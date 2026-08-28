@@ -32,24 +32,29 @@ let package = Package(
         .target(name: "VigieNoyau"),
         .target(name: "EchoHubNoyau"),
         .target(name: "SailyNoyau"),
+        // Le socle de design commun : neutres, sémantiques, typo, grille, galbes,
+        // motion. UNE vérité pour tout ce qui doit être identique ; chaque monde
+        // n'ajoute par-dessus que son accent. Tout est guardé `canImport(SwiftUI)`
+        // — sur Linux il compile à vide, sans casser `swift test` des noyaux.
+        .target(name: "Systeme"),
         .target(
             name: "Vigie",
-            dependencies: ["VigieNoyau"],
+            dependencies: ["VigieNoyau", "Systeme"],
             exclude: ["Charte/CHARTE.md"]
         ),
         .target(
             name: "EchoHub",
-            dependencies: ["EchoHubNoyau"],
+            dependencies: ["EchoHubNoyau", "Systeme"],
             exclude: ["Charte/CHARTE.md"]
         ),
         .target(
             name: "Saily",
-            dependencies: ["SailyNoyau"],
+            dependencies: ["SailyNoyau", "Systeme"],
             exclude: ["Charte/CHARTE.md"]
         ),
         .target(
             name: "Echo",
-            dependencies: ["Vigie", "EchoHub", "Saily", "VigieNoyau"]
+            dependencies: ["Vigie", "EchoHub", "Saily", "VigieNoyau", "Systeme"]
         ),
         .testTarget(name: "VigieNoyauTests", dependencies: ["VigieNoyau"]),
         .testTarget(name: "EchoHubNoyauTests", dependencies: ["EchoHubNoyau"]),
