@@ -45,6 +45,12 @@ public final class Salon {
     /// fragment.
     public private(set) var messages: [MessageChat] = []
     public private(set) var enCours: MessageEnCours?
+    /// La balise de compaction du tour EN COURS, arrivée par le flux AVANT les
+    /// fragments. Rendue au-dessus de la réponse qui s'écrit, tant que celle-ci
+    /// vit hors de `messages` (voir `MessageEnCours`). Au rechargement, la même
+    /// balise revient portée par `MessageChat.compaction` : cette valeur est
+    /// alors remise à `nil`, elle ne double jamais celle du fil relu.
+    public private(set) var compactionEnCours: InfoCompaction?
     public private(set) var etatFil: EtatFil = .vide
     /// L'échec du dernier tour ou de la dernière relecture, affiché sous le fil.
     /// Distinct de `etatFil` : une génération ratée ne doit pas effacer la
@@ -315,6 +321,9 @@ public final class Salon {
         reglagesConversation = detail.reglages
         variantes = detail.variantes
         aRelire.removeAll()
+        // Le fil relu porte la balise sur `MessageChat.compaction` : la version
+        // live devient un doublon, on l'efface.
+        compactionEnCours = nil
     }
 
     /// La vue rendue par `POST /branche` : même contrat que le détail, moins la
@@ -323,6 +332,7 @@ public final class Salon {
         messages = etat.messages
         variantes = etat.variantes
         aRelire.removeAll()
+        compactionEnCours = nil
     }
 
     /// Ce que la feuille de réglages vient d'écrire. Le fil doit le savoir : il
@@ -376,6 +386,7 @@ public final class Salon {
         reglagesConversation = nil
         aRelire.removeAll()
         enCours = nil
+        compactionEnCours = nil
         enAttente = nil
     }
 
@@ -417,6 +428,9 @@ public final class Salon {
 
     func poser(message: MessageChat) { messages.append(message) }
     func poser(enCours nouveau: MessageEnCours?) { enCours = nouveau }
+    /// La balise du tour en cours. `nil` au début de chaque tour ; posée quand
+    /// l'événement `compaction` arrive, avant les fragments.
+    func poser(compaction nouvelle: InfoCompaction?) { compactionEnCours = nouvelle }
     func ajouter(fragment: String) { enCours?.texte += fragment }
     func poser(erreur: String?) { erreurGeneration = erreur }
     /// `douteux` : le flux s'est fermé sans que le serveur ait dit `fin`. L'app

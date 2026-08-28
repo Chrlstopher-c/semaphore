@@ -168,6 +168,12 @@ extension Salon {
                 accueillir(debut)
             case .fragment(let texte):
                 ajouter(fragment: texte)
+            case .compaction(let info):
+                // Arrive après `debut`, avant les fragments : le message à venir
+                // est déjà connu. La balise se peint au-dessus de la réponse qui
+                // s'écrit, et le rechargement de fin de tour la retrouvera sur
+                // `MessageChat.compaction`.
+                poser(compaction: info)
             case .fin(let fin):
                 deposerEnCours(interrompu: fin.interrompu, mesures: fin)
                 noterChangementDeListe()
@@ -188,6 +194,9 @@ extension Salon {
     /// Aligne l'état local sur ce que le serveur vient de décider : le vrai
     /// identifiant du message de Chris, et celui de la réponse à venir.
     private func accueillir(_ debut: EvenementDebut) {
+        // Un tour neuf ne porte pas la balise du précédent. La sienne, s'il en a
+        // une, arrive juste après ce `debut`.
+        poser(compaction: nil)
         if let reel = debut.messageUtilisateurId,
            let local = messages.last(where: { Salon.estLocal($0.id) })?.id {
             remplacerIdentifiant(de: local, par: reel)

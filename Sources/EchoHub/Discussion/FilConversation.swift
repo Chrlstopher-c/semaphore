@@ -20,8 +20,13 @@ struct FilConversation: View {
                     tour(message)
                 }
                 if let enCours = salon.enCours {
-                    ReponseModele(texte: enCours.texte, actif: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .leading, spacing: Trame.serre) {
+                        if let compaction = salon.compactionEnCours {
+                            BaliseCompaction(info: compaction)
+                        }
+                        ReponseModele(texte: enCours.texte, actif: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 if let erreur = salon.erreurGeneration {
                     EchecDeTour(raison: erreur)
@@ -71,6 +76,11 @@ struct FilConversation: View {
             .frame(maxWidth: .infinity, alignment: .trailing)
         case .assistant:
             VStack(alignment: .leading, spacing: Trame.serre) {
+                // La balise se pose AU-DESSUS de la réponse qu'elle désigne :
+                // `compaction` n'est peuplé que sur ce message-là.
+                if let compaction = message.compaction {
+                    BaliseCompaction(info: compaction)
+                }
                 ReponseModele(texte: message.contenu, actif: false)
                 PiedDeReponse(message: message, aRelire: salon.aRelire.contains(message.id))
                 ActionsReponse(message: message)
