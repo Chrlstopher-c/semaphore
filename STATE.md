@@ -4,7 +4,26 @@ Résumé vivant, inter-sessions. Les décisions et leurs raisons sont dans
 `ARCHITECTURE.md` ; ce qui reste à faire et ce qui demande un arbitrage sont
 dans `TODO.md`.
 
-Dernière mise à jour : **28/08/2026**, création du dépôt.
+Dernière mise à jour : **28/08/2026**, balise de compaction du contexte
+(branche `compaction-balise`).
+
+---
+
+## Compaction du contexte — 28/08/2026 (branche `compaction-balise`)
+
+Le backend EchoHub v2 auto-compacte le contexte à 90 % de la fenêtre (résumé
+côté moteur, historique intact). L'app affiche désormais la balise, comme le web.
+
+- **Noyau** : `InfoCompaction` (contrat figé, `Codable`/`Sendable`/`Hashable`),
+  `MessageChat.compaction: InfoCompaction?` (rechargement), cas
+  `EvenementFlux.compaction` + décodage de `EvenementCompaction` (direct).
+- **Vues** : `BaliseCompaction` — bloc repliable, registre `note`, calqué sur
+  `BlocReplie` ; rendu au-dessus du message assistant désigné, en direct
+  (`Salon.compactionEnCours`, posée par l'événement) comme au rechargement
+  (`MessageChat.compaction`).
+- **Preuve** : `swift test` 193 verts (dont 4 de compaction), `xtool dev build`
+  vert. `☠` Le rendu visuel de la balise sur l'iPhone n'a **jamais été vu** —
+  calculé, pas constaté ; c'est Chris qui juge.
 
 ---
 

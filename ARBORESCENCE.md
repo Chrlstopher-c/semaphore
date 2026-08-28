@@ -30,6 +30,7 @@ Une ligne par fichier. Générée le 28/08/2026 ; à régénérer quand la struc
 - `Sources/EchoHub/Coquille/Coquille.swift`
 - `Sources/EchoHub/Discussion/ActionsMessage.swift`
 - `Sources/EchoHub/Discussion/ArbreEcran.swift`
+- `Sources/EchoHub/Discussion/BaliseCompaction.swift`
 - `Sources/EchoHub/Discussion/BandeauMachine.swift`
 - `Sources/EchoHub/Discussion/BlocReplie.swift`
 - `Sources/EchoHub/Discussion/CarteOutil.swift`
@@ -69,6 +70,7 @@ Une ligne par fichier. Générée le 28/08/2026 ; à régénérer quand la struc
 - `Sources/EchoHubNoyau/Conversation/ArbreConversation.swift`
 - `Sources/EchoHubNoyau/Conversation/Conversation.swift`
 - `Sources/EchoHubNoyau/Conversation/DepotConversations.swift`
+- `Sources/EchoHubNoyau/Conversation/InfoCompaction.swift`
 - `Sources/EchoHubNoyau/Conversation/MajReglages.swift`
 - `Sources/EchoHubNoyau/Conversation/MessageChat.swift`
 - `Sources/EchoHubNoyau/Conversation/NavigationVariante.swift`
@@ -278,6 +280,7 @@ Une ligne par fichier. Générée le 28/08/2026 ; à régénérer quand la struc
 - `Tests/EchoHubNoyauTests/AnalyseurSSETests.swift`
 - `Tests/EchoHubNoyauTests/AtelierTests.swift`
 - `Tests/EchoHubNoyauTests/CibleChargementTests.swift`
+- `Tests/EchoHubNoyauTests/CompactionTests.swift`
 - `Tests/EchoHubNoyauTests/CorpsMultipartTests.swift`
 - `Tests/EchoHubNoyauTests/LectureAppelTests.swift`
 - `Tests/EchoHubNoyauTests/LectureRefusTests.swift`

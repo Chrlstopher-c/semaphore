@@ -11,6 +11,10 @@
       revenir sur l'écran du canal : « veille par localisation » doit y figurer.
 - [ ] **Le badge et les notifications de Vigie** arrivent-ils encore ? Le
       délégué est le même, le bundle est le même — mais l'app est nouvelle.
+- [ ] **La balise de compaction s'affiche-t-elle correctement ?** Registre
+      `note`, repliable, au-dessus du bon message assistant. En direct (longue
+      génération qui franchit 90 % du contexte) ET au rechargement d'un fil
+      compacté. Compile, jamais vu à l'œil.
 
 ## À faire — seul
 
