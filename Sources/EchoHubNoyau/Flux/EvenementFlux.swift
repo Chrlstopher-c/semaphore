@@ -30,10 +30,20 @@ public struct EvenementErreur: Sendable, Decodable, Equatable {
     public let remediation: String?
 }
 
+/// L'enveloppe de l'événement `compaction` : le contrat pose la balise sous la
+/// clé `compaction`, jamais à plat. On décode l'enveloppe, on rend la balise.
+public struct EvenementCompaction: Sendable, Decodable, Equatable {
+    public let compaction: InfoCompaction
+}
+
 /// Ce qu'une trame SSE d'EchoHub peut porter.
 public enum EvenementFlux: Sendable, Equatable {
     case debut(EvenementDebut)
     case fragment(String)
+    /// La balise émise AVANT les fragments du tour dont la génération a déclenché
+    /// la compaction. Elle porte le `message_id` du message assistant à venir —
+    /// celui qu'a annoncé `debut` — au-dessus duquel se pose la balise.
+    case compaction(InfoCompaction)
     case fin(EvenementFin)
     case erreur(EvenementErreur)
     /// La sentinelle `data: [DONE]` du flux `/api/inference/generer`. Le flux
@@ -72,6 +82,8 @@ public enum LectureEvenement {
             switch type {
             case "debut": return .debut(try decodeur.decode(EvenementDebut.self, from: donnees))
             case "fragment": return .fragment(try decodeur.decode(Fragment.self, from: donnees).texte)
+            case "compaction":
+                return .compaction(try decodeur.decode(EvenementCompaction.self, from: donnees).compaction)
             case "fin": return .fin(try decodeur.decode(EvenementFin.self, from: donnees))
             case "erreur": return .erreur(try decodeur.decode(EvenementErreur.self, from: donnees))
             default:

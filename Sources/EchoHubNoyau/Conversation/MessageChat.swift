@@ -28,6 +28,10 @@ public struct MessageChat: Sendable, Codable, Identifiable, Hashable {
     /// `nil` désigne une racine de conversation. Deux messages de même parent
     /// sont deux variantes du même tour — un rejeu, une édition.
     public var parentId: String?
+    /// Peuplé UNIQUEMENT sur le message assistant dont la génération a déclenché
+    /// une compaction : il porte alors la balise à rendre au-dessus de lui.
+    /// C'est ainsi que le fil rechargé montre la même balise que le direct.
+    public var compaction: InfoCompaction?
 
     public init(
         id: String,
@@ -39,7 +43,8 @@ public struct MessageChat: Sendable, Codable, Identifiable, Hashable {
         creeLe: Date = .now,
         modeleId: String? = nil,
         interrompu: Bool = false,
-        parentId: String? = nil
+        parentId: String? = nil,
+        compaction: InfoCompaction? = nil
     ) {
         self.id = id
         self.conversationId = conversationId
@@ -51,5 +56,6 @@ public struct MessageChat: Sendable, Codable, Identifiable, Hashable {
         self.modeleId = modeleId
         self.interrompu = interrompu
         self.parentId = parentId
+        self.compaction = compaction
     }
 }
