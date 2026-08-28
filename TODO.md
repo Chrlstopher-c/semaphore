@@ -1,9 +1,16 @@
 # TODO — Echo
 
+## Constaté sur l'appareil — 28/08/2026
+
+- [x] **Le pupitre et le sélecteur de monde** — `Quart` / `Machine` vus, la
+      bascule fonctionne. Constaté par Chris (captures).
+- [x] **Le monde Machine** — chargement de modèles, conversations, génération en
+      flux, panneau d'occupation : utilisés sur l'iPhone.
+- [x] **Correctif « Machine injoignable »** — le faux message ne réapparaît
+      plus. « Le message n'apparaît plus, c'est nickel » (Chris).
+
 ## À constater sur l'appareil — Chris
 
-- [ ] **Le pupitre existe-t-il visuellement ?** Le sélecteur de monde en tête,
-      au-dessus de chaque coquille. Jamais vu à l'œil : calculé, pas constaté.
 - [ ] **La veille tient-elle le monde Machine ?** Lancer une génération longue
       dans EchoHub, éteindre l'écran, revenir : la réponse doit avoir continué.
       C'est LA promesse du centre, et elle n'est prouvée nulle part.
@@ -29,6 +36,14 @@
 - [ ] `start.sh` / `stop.sh` / `restart.sh` : les projets iOS frères n'en ont
       pas (rien ne se lance sur cette machine). À trancher : convention à part
       entière, ou scripts vides pour la forme.
+
+## Fusions en attente — après validation du test de Chris
+
+- [ ] `compaction-balise` → `master` (echo-centre), une fois le rendu de la
+      balise validé sur l'iPhone.
+- [ ] Côté serveur (dépôt `echohub-v2`) : `auto-compact` → `main`, une fois
+      l'auto-compact validé dans le web / l'app. Porte aussi le watchdog relevé
+      à 900 s.
 
 ## Écarté — décisions de Chris, 28/08/2026
 

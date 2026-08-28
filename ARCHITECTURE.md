@@ -83,6 +83,28 @@ le porte en préfixe ; et installer Echo **remplace** Vigie sur l'appareil,
 ce qui est le but. EchoHub Mobile (`com.echo.echohub`) reste installable à
 côté tant qu'on veut comparer.
 
+## Contrats consommés du serveur — la compaction
+
+Le monde Machine ne réimplémente rien du serveur EchoHub v2 : il consomme ses
+contrats. La balise de compaction en est un exemple à garder en tête, parce que
+sa forme est **fixée côté serveur** et ne doit pas diverger.
+
+Le backend auto-compacte le contexte à 90 % de la fenêtre du modèle (résumé
+côté moteur, historique intact) et le signale par une structure `InfoCompaction`
+aux noms de champs **stables**, livrée par deux voies :
+
+- **en direct**, événement SSE `type: "compaction"` (avant les fragments du tour
+  qui l'a déclenchée) → décodé par `EvenementFlux.compaction`, posé dans
+  `Salon.compactionEnCours` ;
+- **au rechargement**, champ `MessageChat.compaction` sur le message assistant
+  déclencheur.
+
+`InfoCompaction` (`Sources/EchoHubNoyau/Conversation/`) reprend ces noms tels
+quels — toute divergence casserait le décodage en silence. La source de vérité
+du contrat est `backend/chat/modeles.py` du dépôt `echohub-v2` ; l'app le
+consomme, ne le définit pas. Rendu : `BaliseCompaction`, bloc repliable en
+registre `note`.
+
 ## Ce qui reste dans les dépôts d'origine
 
 - `/mnt/projects/echohub-mobile/Relais/` — le relais Bun qui tourne sur le Pi.

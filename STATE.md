@@ -4,15 +4,52 @@ Résumé vivant, inter-sessions. Les décisions et leurs raisons sont dans
 `ARCHITECTURE.md` ; ce qui reste à faire et ce qui demande un arbitrage sont
 dans `TODO.md`.
 
-Dernière mise à jour : **28/08/2026**, balise de compaction du contexte
-(branche `compaction-balise`).
+Dernière mise à jour : **28/08/2026** — Echo tourne sur l'iPhone de Chris ;
+correctif « Machine injoignable » confirmé, balise de compaction ajoutée.
 
 ---
+
+## En une phrase
+
+Echo est **installée et utilisée sur l'iPhone de Chris**. Le pupitre, les deux
+mondes et l'onglet Machine (chargement de modèles, génération) sont constatés à
+l'œil ; ce qui touche l'arrière-plan (veille, notifications, relais de
+localisation) et la nouvelle balise de compaction reste à constater.
+
+## Ce qui est confirmé SUR L'APPAREIL — 28/08/2026
+
+Contrairement à l'état précédent (« rien n'a jamais tourné sur un iPhone »),
+Echo a réellement tourné. Constaté par Chris, captures à l'appui :
+
+- **Le pupitre et le sélecteur de monde** — `Quart` / `Machine` en tête, la
+  bascule fonctionne.
+- **Le monde Machine** — chargement de modèles depuis l'onglet, conversations,
+  génération en flux, panneau d'occupation du contexte, blocs de raisonnement
+  repliés.
+- **Le correctif « Machine injoignable »** — le faux message
+  « Relecture impossible — Relais injoignable — cancelled » (une annulation
+  locale prise pour une panne) **ne réapparaît plus**. Confirmé par Chris :
+  « le message n'apparaît plus, c'est nickel ».
+- **Le relais EchoHub** joignable depuis le téléphone (adresse + jeton posés
+  dans les réglages Machine).
+
+## Ce qui RESTE à constater sur l'appareil
+
+- **La balise de compaction** (ci-dessous) — compile et décodage testé, jamais
+  vue à l'écran : lisibilité en registre `note`, position au-dessus du bon
+  message, repli en direct pendant qu'une réponse s'écrit.
+- **La veille tient-elle le monde Machine ?** Génération longue, écran éteint,
+  retour : la réponse doit avoir continué. C'est LA promesse du centre.
+- **Le relais de localisation pendant Sillon** — « veille par localisation »
+  doit figurer à l'écran du canal Vigie quand une autre app prend l'audio.
+- **Le badge et les notifications de Vigie** — même délégué, même bundle, app
+  nouvelle : à vérifier qu'ils arrivent encore.
 
 ## Compaction du contexte — 28/08/2026 (branche `compaction-balise`)
 
 Le backend EchoHub v2 auto-compacte le contexte à 90 % de la fenêtre (résumé
-côté moteur, historique intact). L'app affiche désormais la balise, comme le web.
+côté moteur, historique intact — non destructif). L'app affiche la balise,
+comme le web.
 
 - **Noyau** : `InfoCompaction` (contrat figé, `Codable`/`Sendable`/`Hashable`),
   `MessageChat.compaction: InfoCompaction?` (rechargement), cas
@@ -21,35 +58,33 @@ côté moteur, historique intact). L'app affiche désormais la balise, comme le 
   `BlocReplie` ; rendu au-dessus du message assistant désigné, en direct
   (`Salon.compactionEnCours`, posée par l'événement) comme au rechargement
   (`MessageChat.compaction`).
-- **Preuve** : `swift test` 193 verts (dont 4 de compaction), `xtool dev build`
-  vert. `☠` Le rendu visuel de la balise sur l'iPhone n'a **jamais été vu** —
-  calculé, pas constaté ; c'est Chris qui juge.
+- **Preuve** : `swift test` au vert (193 EchoHub/XCTest dont 4 de compaction,
+  156 Vigie/swift-testing), `xtool dev build` vert. Rendu visuel jamais vu.
 
----
+## État des branches — 28/08/2026
 
-## En une phrase
+`master` porte l'assemblage (`f1ae087`) et le correctif « Machine injoignable »
+(`c26289a`). **Deux branches non encore fusionnées, en attente du test de Chris :**
 
-Les deux apps sont assemblées, tout compile pour iOS, 334 tests verts, l'IPA
-est produit et déposé sur le portable — et **rien n'a jamais tourné sur un
-iPhone** : le pupitre, la veille qui tient le monde Machine, le relais de
-localisation, sont calculés, pas constatés.
-
-## Ce qui existe — 28/08/2026
-
-| Pièce | État | Preuve |
+| Branche | Contenu | IPA |
 |---|---|---|
-| Module `Vigie` + `VigieNoyau` | copié de `vigie@8a0454e` (branche `relais-localisation`), sans son `@main` | compile iOS |
-| Module `EchoHub` + `EchoHubNoyau` | copié de `echohub-mobile@7a583a2` (branche `extension-machine`), sans son `@main` | compile iOS |
-| Module `Echo` | 4 fichiers : `EchoApp`, `Pupitre`, `SelecteurMonde`, `Monde` | compile iOS |
-| `EchoHub.Coquille` | reçoit une politique de suspension de l'hôte (`suspendreEnArrierePlan`) | compile iOS |
-| `Info.plist` | union des deux : modes de fond, permissions, réseau local, sombre | — |
-| IPA | `xtool/Echo.ipa`, 28,2 Mo, 0 erreur | `sha256 0a5caeb4…aa72a`, identique sur le portable (`~/Echo.ipa`) |
-| Tests | 156 (Vigie, swift-testing) + 178 (EchoHub, XCTest) | `swift test`, 0 échec |
+| `master` | pupitre + correctif injoignable | — |
+| `compaction-balise` | balise de compaction (noyau + vues) | `~/Echo.ipa` sur le portable, `sha256 88478b3b…96b2e`, 28,5 Mo |
 
-`☠` Les deux branches d'origine sont **non fusionnées et non testées par
-Chris** au moment de la copie. Echo est l'endroit où elles seront testées ; si
-un défaut apparaît, il vient d'une des deux, pas de l'assemblage — sauf pour
-ce que `Echo/` et la modification de `EchoHub.Coquille` ajoutent.
+L'IPA courante sur le portable inclut `compaction-balise`. Fusion dans `master`
+à faire une fois le rendu validé sur l'appareil.
+
+## Ce qui existe — modules
+
+| Module | Rôle | Origine |
+|---|---|---|
+| `VigieNoyau` / `Vigie` | monde Quart (ccremote) | `vigie@8a0454e` (branche `relais-localisation`) |
+| `EchoHubNoyau` / `EchoHub` | monde Machine (modèle local) | `echohub-mobile@7a583a2` (branche `extension-machine`) |
+| `Echo` | pupitre : `EchoApp`, `Pupitre`, `SelecteurMonde`, `Monde` | écrit pour la fusion |
+
+`EchoHub.Coquille` reçoit de l'hôte une politique de suspension
+(`suspendreEnArrierePlan`) : la veille de Vigie tient le processus, la
+génération n'est plus coupée à l'écran éteint.
 
 ## Ce qui a été décidé, et par qui
 
