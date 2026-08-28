@@ -1,0 +1,18 @@
+# Chaîne de compilation iOS : réinstallée par machine, jamais versionnée.
+.build/
+# Tout le dossier, pas seulement l'IPA : xtool y depose aussi un paquet
+# intermediaire (.xtool-tmp/) qui est du code GENERE. Deux fichiers s'y etaient
+# glisses dans un commit.
+xtool/
+*.xcuserstate
+DerivedData/
+
+# Secrets et adresses de tunnel : le dépôt est privé, ce n'est pas une raison.
+.env
+.env.*
+*.mobileprovision
+*.p12
+
+node_modules/
+dist/
+logs/

@@ -1,0 +1,17 @@
+# Echo — le centre de contrôle iOS : Vigie (ccremote) + EchoHub Mobile
+# (inférence locale) dans un seul bundle, com.echo.labs.
+#
+# `type: desktop` : c'est une app compilée (iOS via xtool), pas un service web.
+# Rien ne se lance sur cette machine — l'app se pose sur un iPhone par
+# ./deploy.sh (Impactor), et c'est Chris qui juge le rendu, jamais un agent.
+# Le relais EchoHub (Bun, sur le Pi) reste dans /mnt/projects/echohub-mobile.
+name: echo-centre
+type: desktop
+stack: custom   # Swift 6.3 / SwiftUI, compilé sous Linux par xtool + SDK Darwin
+port: 0
+start: build.sh
+stop: /bin/true
+logs: logs/
+e2e:
+  # Aucune URL : la validation se fait sur l'appareil, par Chris.
+  url: ""

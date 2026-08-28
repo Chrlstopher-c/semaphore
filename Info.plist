@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- L'union des deux Info.plist d'origine (Vigie, EchoHub Mobile), fusionnée
+	     avec les clés générées par xtool — la nôtre l'emporte. Aucune de ces
+	     clés n'est un entitlement : toutes passent en free provisioning. -->
+
+	<!-- ======== Vigie : le maintien en vie et les réveils ======== -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<!-- Exécution continue tant qu'une session audio joue : seul moyen de
+		     garder un socket ouvert en arrière-plan sans compte payant. -->
+		<string>audio</string>
+		<!-- Le relais quand une autre app (Sillon) prend l'audio en exclusif :
+		     `MaintienVieLocalisation`, trois kilomètres, jamais le GPS. -->
+		<string>location</string>
+		<!-- Réveils opportunistes, pour rattraper ce qui a été manqué. -->
+		<string>fetch</string>
+		<string>processing</string>
+	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Garder Echo en veille quand une autre app joue de l'audio. Aucune position n'est enregistrée ni transmise.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Le maintien en veille par localisation exige l'autorisation « Toujours ». Précision réglée à trois kilomètres : le GPS n'est jamais sollicité, et aucune position n'est enregistrée ni transmise.</string>
+	<!-- `☠` Sans cette clé, le premier appel à LocalAuthentication ne rend pas
+	     une erreur : il TUE le processus. Elle garde les gestes engageants —
+	     autoriser un mandat, terminer une équipe. -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>Confirmer les décisions qui engagent une dépense : autoriser un mandat, accorder une rallonge, terminer une équipe.</string>
+	<!-- `☠` Les deux clés de la dictée. `NSSpeechRecognitionUsageDescription`
+	     est exigée dès qu'on INSTANCIE `SFSpeechRecognizer`, même en mode
+	     strictement local : son absence ne dégrade pas, elle tue le processus. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Dicter un message à l'orchestrateur. La transcription se fait sur l'appareil : aucun son ni aucun texte n'est envoyé à Apple.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Transcrire la dictée en texte, strictement sur l'appareil. Aucun repli par les serveurs d'Apple : sans modèle local, la dictée refuse de démarrer.</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.echo.labs.refresh</string>
+		<string>com.echo.labs.catchup</string>
+	</array>
+
+	<!-- ======== EchoHub Mobile : le relais sur le réseau local ======== -->
+	<!-- Sur iOS 14+, la première connexion vers une adresse du réseau local
+	     déclenche l'invite « réseau local ». Sans cette clé, l'invite s'affiche
+	     SANS phrase explicative, et un refus fait échouer le transport sur une
+	     erreur opaque — au tout premier lancement, précisément. -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Echo joint le relais EchoHub sur ton réseau local quand tu es à la maison.</string>
+	<!-- Le relais est joint en clair (http://10.0.0.2:8947) à la maison ;
+	     en HTTPS par le tunnel dehors. ATS ne laisse pas passer le premier cas
+	     sans exception, et l'exception est bornée au réseau local — jamais un
+	     `NSAllowsArbitraryLoads` global. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+
+	<!-- ======== Commun ======== -->
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleLightContent</string>
+	<!-- Sombre permanent : sans cette clé, iOS peint les vues système (clavier,
+	     feuilles de partage) en clair sur un fond graphite. -->
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
+	<key>UIRequiresFullScreen</key>
+	<true/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+</dict>
+</plist>
