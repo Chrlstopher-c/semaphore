@@ -25,6 +25,12 @@ struct CarteItem: View {
             }
         }
         .contentShape(.rect)
+        // `☠` Cohabitation tap / lien : sur iOS 18, un tap qui tombe sur un run
+        // `.link` d'un `Text(AttributedString)` déclenche `openURL` et a la
+        // priorité sur ce `onTapGesture` d'ancêtre ; un tap ailleurs édite. Le
+        // lien reste donc prioritaire dans le rendu, et « Modifier » du menu
+        // contextuel est le chemin d'édition GARANTI, quelle que soit la façon
+        // dont la plateforme arbitre le geste.
         .onTapGesture { surEdition?() }
         .contextMenu { menu }
     }
@@ -69,15 +75,21 @@ struct CarteItem: View {
     private var corps: some View {
         if item.kind == .lien, let url = item.url {
             if !item.text.isEmpty {
-                Text(item.text).corps().foregroundStyle(Teinte.encre).lineLimit(2)
+                NoteRendue(texte: item.text, lignesMax: 2)
             }
             Text(url).brut().foregroundStyle(Teinte.accent).lineLimit(1)
+        } else if item.kind == .note, !item.text.isEmpty {
+            // Une note : rendu formaté, retours préservés, aperçu borné à ~8
+            // lignes sans écraser le formatage.
+            NoteRendue(texte: item.text, lignesMax: 8)
         } else if !texteAffiche.isEmpty {
+            // Les autres espèces (fichier avec légende) restent en texte simple :
+            // rien à formater, et le nom de blob n'est pas du markdown.
             Text(texteAffiche)
                 .corps()
                 .foregroundStyle(Teinte.encre)
                 .lineSpacing(Typo.interligneNote)
-                .lineLimit(item.kind == .note ? 6 : 2)
+                .lineLimit(2)
         }
     }
 
