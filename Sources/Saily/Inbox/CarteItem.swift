@@ -8,6 +8,9 @@ struct CarteItem: View {
     let item: Item
     let surEpingle: () -> Void
     let surSuppression: () -> Void
+    /// Éditer l'item. `nil` pour les espèces non éditables (image/vidéo/fichier),
+    /// ce qui retire le geste et l'entrée de menu.
+    var surEdition: (() -> Void)?
 
     var body: some View {
         Panneau {
@@ -21,6 +24,8 @@ struct CarteItem: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .contentShape(.rect)
+        .onTapGesture { surEdition?() }
         .contextMenu { menu }
     }
 
@@ -83,6 +88,13 @@ struct CarteItem: View {
 
     private var menu: some View {
         Group {
+            if let surEdition {
+                Button {
+                    surEdition()
+                } label: {
+                    Label("Modifier", systemImage: "pencil")
+                }
+            }
             Button {
                 surEpingle()
             } label: {

@@ -9,6 +9,8 @@ struct InboxEcran: View {
     @Environment(Boite.self) private var boite
     @State private var recherche = ""
     @State private var tagActif: String?
+    /// La note en cours d'édition, présentée en feuille. `nil` = aucune.
+    @State private var noteAEditer: Item?
 
     var body: some View {
         ZStack {
@@ -17,6 +19,12 @@ struct InboxEcran: View {
                 enTete
                 corps
             }
+        }
+        .sheet(item: $noteAEditer) { note in
+            EditionNoteEcran(item: note)
+                .environment(boite)
+                .presentationDetents([.medium, .large])
+                .presentationBackground(Teinte.fond)
         }
     }
 
@@ -92,7 +100,8 @@ struct InboxEcran: View {
                     CarteItem(
                         item: item,
                         surEpingle: { Task { await boite.basculerEpingle(item) } },
-                        surSuppression: { Task { await boite.supprimer(item) } }
+                        surSuppression: { Task { await boite.supprimer(item) } },
+                        surEdition: item.kind == .note ? { noteAEditer = item } : nil
                     )
                     .entreeEnScene(rang: rang)
                     .transition(.item)

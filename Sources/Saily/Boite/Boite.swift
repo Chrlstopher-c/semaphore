@@ -188,6 +188,18 @@ public final class Boite {
         }
     }
 
+    /// Modifie le texte et les tags d'une note existante. Reconstruit l'entrée
+    /// depuis l'item, même id : l'upsert idempotent met à jour au lieu de créer.
+    /// Un texte vide ne fait rien — pour effacer, on supprime.
+    public func modifier(_ item: Item, texte: String, tags: [String]) async {
+        let coupe = texte.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !coupe.isEmpty else { return }
+        await capturer(ItemInput(
+            id: item.id, kind: item.kind, text: coupe, url: item.url,
+            blob: item.blob, mime: item.mime, tags: tags, pinned: item.pinned
+        ))
+    }
+
     /// Épingle/désépingle. Reconstruit l'entrée depuis l'item courant.
     public func basculerEpingle(_ item: Item) async {
         var input = ItemInput(depuis: item)
