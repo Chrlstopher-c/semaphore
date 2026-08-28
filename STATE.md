@@ -86,6 +86,33 @@ L'IPA courante sur le portable inclut `compaction-balise`. Fusion dans `master`
 (`suspendreEnArrierePlan`) : la veille de Vigie tient le processus, la
 génération n'est plus coupée à l'écran éteint.
 
+## Le monde Saily — « La Besace » (28/08)
+
+Troisième monde : le client iOS de l'inbox de capture Saily (serveur en prod,
+`https://saily.example.com`). Découpage identique aux deux autres —
+`SailyNoyau` (pur, testable Linux) + `Saily` (SwiftUI, charte propre).
+
+- **DA « La Besace »** : accent turquoise `#2AD4C6` (ni la pervenche d'EchoHub,
+  ni le bleu de Vigie), neutres graphite chauds, SF Pro Rounded. `CHARTE.md`.
+- **Noyau** : `Item`/`ItemInput`/messages sync miroirs de `contracts.ts`
+  (horodatages ms `Int`, clés camelCase sans conversion) ; `ClientSaily` (REST +
+  `urlSync`) ; `ConnexionSync` (WebSocket, reconnexion à backoff **borné** ≤
+  30 s) ; `EtatBoite`, réducteur pur — snapshot, dédup par id/updatedAt,
+  filtrage des pierres tombales, file offline bornée rejouée à la reconnexion.
+- **Écrans** : inbox (épingles en tête, recherche, filtre par tag, aperçu blob
+  authentifié), capture (note/lien auto-détecté, photo/vidéo, fichier → upload
+  blob, tags), réglages (adresse prod par défaut + jeton + « tester » sur
+  `/health`).
+- **Intégration** : `Monde.saily` (`tray.full.fill`), monté dans `Pupitre`,
+  `Package.swift`. Aucun fichier de Vigie/EchoHub touché.
+- **Share Extension écartée** : xtool 1.17.0 ne construit qu'un produit
+  `.library` en une seule app — pas de cible d'extension ni d'App Group (le
+  projet s'interdit tout entitlement). Capture in-app livrée ; URL scheme custom
+  laissé en repli possible (détail dans le rapport de session).
+- **Preuves 28/08** : `swift build` 0 erreur ; `swift test` 37 tests Saily verts
+  (226 XCTest + 156 swift-testing au total, 0 échec) ; `xtool dev build` →
+  `Echo.app`, exit 0.
+
 ## Ce qui a été décidé, et par qui
 
 - **Chris, 28/08** : deux apps au final — Sillon seule, et Echo = Vigie +

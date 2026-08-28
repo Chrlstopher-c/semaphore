@@ -31,6 +31,7 @@ let package = Package(
         // c'est la seule preuve automatique dont dispose ce projet.
         .target(name: "VigieNoyau"),
         .target(name: "EchoHubNoyau"),
+        .target(name: "SailyNoyau"),
         .target(
             name: "Vigie",
             dependencies: ["VigieNoyau"],
@@ -42,10 +43,16 @@ let package = Package(
             exclude: ["Charte/CHARTE.md"]
         ),
         .target(
+            name: "Saily",
+            dependencies: ["SailyNoyau"],
+            exclude: ["Charte/CHARTE.md"]
+        ),
+        .target(
             name: "Echo",
-            dependencies: ["Vigie", "EchoHub", "VigieNoyau"]
+            dependencies: ["Vigie", "EchoHub", "Saily", "VigieNoyau"]
         ),
         .testTarget(name: "VigieNoyauTests", dependencies: ["VigieNoyau"]),
         .testTarget(name: "EchoHubNoyauTests", dependencies: ["EchoHubNoyau"]),
+        .testTarget(name: "SailyNoyauTests", dependencies: ["SailyNoyau"]),
     ]
 )

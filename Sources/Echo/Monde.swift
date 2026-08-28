@@ -13,6 +13,8 @@ public enum Monde: String, CaseIterable, Identifiable, Hashable, Sendable {
     case quart
     /// EchoHub — le modèle local, ses conversations, sa machine.
     case machine
+    /// Saily — l'inbox personnelle de capture, synchronisée avec le PC.
+    case saily
 
     public var id: String { rawValue }
 
@@ -20,6 +22,7 @@ public enum Monde: String, CaseIterable, Identifiable, Hashable, Sendable {
         switch self {
         case .quart: return "Quart"
         case .machine: return "Machine"
+        case .saily: return "Saily"
         }
     }
 
@@ -29,6 +32,7 @@ public enum Monde: String, CaseIterable, Identifiable, Hashable, Sendable {
         switch self {
         case .quart: return "moon.stars.fill"
         case .machine: return "cpu"
+        case .saily: return "tray.full.fill"
         }
     }
 }

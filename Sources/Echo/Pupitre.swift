@@ -1,5 +1,6 @@
 #if canImport(SwiftUI)
 import EchoHub
+import Saily
 import SwiftUI
 import Vigie
 
@@ -39,6 +40,9 @@ struct Pupitre: View {
             EchoHub.Coquille(suspendreEnArrierePlan: { !MaintienVie.partage.actif })
                 .opacity(monde == .machine ? 1 : 0)
                 .allowsHitTesting(monde == .machine)
+            Saily.Coquille()
+                .opacity(monde == .saily ? 1 : 0)
+                .allowsHitTesting(monde == .saily)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
