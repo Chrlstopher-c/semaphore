@@ -7,6 +7,8 @@ import SailyNoyau
 
 struct InboxEcran: View {
     @Environment(Boite.self) private var boite
+    /// Bascule vers l'onglet de capture — l'action de l'état « besace vide ».
+    var surCapturer: () -> Void = {}
     @State private var recherche = ""
     @State private var tagActif: String?
     /// La note en cours d'édition, présentée en feuille. `nil` = aucune.
@@ -24,6 +26,9 @@ struct InboxEcran: View {
             EditionNoteEcran(item: note)
                 .environment(boite)
                 .presentationDetents([.medium, .large])
+                // Le grabber : il DIT que la feuille se tire, et le swipe-down la
+                // ferme sans chercher un bouton.
+                .presentationDragIndicator(.visible)
                 .presentationBackground(Teinte.fond)
         }
     }
@@ -63,19 +68,24 @@ struct InboxEcran: View {
     private var rubanTags: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Trame.serre) {
-                Button { basculerTag(nil) } label: {
-                    Etiquette("Tout", actif: tagActif == nil)
-                }
-                .buttonStyle(.appui)
+                boutonTag(nil, libelle: "Tout")
                 ForEach(boite.tags, id: \.self) { tag in
-                    Button { basculerTag(tag) } label: {
-                        Etiquette(tag, actif: tagActif == tag)
-                    }
-                    .buttonStyle(.appui)
+                    boutonTag(tag, libelle: tag)
                 }
             }
             .padding(.horizontal, Trame.ecran)
         }
+    }
+
+    /// Un tag filtrable. La pastille reste fine, mais sa zone tapable atteint
+    /// 44 pt de haut — la règle Apple ne se lit pas sur le glyphe.
+    private func boutonTag(_ tag: String?, libelle: String) -> some View {
+        Button { basculerTag(tag) } label: {
+            Etiquette(libelle, actif: tagActif == tag)
+                .frame(minHeight: Trame.cible)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.appui)
     }
 
     // MARK: - Corps
@@ -83,9 +93,9 @@ struct InboxEcran: View {
     @ViewBuilder
     private var corps: some View {
         if !boite.premierChargementFait {
-            EtatCalme(symbole: "tray", titre: "Ouverture de la besace…",
-                      detail: "On récupère tes captures.")
-            .frame(maxHeight: .infinity)
+            // Un squelette de cartes, pas un tourniquet : l'écran montre la forme
+            // de ce qui arrive.
+            SqueletteInbox().frame(maxHeight: .infinity, alignment: .top)
         } else if itemsFiltres.isEmpty {
             etatVide.frame(maxHeight: .infinity)
         } else {
@@ -118,7 +128,8 @@ struct InboxEcran: View {
         if recherche.isEmpty && tagActif == nil {
             EtatCalme(
                 symbole: "tray", titre: "Besace vide",
-                detail: "Balance ta première note, un lien, une image — depuis l'onglet Capturer."
+                detail: "Balance ta première note, un lien ou une image — tout se retrouve ici, synchronisé.",
+                actionTitre: "Capturer", action: surCapturer
             )
         } else {
             EtatCalme(
@@ -179,13 +190,17 @@ struct BarreRecherche: View {
                 .autocorrectionDisabled()
             if !texte.isEmpty {
                 Button { texte = "" } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(Teinte.encreEteinte)
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(Teinte.encreEteinte)
+                        .frame(width: Trame.cible, height: Trame.cible)
+                        .contentShape(.rect)
                 }
                 .buttonStyle(.appui)
             }
         }
-        .padding(.horizontal, Trame.bloc)
-        .frame(height: Trame.cible)
+        .padding(.leading, Trame.bloc)
+        .padding(.trailing, texte.isEmpty ? Trame.bloc : Trame.fin)
+        .frame(minHeight: Trame.cible)
         .background(Teinte.surface, in: .rect(cornerRadius: Galbe.controle, style: .continuous))
         .lisere(Galbe.controle)
     }

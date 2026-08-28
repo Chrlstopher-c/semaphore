@@ -43,6 +43,35 @@ extension ButtonStyle where Self == AllureEngage {
     public static var engage: AllureEngage { AllureEngage() }
 }
 
+/// Un bouton à icône seule (fermer, effacer) avec une cible tactile GARANTIE de
+/// 44×44 pt, quel que soit le corps du glyphe.
+///
+/// `☠` La règle Apple des 44 pt ne se lit pas sur le glyphe : un `xmark` de 17
+/// pt n'offre que 17 pt à toucher si rien n'élargit sa zone. Ce composant pose la
+/// cible, le glyphe reste petit — l'un ne dicte pas l'autre.
+public struct BoutonIcone: View {
+    private let symbole: String
+    private let teinte: Color
+    private let action: () -> Void
+
+    public init(_ symbole: String, teinte: Color = Teinte.encreEteinte, action: @escaping () -> Void) {
+        self.symbole = symbole
+        self.teinte = teinte
+        self.action = action
+    }
+
+    public var body: some View {
+        Button(action: action) {
+            Image(systemName: symbole)
+                .font(.system(.body, weight: .semibold))
+                .foregroundStyle(teinte)
+                .frame(width: Trame.cible, height: Trame.cible)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.appui)
+    }
+}
+
 /// La lumière qui fait exister une surface sur fond sombre : un liseré d'un
 /// point, clair en haut, éteint en bas. C'est lui qui remplace l'ombre.
 public struct Lisere: ViewModifier {
@@ -180,7 +209,7 @@ public struct EtatCalme: View {
     public var body: some View {
         VStack(spacing: Trame.element) {
             Image(systemName: symbole)
-                .font(.system(size: 32, weight: .light))
+                .font(.system(.largeTitle, design: .rounded, weight: .light))
                 .foregroundStyle(Teinte.encreEteinte)
             VStack(spacing: Trame.fin) {
                 Text(titre).entete().foregroundStyle(Teinte.encre)
@@ -192,6 +221,7 @@ public struct EtatCalme: View {
                     .buttonStyle(.appui)
                     .mention()
                     .foregroundStyle(Teinte.accent)
+                    .frame(minHeight: Trame.cible)
                     .padding(.top, Trame.fin)
             }
         }

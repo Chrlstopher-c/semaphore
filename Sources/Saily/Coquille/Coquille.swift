@@ -15,7 +15,7 @@ public struct Coquille: View {
     public var body: some View {
         TabView(selection: $onglet) {
             Tab(Onglet.inbox.libelle, systemImage: Onglet.inbox.symbole, value: .inbox) {
-                InboxEcran()
+                InboxEcran(surCapturer: { onglet = .capture })
             }
             Tab(Onglet.capture.libelle, systemImage: Onglet.capture.symbole, value: .capture) {
                 CaptureEcran(surCapture: { onglet = .inbox })

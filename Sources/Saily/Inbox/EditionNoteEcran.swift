@@ -28,6 +28,9 @@ struct EditionNoteEcran: View {
             Teinte.fond.ignoresSafeArea()
             ScrollView { contenu }
         }
+        // L'action primaire EN BAS, dans la zone du pouce, toujours visible — pas
+        // noyée dans le défilement.
+        .safeAreaInset(edge: .bottom) { barreAction }
     }
 
     private var contenu: some View {
@@ -35,7 +38,6 @@ struct EditionNoteEcran: View {
             enTete
             champTexte
             champTags
-            boutonEnregistrer
         }
         .padding(.vertical, Trame.groupe)
     }
@@ -44,13 +46,8 @@ struct EditionNoteEcran: View {
         HStack(alignment: .firstTextBaseline) {
             Fronton("Modifier").padding(.top, Trame.serre)
             Spacer(minLength: 0)
-            Button { fermer() } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(Teinte.encreEteinte)
-            }
-            .buttonStyle(.appui)
-            .padding(.trailing, Trame.ecran)
+            BoutonIcone("xmark.circle.fill") { fermer() }
+                .padding(.trailing, Trame.serre)
         }
     }
 
@@ -85,7 +82,9 @@ struct EditionNoteEcran: View {
         .padding(.horizontal, Trame.ecran)
     }
 
-    private var boutonEnregistrer: some View {
+    /// La barre d'action posée en bas de la feuille. Un fond de surface + un
+    /// filet de lumière en tête la détachent du contenu qui défile dessous.
+    private var barreAction: some View {
         Button { Task { await enregistrer() } } label: {
             if enCours {
                 ProgressView().tint(Teinte.fond)
@@ -96,6 +95,12 @@ struct EditionNoteEcran: View {
         .buttonStyle(.engage)
         .disabled(texteCoupe.isEmpty || enCours)
         .padding(.horizontal, Trame.ecran)
+        .padding(.top, Trame.element)
+        .padding(.bottom, Trame.serre)
+        .background(alignment: .top) {
+            Rectangle().fill(Teinte.trait).frame(height: Trame.trait)
+        }
+        .background(Teinte.fond)
         .sensoryFeedback(Retour.engage, trigger: enCours) { avant, apres in avant && !apres }
     }
 

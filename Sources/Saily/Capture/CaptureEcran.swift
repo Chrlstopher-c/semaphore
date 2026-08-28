@@ -33,6 +33,8 @@ struct CaptureEcran: View {
             Teinte.fond.ignoresSafeArea()
             ScrollView { contenu }
         }
+        // L'action primaire EN BAS, zone du pouce, toujours accessible.
+        .safeAreaInset(edge: .bottom) { barreCapture }
         .fileImporter(
             isPresented: $importeFichier, allowedContentTypes: [.item], allowsMultipleSelection: false
         ) { resultat in
@@ -46,7 +48,6 @@ struct CaptureEcran: View {
             champTexte
             champTags
             gestes
-            boutonCapturer
         }
         .padding(.vertical, Trame.groupe)
     }
@@ -108,7 +109,9 @@ struct CaptureEcran: View {
         .padding(.horizontal, Trame.ecran)
     }
 
-    private var boutonCapturer: some View {
+    /// La barre d'action en bas de l'écran. Filet de lumière en tête + fond de
+    /// page pour la détacher du contenu qui défile dessous.
+    private var barreCapture: some View {
         Button { Task { await capturerTexte() } } label: {
             if enCours {
                 ProgressView().tint(Teinte.fond)
@@ -119,6 +122,12 @@ struct CaptureEcran: View {
         .buttonStyle(.engage)
         .disabled(texteCoupe.isEmpty || enCours)
         .padding(.horizontal, Trame.ecran)
+        .padding(.top, Trame.element)
+        .padding(.bottom, Trame.serre)
+        .background(alignment: .top) {
+            Rectangle().fill(Teinte.trait).frame(height: Trame.trait)
+        }
+        .background(Teinte.fond)
         .sensoryFeedback(Retour.engage, trigger: enCours) { avant, apres in avant && !apres }
     }
 
