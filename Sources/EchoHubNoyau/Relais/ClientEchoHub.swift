@@ -154,6 +154,9 @@ public actor ClientEchoHub {
         do {
             (donnees, reponse) = try await session.data(for: requete)
         } catch {
+            // Une annulation n'est pas une panne : la relire comme « injoignable »
+            // affichait « Relais injoignable — cancelled » après une réponse réussie.
+            if ErreurRelais.vientDUneAnnulation(error) { throw ErreurRelais.annule }
             Journal.echec("requête \(methode) \(chemin) échouée : \(error.localizedDescription)")
             throw ErreurRelais.injoignable(error.localizedDescription)
         }
@@ -199,6 +202,7 @@ public actor ClientEchoHub {
             let (donnees, reponse) = try await sessionSonde.data(for: requete)
             return Self.lireSante(donnees: donnees, reponse: reponse)
         } catch {
+            if ErreurRelais.vientDUneAnnulation(error) { return .failure(.annule) }
             Journal.echec("sonde du relais échouée : \(error.localizedDescription)")
             return .failure(.injoignable(error.localizedDescription))
         }

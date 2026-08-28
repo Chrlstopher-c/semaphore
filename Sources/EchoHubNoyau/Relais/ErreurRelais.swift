@@ -10,6 +10,14 @@ import Foundation
 public enum ErreurRelais: Error, Sendable, Equatable {
     case adresseInvalide(String)
     case injoignable(String)
+    /// La requête a été ANNULÉE localement (retour d'écran, tâche remplacée,
+    /// génération terminée) — `URLError.cancelled` ou `CancellationError`. Ce
+    /// n'est PAS une panne : rien à réparer, rien à montrer.
+    ///
+    /// `☠` Sans ce cas, une annulation retombait dans `injoignable` et
+    /// s'affichait « Relais injoignable — cancelled » juste après une réponse
+    /// réussie — le faux message que Chris voyait.
+    case annule
     case refuse
     case aucunModelePret
     /// Le PC génère DÉJÀ sur cette conversation. Rien n'est cassé : le modèle
@@ -26,6 +34,8 @@ public enum ErreurRelais: Error, Sendable, Equatable {
             return "Adresse de relais invalide : « \(adresse) »."
         case .injoignable(let detail):
             return "Relais injoignable — \(detail)"
+        case .annule:
+            return "Opération annulée."
         case .refuse:
             return "Jeton refusé par le relais."
         case .aucunModelePret:
@@ -44,6 +54,8 @@ public enum ErreurRelais: Error, Sendable, Equatable {
         switch self {
         case .adresseInvalide, .injoignable:
             return "Vérifie l'adresse dans Réglages, et que le PC est allumé."
+        case .annule:
+            return nil
         case .refuse:
             return "Vérifie le jeton dans Réglages."
         case .aucunModelePret:
@@ -57,6 +69,39 @@ public enum ErreurRelais: Error, Sendable, Equatable {
         case .reponseIllisible:
             return nil
         }
+    }
+
+    /// Une panne PASSAGÈRE de transport, par opposition à une panne durable
+    /// qu'un nouveau relevé ne corrigerait pas.
+    ///
+    /// `☠` La distinction décide si l'app efface un état déjà connu sur un seul
+    /// relevé raté. Le tunnel Cloudflare et le réseau mobile ont des à-coups :
+    /// un `injoignable` isolé pendant que le PC répond encore ne doit PAS lever
+    /// « Machine injoignable ». Un jeton refusé ou un 4xx, si : le relever une
+    /// seconde fois donnera le même refus.
+    public var estTransitoire: Bool {
+        switch self {
+        case .injoignable, .reponseIllisible, .annule:
+            return true
+        case .adresseInvalide, .refuse, .aucunModelePret, .generationEnCours, .serveur:
+            return false
+        }
+    }
+
+    /// Une annulation locale — jamais une panne à montrer. L'appelant l'avale
+    /// en silence.
+    public var estAnnulation: Bool {
+        if case .annule = self { return true }
+        return false
+    }
+
+    /// Reconnaît une annulation venue de la couche réseau ou de la concurrence
+    /// Swift, AVANT qu'elle soit traduite. Sert au client à lever `.annule`
+    /// plutôt que `.injoignable`.
+    public static func vientDUneAnnulation(_ erreur: Error) -> Bool {
+        if erreur is CancellationError { return true }
+        if let url = erreur as? URLError, url.code == .cancelled { return true }
+        return false
     }
 }
 

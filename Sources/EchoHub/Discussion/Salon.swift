@@ -56,6 +56,9 @@ public final class Salon {
     /// Il affichait donc un neutre « Sans nouvelles de la machine » dans les
     /// deux cas, c'est-à-dire le sens rassurant, qui est le mauvais.
     public internal(set) var statut: EtatChargement<StatutInference> = .chargement
+    /// Échecs de relevé de statut d'affilée, remis à zéro au premier succès.
+    /// Sert la tolérance aux à-coups du tunnel (voir `rafraichirStatut`).
+    @ObservationIgnored private var echecsStatut = 0
     /// Pour chaque message du chemin actif, les identifiants qui partagent son
     /// parent, lui compris. C'est ce qui donne le « ‹ 2 / 3 › » sans rien
     /// recalculer.
@@ -226,8 +229,24 @@ public final class Salon {
         if statut.contenu == nil { statut = .chargement }
         do {
             statut = .pret(try await modeles.statut())
+            echecsStatut = 0
         } catch {
+            // Une annulation locale n'est ni un échec ni un événement à compter :
+            // on garde l'état connu et on n'entame pas le budget de tolérance.
+            if (error as? ErreurRelais)?.estAnnulation == true { return }
             Journal.echec("relevé du statut d'inférence échoué : \(error)")
+            echecsStatut += 1
+            // `☠` Un à-coup isolé du tunnel ne doit pas effacer un état déjà
+            // connu : sinon le bandeau « Machine injoignable » clignote alors
+            // que le PC répond encore. On garde le dernier `.pret` tant qu'une
+            // panne transitoire ne se répète pas — une vraie panne (jeton, PC
+            // éteint) n'est PAS transitoire et s'affiche du premier coup.
+            let transitoire = (error as? ErreurRelais)?.estTransitoire ?? false
+            if ToleranceSonde.garderDernierEtat(
+                erreurEstTransitoire: transitoire,
+                aUnEtatConnu: statut.contenu != nil,
+                echecsConsecutifs: echecsStatut
+            ) { return }
             statut = .echec(Self.libelle(error))
         }
     }
@@ -266,6 +285,10 @@ public final class Salon {
             appliquer(try await conversations.detail(conversation.id))
             erreurGeneration = nil
         } catch {
+            // Une relecture annulée (retour d'écran, tâche remplacée) n'est pas
+            // un échec : l'afficher mettait « Relecture impossible — Relais
+            // injoignable — cancelled » juste après une réponse réussie.
+            if (error as? ErreurRelais)?.estAnnulation == true { return }
             Journal.echec("relecture du fil échouée : \(error)")
             erreurGeneration = "Relecture impossible — \(Self.libelle(error))"
         }
