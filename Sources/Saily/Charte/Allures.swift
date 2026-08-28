@@ -209,7 +209,7 @@ public struct EtatCalme: View {
     public var body: some View {
         VStack(spacing: Trame.element) {
             Image(systemName: symbole)
-                .font(.system(.largeTitle, design: .rounded, weight: .light))
+                .font(.system(.largeTitle, weight: .light))
                 .foregroundStyle(Teinte.encreEteinte)
             VStack(spacing: Trame.fin) {
                 Text(titre).entete().foregroundStyle(Teinte.encre)

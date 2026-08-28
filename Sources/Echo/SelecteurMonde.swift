@@ -1,43 +1,52 @@
 #if canImport(SwiftUI)
 import SwiftUI
-import Vigie
+import Systeme
 
-/// Le sélecteur de monde : une ligne en tête, deux entrées, un filet dessous.
-/// Écrit à la main comme la barre de veille de Vigie, avec ses jetons — c'est
-/// le seul élément du centre qui n'appartient à aucun des deux mondes.
+/// Le sélecteur de monde : une ligne en tête, un filet dessous. Peint avec le
+/// socle, en pierre — c'est le seul élément du centre qui n'appartient à aucun
+/// monde, et il ne doit jamais en prendre la couleur au repos. Seul
+/// l'indicateur du monde actif laisse transparaître l'accent du monde pointé,
+/// par son glyphe — pas d'aplat.
 struct SelecteurMonde: View {
     @Binding var monde: Monde
+    /// La bascule appartient au pupitre : c'est lui qui joue l'animation de
+    /// monde et le retour haptique, en un seul endroit.
+    let bascule: (Monde) -> Void
 
     var body: some View {
-        HStack(spacing: Vigie.Trame.serre) {
+        HStack(spacing: Grille.serre) {
             ForEach(Monde.allCases) { candidat in
                 bouton(candidat)
             }
         }
-        .padding(.horizontal, Vigie.Trame.ecran)
-        .padding(.vertical, Vigie.Trame.fin)
+        .padding(.horizontal, Grille.ecran)
+        .padding(.vertical, Grille.fin)
         .frame(maxWidth: .infinity)
-        .background(alignment: .bottom) { Vigie.FiletFin() }
-        .background(Vigie.Teinte.fond)
-        .sensoryFeedback(Vigie.Haptique.selection, trigger: monde)
+        .background(alignment: .bottom) {
+            Rectangle()
+                .fill(Neutre.trait)
+                .frame(height: Grille.trait)
+        }
+        .background(Neutre.fond)
     }
 
     private func bouton(_ candidat: Monde) -> some View {
         let actif = candidat == monde
         return Button {
-            guard !actif else { return }
-            withAnimation(Vigie.Elan.vif) { monde = candidat }
+            bascule(candidat)
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: Grille.fin) {
                 Image(systemName: candidat.symbole)
-                    .font(.system(size: 12, weight: actif ? .semibold : .regular))
+                    .font(Voix.legende)
+                    .foregroundStyle(actif ? TeinteEcho.accent(du: candidat) : Neutre.encreEteinte)
                 Text(candidat.titre)
-                    .font(.system(size: 12, weight: actif ? .semibold : .medium))
+                    .font(Voix.legende)
+                    .fontWeight(actif ? .semibold : .medium)
+                    .foregroundStyle(actif ? Neutre.encre : Neutre.encreEteinte)
             }
-            .foregroundStyle(actif ? Vigie.Teinte.accent : Vigie.Teinte.encreTernie)
-            .padding(.horizontal, Vigie.Trame.serre + 2)
-            .padding(.vertical, 5)
-            .background(actif ? Vigie.Teinte.surface : .clear, in: Capsule())
+            .padding(.horizontal, Grille.element)
+            .padding(.vertical, Grille.fin)
+            .background(actif ? Neutre.surface : .clear, in: Capsule())
             .contentShape(.rect)
         }
         .buttonStyle(.plain)

@@ -1,55 +1,54 @@
-// Les voix d'EchoHub Mobile. L'échelle est celle d'Apple ; ce qui est propre à
-// l'app, c'est le CONTRASTE entre deux familles — une grotesque pour ce qui
-// s'adresse à Chris, une chasse fixe pour ce qui vient d'une machine.
+// Les voix d'EchoHub Mobile — désormais celles du socle `Systeme` : serif
+// éditorial pour les titres, sans système pour le courant, chasse fixe pour la
+// machine, toutes bâties sur des text styles Dynamic Type. Ce qui reste propre
+// à l'app : les interlignes de lecture, valeurs typographiques hors grille.
 //
-// Écart déclaré : l'interface de bureau utilise IBM Plex Sans/Mono,
-// auto-hébergée. L'embarquer ici coûterait cinq fichiers de police dans l'IPA,
-// ferait perdre Dynamic Type, et le skill iOS écarte les polices tierces pour
-// du corps de texte. SF Pro + SF Mono donnent le MÊME contraste de nature sans
-// un octet de police ; la continuité avec le bureau est portée par la palette
-// et par le registre.
+// Le CONTRASTE entre deux natures demeure — ce qui s'adresse à Chris en
+// proportionnel, ce qui vient d'une machine en chasse fixe. L'information est
+// dans la forme avant d'être dans le mot.
 #if canImport(SwiftUI)
 import SwiftUI
+import Systeme
 
 public enum Typo {
-    // MARK: - Ce qui s'adresse à Chris (SF Pro)
+    // MARK: - Ce qui s'adresse à Chris — voix du socle, Dynamic Type
 
-    /// Titre d'écran. 26 et pas 34 : rien ne doit dominer la réponse du modèle.
-    public static let titreEcran = Font.system(size: 26, weight: .semibold)
-    public static let titreSection = Font.system(size: 18, weight: .semibold)
-    /// **La réponse du modèle.** Le seul texte de l'app composé à cette taille
+    /// Titre d'écran. Serif éditorial : rien ne doit dominer la réponse du
+    /// modèle, et le serif titre sans crier.
+    public static let titreEcran = Voix.titreEcran
+    public static let titreSection = Voix.titreSection
+    /// **La réponse du modèle.** Le seul texte de l'app composé à cette voix
     /// dans cette encre — c'est ce qui en fait le sujet de chaque écran.
-    public static let corps = Font.system(size: 17)
-    public static let entete = Font.system(size: 17, weight: .semibold)
-    public static let mention = Font.system(size: 15)
-    public static let note = Font.system(size: 13)
-    public static let legende = Font.system(size: 12)
+    public static let corps = Voix.corps
+    public static let entete = Voix.entete
+    public static let mention = Voix.mention
+    public static let note = Voix.note
+    public static let legende = Voix.legende
 
-    // MARK: - Ce qui vient d'une machine (SF Mono)
+    // MARK: - Ce qui vient d'une machine — chasse fixe du socle
 
     /// Le registre `note` : raisonnement, commentaire de travail. Un
     /// raisonnement en chasse fixe se lit COMME DU TRAVAIL et non comme un
-    /// propos — l'information est dans la forme avant d'être dans le mot.
-    public static let pensee = Font.system(size: 14, design: .monospaced)
+    /// propos.
+    public static let pensee = Voix.brut
     /// Le registre `machine` : entrée et sortie brutes d'un outil, JSON,
     /// chemins de fichiers.
-    public static let brut = Font.system(size: 12, design: .monospaced)
+    public static let brut = Voix.brut
 
     // MARK: - Mesures
 
     /// Toute mesure : tokens, tokens/s, taille sur disque. Chiffres à chasse
     /// fixe — sans cela la largeur danse à chaque token généré, et un compteur
     /// qui tremble pendant une génération est insupportable.
-    public static let mesure = Font.system(size: 13).monospacedDigit()
-    public static let mesureFine = Font.system(size: 12).monospacedDigit()
+    public static let mesure = Voix.mesure
+    public static let mesureFine = Voix.mesure
 
-    // MARK: - Interlignes de lecture
+    // MARK: - Interlignes de lecture — propres à EchoHub, hors grille
 
     /// L'interligne ajouté à la réponse du modèle et à la bulle de Chris.
     /// L'interligne par défaut d'iOS est réglé pour des libellés d'interface ;
     /// l'archétype de cette app est la page de lecture, et une réponse fait
-    /// couramment trois écrans. +4 porte le corps 17 à ~26 de ligne (≈ 1,5) —
-    /// le régime d'un livre, pas d'un réglage.
+    /// couramment trois écrans. Le régime d'un livre, pas d'un réglage.
     ///
     /// Ces valeurs sont typographiques, HORS de la grille `Trame` : la règle
     /// « sous 4 pt il n'y a rien » gouverne les espacements de mise en page,

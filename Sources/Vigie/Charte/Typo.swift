@@ -1,28 +1,43 @@
-// Les trois voix de la charte : New York pour les titres, SF pour le corps,
-// SF Mono pour toute mesure. Une heure, un montant, un identifiant = mono.
+// Les voix de la charte, adossées au socle `Systeme` : serif éditorial pour
+// les titres, sans système pour le courant, mono pour toute mesure — le tout en
+// Dynamic Type. Les noms historiques restent : les composants écrivent
+// `Typo.phrase` sans changement.
+//
+// Les voix MONO fines (chiffre, donnee…) sont propres à Vigie — pas
+// d'équivalent socle — mais réécrites sur des text styles système, cohérentes
+// avec `Voix.mesure`/`Voix.brut`. Plus aucune taille en dur.
 #if canImport(SwiftUI)
 import SwiftUI
+import Systeme
 
 public enum Typo {
-    // MARK: - Titres (serif — la voix du journal de quart)
-    public static let grandTitre = Font.system(size: 28, weight: .semibold, design: .serif)
-    public static let titreFeuille = Font.system(size: 20, weight: .semibold, design: .serif)
+    // MARK: - Titres (serif — la voix du journal de quart) — socle
 
-    // MARK: - Corps (SF)
-    public static let phraseForte = Font.system(size: 15, weight: .semibold)
-    public static let phrase = Font.system(size: 15, weight: .regular)
-    public static let note = Font.system(size: 13, weight: .regular)
-    public static let mention = Font.system(size: 11.5, weight: .regular)
-    public static let rubriqueFonte = Font.system(size: 12, weight: .semibold)
-    public static let insigneFonte = Font.system(size: 11, weight: .semibold)
-    public static let libelleFonte = Font.system(size: 15, weight: .semibold)
+    public static let grandTitre = Voix.titreEcran
+    public static let titreFeuille = Voix.titreSection
 
-    // MARK: - Mesures (mono)
-    public static let chiffre = Font.system(size: 20, weight: .medium, design: .monospaced)
-    public static let donnee = Font.system(size: 13, weight: .regular, design: .monospaced)
-    public static let donneePetite = Font.system(size: 11.5, weight: .regular, design: .monospaced)
-    public static let donneeMinuscule = Font.system(size: 10, weight: .regular, design: .monospaced)
-    public static let fonteTerminal = Font.system(size: 11.5, weight: .regular, design: .monospaced)
+    // MARK: - Corps (SF) — socle
+
+    public static let phraseForte = Voix.entete
+    public static let phrase = Voix.corps
+    public static let note = Voix.note
+    public static let mention = Voix.mention
+    public static let rubriqueFonte = Voix.legende
+    public static let insigneFonte = Voix.legende
+    public static let libelleFonte = Voix.entete
+
+    // MARK: - Mesures (mono) — propres à Vigie, en Dynamic Type
+
+    /// Le grand compteur d'une carte. Chiffres à chasse fixe pour que la
+    /// largeur ne tremble pas.
+    public static let chiffre = Font.system(.title3, design: .monospaced, weight: .medium)
+        .monospacedDigit()
+    /// La donnée courante : horodatage, identifiant, mesure en rangée.
+    public static let donnee = Font.system(.footnote, design: .monospaced)
+    public static let donneePetite = Font.system(.caption, design: .monospaced)
+    public static let donneeMinuscule = Font.system(.caption2, design: .monospaced)
+    /// La sortie de terminal — même dessin que `Voix.brut`, un cran plus petit.
+    public static let fonteTerminal = Font.system(.caption, design: .monospaced)
 }
 
 extension View {
