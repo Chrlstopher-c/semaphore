@@ -51,38 +51,19 @@ private struct VueMovix: View {
                 invite
             }
         }
-        // Le bouton vit dans un overlay AU-DESSUS de la WebView, centré en haut.
-        // `contentShape` + fond opaque bornent sa zone de touche à son disque —
-        // le reste de l'écran reste au player, mais un tap SUR le bouton est
-        // consommé ici et ne file plus à l'élément du site derrière.
-        .overlay(alignment: .top) {
-            if modele.url != nil { boutonPleinEcran }
+        // Le bouton est en UIKit natif (voir BoutonImmersif) : posé en overlay
+        // SwiftUI, il ne recevrait pas ses touches par-dessus la WebView. La
+        // couche remplit l'écran mais ne capte que le disque du bouton ; partout
+        // ailleurs le touch file au player.
+        .overlay {
+            if modele.url != nil {
+                BoutonImmersif(immersif: immersif, estompe: hudEstompe) {
+                    withAnimation(.easeInOut(duration: 0.25)) { immersif.toggle() }
+                    reveler()
+                }
+            }
         }
         .onAppear { reveler() }
-    }
-
-    private var boutonPleinEcran: some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.25)) { immersif.toggle() }
-            reveler()
-        } label: {
-            Image(systemName: immersif
-                  ? "arrow.down.right.and.arrow.up.left"
-                  : "arrow.up.left.and.arrow.down.right")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 46, height: 46)
-                .background(.black.opacity(0.62), in: Circle())
-                .overlay(Circle().stroke(Teinte.accent.opacity(0.9), lineWidth: 1.5))
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .padding(.top, 8)
-        // Auto-hide : le bouton s'estompe après quelques secondes ; il reste
-        // touchable (l'opacité n'ôte pas le hit-test) et son action le rappelle
-        // avant de basculer. Il ne disparaît jamais tout à fait, sinon plus rien
-        // à toucher pour ressortir.
-        .opacity(hudEstompe ? 0.28 : 1)
     }
 
     private var invite: some View {
