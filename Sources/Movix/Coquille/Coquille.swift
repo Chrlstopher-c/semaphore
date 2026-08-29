@@ -1,8 +1,8 @@
 // La coquille du monde Movix : deux onglets — le site dans une WebView, et le
-// réglage de l'adresse. Un mode PLEIN ÉCRAN (piloté par un bouton HUD auto-hide)
-// masque le chrome d'Echo — le sélecteur de mondes en haut (via `immersif`, lu
-// par le pupitre) et la barre d'onglets en bas — pour rendre tout l'écran au
-// player web, dont les contrôles vivent aux mêmes bords.
+// réglage de l'adresse. Un mode PLEIN ÉCRAN (piloté par un bouton HUD auto-hide,
+// au centre en haut) masque le chrome d'Echo — le sélecteur de mondes en haut
+// (via `immersif`, lu par le pupitre) et la barre d'onglets en bas — pour rendre
+// tout l'écran au player web, dont les contrôles vivent aux mêmes bords.
 #if canImport(SwiftUI)
 import SwiftUI
 
@@ -34,7 +34,7 @@ public struct Coquille: View {
 }
 
 /// L'onglet principal : la WebView (plein écran en mode immersif), surmontée d'un
-/// bouton HUD qui bascule le plein écran et s'estompe tout seul.
+/// bouton HUD centré en haut qui bascule le plein écran et s'estompe tout seul.
 private struct VueMovix: View {
     @Environment(ModeleMovix.self) private var modele
     @Binding var immersif: Bool
@@ -42,15 +42,21 @@ private struct VueMovix: View {
     @State private var tacheEstompe: Task<Void, Never>?
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
+        ZStack(alignment: .top) {
             Teinte.fond.ignoresSafeArea()
             if let url = modele.url {
                 VueWeb(url: url)
                     .ignoresSafeArea(edges: immersif ? .all : .bottom)
-                boutonPleinEcran
             } else {
                 invite
             }
+        }
+        // Le bouton vit dans un overlay AU-DESSUS de la WebView, centré en haut.
+        // `contentShape` + fond opaque bornent sa zone de touche à son disque —
+        // le reste de l'écran reste au player, mais un tap SUR le bouton est
+        // consommé ici et ne file plus à l'élément du site derrière.
+        .overlay(alignment: .top) {
+            if modele.url != nil { boutonPleinEcran }
         }
         .onAppear { reveler() }
     }
@@ -63,19 +69,20 @@ private struct VueMovix: View {
             Image(systemName: immersif
                   ? "arrow.down.right.and.arrow.up.left"
                   : "arrow.up.left.and.arrow.down.right")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.white)
-                .frame(width: 40, height: 40)
-                .background(.black.opacity(0.55), in: Circle())
-                .overlay(Circle().stroke(Teinte.accent.opacity(0.85), lineWidth: 1))
+                .frame(width: 46, height: 46)
+                .background(.black.opacity(0.62), in: Circle())
+                .overlay(Circle().stroke(Teinte.accent.opacity(0.9), lineWidth: 1.5))
+                .contentShape(Circle())
         }
-        .padding(.leading, 14)
-        .padding(.top, 10)
-        // Auto-hide : le bouton s'efface après quelques secondes ; il reste
-        // touchable (l'opacité n'ôte pas le hit-test), et son action le rappelle
-        // avant de basculer. Il ne disparaît jamais tout à fait — sinon plus
-        // rien à toucher pour ressortir — mais s'estompe assez pour ne pas gêner.
-        .opacity(hudEstompe ? 0.2 : 1)
+        .buttonStyle(.plain)
+        .padding(.top, 8)
+        // Auto-hide : le bouton s'estompe après quelques secondes ; il reste
+        // touchable (l'opacité n'ôte pas le hit-test) et son action le rappelle
+        // avant de basculer. Il ne disparaît jamais tout à fait, sinon plus rien
+        // à toucher pour ressortir.
+        .opacity(hudEstompe ? 0.28 : 1)
     }
 
     private var invite: some View {
