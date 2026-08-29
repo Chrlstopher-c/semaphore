@@ -15,6 +15,8 @@ public enum Monde: String, CaseIterable, Identifiable, Hashable, Sendable {
     case machine
     /// Saily — l'inbox personnelle de capture, synchronisée avec le PC.
     case saily
+    /// Movix — la web-app maison de streaming, rendue dans une WebView.
+    case movix
 
     public var id: String { rawValue }
 
@@ -23,6 +25,7 @@ public enum Monde: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .quart: return "Quart"
         case .machine: return "Machine"
         case .saily: return "Saily"
+        case .movix: return "Movix"
         }
     }
 
@@ -33,6 +36,7 @@ public enum Monde: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .quart: return "moon.stars.fill"
         case .machine: return "cpu"
         case .saily: return "tray.full.fill"
+        case .movix: return "play.rectangle.fill"
         }
     }
 }
