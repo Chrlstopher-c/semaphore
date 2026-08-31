@@ -17,7 +17,8 @@ public struct ReglagesServeur: Sendable, Equatable, Codable {
         self.jeton = jeton
     }
 
-    public static let adresseProdParDefaut = "https://saily.example.com"
+    public static let adresseProdParDefaut = adresseEmbarquee(
+        "EchoAdresseSaily", repli: "https://saily.example.com")
 
     public static let parDefaut = ReglagesServeur(adresse: adresseProdParDefaut, jeton: "")
 
@@ -98,4 +99,16 @@ public actor GestionnaireReglagesServeur {
         enMemoire = reglages
         magasin.sauvegarder(reglages)
     }
+}
+
+/// Lit une adresse posée dans `Info.plist` au moment de compiler.
+///
+/// `☠` Le dépôt est public : aucune adresse réelle n'y est écrite. `build.sh`
+/// génère `.build/Info.plist` depuis `Info.template.plist` en y injectant les
+/// valeurs de `.env.local`, jamais suivi par git. Clé absente ou vide — clone
+/// frais, suite de tests — on rend le repli, qui est un exemple.
+func adresseEmbarquee(_ cle: String, repli: String) -> String {
+    guard let brut = Bundle.main.object(forInfoDictionaryKey: cle) as? String else { return repli }
+    let nettoyee = brut.trimmingCharacters(in: .whitespacesAndNewlines)
+    return nettoyee.isEmpty ? repli : nettoyee
 }

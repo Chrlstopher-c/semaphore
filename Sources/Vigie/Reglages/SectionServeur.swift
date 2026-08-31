@@ -54,7 +54,9 @@ struct SectionServeur: View {
         HStack(spacing: Trame.serre) {
             Button("Tunnel par défaut") { adresse = Cablage.adresseParDefaut.absoluteString }
                 .buttonStyle(.allurePuce)
-            Button("Repli LAN") { adresse = "http://10.0.0.2:8766" }
+            Button("Repli LAN") {
+                adresse = adresseEmbarquee("EchoAdresseCcremoteLAN", repli: "http://10.0.0.2:8766")
+            }
                 .buttonStyle(.allurePuce)
         }
     }

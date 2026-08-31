@@ -13,9 +13,10 @@ public struct ReglagesMovix: Sendable, Equatable, Codable {
         self.adresse = adresse
     }
 
-    /// L'instance LAN par défaut. Un simple `10.0.0.3:3000` sans schéma est
+    /// L'instance LAN par défaut. Une adresse sans schéma est
     /// accepté aussi (voir `url`) — mais le défaut porte le schéma pour l'exemple.
-    public static let adresseParDefaut = "http://10.0.0.3:3000"
+    public static let adresseParDefaut = adresseEmbarquee(
+        "EchoAdresseMovix", repli: "http://10.0.0.2:3000")
 
     public static let parDefaut = ReglagesMovix(adresse: adresseParDefaut)
 
@@ -34,4 +35,16 @@ public struct ReglagesMovix: Sendable, Equatable, Codable {
     }
 
     public var adresseValide: Bool { url != nil }
+}
+
+/// Lit une adresse posée dans `Info.plist` au moment de compiler.
+///
+/// `☠` Le dépôt est public : aucune adresse réelle n'y est écrite. `build.sh`
+/// génère `.build/Info.plist` depuis `Info.template.plist` en y injectant les
+/// valeurs de `.env.local`, jamais suivi par git. Clé absente ou vide — clone
+/// frais, suite de tests — on rend le repli, qui est un exemple.
+func adresseEmbarquee(_ cle: String, repli: String) -> String {
+    guard let brut = Bundle.main.object(forInfoDictionaryKey: cle) as? String else { return repli }
+    let nettoyee = brut.trimmingCharacters(in: .whitespacesAndNewlines)
+    return nettoyee.isEmpty ? repli : nettoyee
 }

@@ -4,5 +4,5 @@ version: 1
 # En changer brûlerait un App ID de plus sur le quota, et casserait les réveils
 # de fond. Installer Echo remplace Vigie sur l'appareil — c'est voulu.
 bundleID: com.echo.labs
-infoPath: Info.plist
+infoPath: .build/Info.plist
 iconPath: Icone.png

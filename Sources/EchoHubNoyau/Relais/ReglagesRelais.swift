@@ -4,7 +4,7 @@ import Foundation
 /// l'ouvre.
 ///
 /// `☠` Deux adresses existent dans la vraie vie et l'app n'en devine aucune :
-/// l'adresse locale (`http://10.0.0.2:8947`, rapide, valable à la maison)
+/// l'adresse locale du relais (rapide, valable à la maison)
 /// et l'adresse du tunnel (HTTPS, valable partout). C'est un CHAMP, pas une
 /// constante compilée, précisément parce que le nom du tunnel ne doit pas
 /// vivre dans le dépôt — voir `TODO.md`, arbitrage sous-domaine.
@@ -28,7 +28,8 @@ public struct ReglagesRelais: Sendable, Equatable, Codable {
     /// quoi doit ressembler ce qu'on y colle.
     public static let parDefaut = ReglagesRelais(adresse: adresseLocaleParDefaut, jeton: "")
 
-    public static let adresseLocaleParDefaut = "http://10.0.0.2:8947"
+    public static let adresseLocaleParDefaut = adresseEmbarquee(
+        "EchoAdresseEchoHub", repli: "http://10.0.0.2:8947")
 
     /// Une adresse utilisable : un schéma et un hôte. Le reste — port, chemin —
     /// est laissé libre : un tunnel peut très bien servir sur un sous-chemin.
@@ -112,4 +113,16 @@ public actor GestionnaireReglagesRelais {
         enMemoire = reglages
         magasin.sauvegarder(reglages)
     }
+}
+
+/// Lit une adresse posée dans `Info.plist` au moment de compiler.
+///
+/// `☠` Le dépôt est public : aucune adresse réelle n'y est écrite. `build.sh`
+/// génère `.build/Info.plist` depuis `Info.template.plist` en y injectant les
+/// valeurs de `.env.local`, jamais suivi par git. Clé absente ou vide — clone
+/// frais, suite de tests — on rend le repli, qui est un exemple.
+func adresseEmbarquee(_ cle: String, repli: String) -> String {
+    guard let brut = Bundle.main.object(forInfoDictionaryKey: cle) as? String else { return repli }
+    let nettoyee = brut.trimmingCharacters(in: .whitespacesAndNewlines)
+    return nettoyee.isEmpty ? repli : nettoyee
 }

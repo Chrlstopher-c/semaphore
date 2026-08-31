@@ -54,3 +54,8 @@ DerivedData/
 *.xcuserstate
 *.mobileprovision
 *.p12
+
+# Adresses réelles et plist généré : ce dépôt est public, ils n'y entrent jamais
+.env.local
+.build/
+Info.plist

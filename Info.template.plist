@@ -6,6 +6,22 @@
 	     avec les clés générées par xtool — la nôtre l'emporte. Aucune de ces
 	     clés n'est un entitlement : toutes passent en free provisioning. -->
 
+	<!-- ======== Adresses des services ========
+	     `☠` Ce fichier est PUBLIC. Aucune adresse réelle ici : `build.sh` génère
+	     `.build/Info.plist` en y injectant les valeurs de `.env.local`, qui n'est
+	     pas suivi par git. Les exemples ci-dessous sont ce que voit quelqu'un qui
+	     clone : l'app démarre, et les vraies adresses se saisissent dans Réglages. -->
+	<key>EchoAdresseSaily</key>
+	<string>https://saily.example.com</string>
+	<key>EchoAdresseCcremote</key>
+	<string>https://ccremote.example.com</string>
+	<key>EchoAdresseCcremoteLAN</key>
+	<string>http://10.0.0.2:8766</string>
+	<key>EchoAdresseEchoHub</key>
+	<string>http://10.0.0.2:8947</string>
+	<key>EchoAdresseMovix</key>
+	<string>http://10.0.0.2:3000</string>
+
 	<!-- ======== Vigie : le maintien en vie et les réveils ======== -->
 	<key>UIBackgroundModes</key>
 	<array>
@@ -48,7 +64,7 @@
 	     erreur opaque — au tout premier lancement, précisément. -->
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Echo joint le relais EchoHub sur ton réseau local quand tu es à la maison.</string>
-	<!-- Le relais est joint en clair (http://10.0.0.2:8947) à la maison ;
+	<!-- Le relais est joint en clair sur le réseau local à la maison ;
 	     en HTTPS par le tunnel dehors. ATS ne laisse pas passer le premier cas
 	     sans exception, et l'exception est bornée au réseau local — jamais un
 	     `NSAllowsArbitraryLoads` global. -->
