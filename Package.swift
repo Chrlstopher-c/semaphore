@@ -55,7 +55,8 @@ let package = Package(
         ),
         .target(
             name: "Duplex",
-            dependencies: ["DuplexNoyau", "Systeme"]
+            dependencies: ["DuplexNoyau", "Systeme"],
+            exclude: ["Charte/CHARTE.md"]
         ),
         .target(
             name: "Echo",
