@@ -19,8 +19,6 @@
 	<string>http://10.0.0.2:8766</string>
 	<key>EchoAdresseEchoHub</key>
 	<string>http://10.0.0.2:8947</string>
-	<key>EchoAdresseMovix</key>
-	<string>http://10.0.0.2:3000</string>
 
 	<!-- ======== Vigie : le maintien en vie et les réveils ======== -->
 	<key>UIBackgroundModes</key>

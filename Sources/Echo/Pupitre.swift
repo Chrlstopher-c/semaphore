@@ -1,6 +1,5 @@
 #if canImport(SwiftUI)
 import EchoHub
-import Movix
 import Saily
 import SwiftUI
 import Systeme
@@ -26,22 +25,11 @@ import Vigie
 /// `opacity` sur les vues persistantes — même geste, zéro démontage.
 struct Pupitre: View {
     @State private var monde: Monde = .quart
-    /// Plein écran du monde Movix : quand il est actif, le sélecteur de mondes
-    /// s'efface pour rendre tout le haut de l'écran au player web. Piloté par le
-    /// bouton HUD de la coquille Movix.
-    @State private var movixImmersif = false
     @Environment(\.accessibilityReduceMotion) private var reduireMouvement
-
-    /// Le chrome ne s'efface que pour Movix : les autres mondes ne touchent
-    /// jamais ce drapeau, ils gardent leur sélecteur en toutes circonstances.
-    private var immersion: Bool { movixImmersif && monde == .movix }
 
     var body: some View {
         VStack(spacing: 0) {
-            if !immersion {
-                SelecteurMonde(monde: $monde, bascule: basculer(vers:))
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
+            SelecteurMonde(monde: $monde, bascule: basculer(vers:))
             mondes
         }
         .background(Neutre.fond.ignoresSafeArea())
@@ -59,7 +47,6 @@ struct Pupitre: View {
                 EchoHub.Coquille(suspendreEnArrierePlan: { !MaintienVie.partage.actif })
             }
             scene(.saily) { Saily.Coquille() }
-            scene(.movix) { Movix.Coquille(immersif: $movixImmersif) }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -82,9 +69,6 @@ struct Pupitre: View {
     /// animations » est actif.
     private func basculer(vers cible: Monde) {
         guard cible != monde else { return }
-        // Quitter Movix éteint son plein écran : le prochain retour repart avec
-        // le chrome visible, jamais coincé sans sélecteur.
-        movixImmersif = false
         withAnimation(reduireMouvement ? Mouvement.fonduReduit : Mouvement.surface) {
             monde = cible
         }
