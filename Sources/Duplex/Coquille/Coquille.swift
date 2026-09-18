@@ -13,6 +13,7 @@ public struct Coquille: View {
     public var body: some View {
         EcouteEcran()
             .environment(duplexeur)
+            .tint(Teinte.accent)
             .preferredColorScheme(.dark)
             .task { await duplexeur.demarrer() }
             .onChange(of: phase) { _, nouvelle in reagir(nouvelle) }

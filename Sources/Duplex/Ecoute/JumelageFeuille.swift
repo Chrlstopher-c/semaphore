@@ -1,7 +1,5 @@
 // La saisie du code à six chiffres affiché par le PC. Première rencontre
 // seulement : ensuite, le jeton conservé fait sauter cette étape.
-//
-// Rendu sobre, jetons du socle uniquement — la direction artistique viendra après.
 #if canImport(SwiftUI)
 import DuplexNoyau
 import SwiftUI
@@ -19,75 +17,69 @@ struct JumelageFeuille: View {
             Neutre.fond.ignoresSafeArea()
             VStack(alignment: .leading, spacing: Grille.groupe) {
                 entete
-                champ
-                if let restants = duplexeur.essaisRestants { avertissement(restants) }
+                ChampCode(code: $code, actif: !verification)
+                if let restants = duplexeur.essaisRestants {
+                    avertissement(restants).transition(.item)
+                }
                 bouton
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, Grille.ecran)
-            .padding(.vertical, Grille.section)
+            .padding(.top, Grille.section)
+            .padding(.bottom, Grille.groupe)
+            .animation(Mouvement.normal, value: duplexeur.essaisRestants)
         }
+        // Un refus vide le champ : retaper par-dessus six chiffres faux, c'est
+        // d'abord les effacer un à un. La butée dit que le PC a répondu non.
+        .onChange(of: duplexeur.essaisRestants) { _, restants in
+            if restants != nil { code = "" }
+        }
+        .sensoryFeedback(Toucher.butee, trigger: duplexeur.essaisRestants) { _, restants in restants != nil }
     }
 
     private var entete: some View {
         VStack(alignment: .leading, spacing: Grille.serre) {
-            Text("Jumeler")
+            Text("Jumelage").rubrique()
+            Text(duplexeur.nomPoste ?? "Le PC")
                 .font(Voix.titreEcran)
                 .foregroundStyle(Neutre.encre)
-            Text("""
-                \(duplexeur.nomPoste ?? "Le PC") affiche un code à six chiffres. \
-                Recopie-le ici — une seule fois, ce PC sera reconnu ensuite.
-                """)
+            Text("Recopie le code à six chiffres affiché sur son écran. Une seule fois : ce PC sera reconnu ensuite.")
                 .font(Voix.note)
                 .foregroundStyle(Neutre.encreDouce)
         }
     }
 
-    private var champ: some View {
-        TextField("000000", text: $code)
-            .textFieldStyle(.plain)
-            .font(Voix.titreSection)
-            .foregroundStyle(Neutre.encre)
-            .tint(Teinte.accent)
-            .keyboardType(.numberPad)
-            .textContentType(.oneTimeCode)
-            .padding(Grille.bloc)
-            .background(Neutre.surfaceHaute)
-            .clipShape(.rect(cornerRadius: Rayon.controle, style: .continuous))
-            .onChange(of: code) { _, nouveau in
-                // Le champ ne garde que des chiffres, et jamais plus de six : la
-                // machine refuserait un code mal formé sans rien dire, et Chris
-                // croirait avoir tapé juste.
-                let propre = String(nouveau.filter(\.isNumber).prefix(Cadence.longueurCode))
-                if propre != nouveau { code = propre }
-            }
-    }
-
     private func avertissement(_ restants: Int) -> some View {
-        Text(restants > 1
-            ? "Code refusé. Encore \(restants) essais."
-            : "Code refusé. Dernier essai avant que le PC ferme la connexion.")
-            .font(Voix.note)
-            .foregroundStyle(Semantique.alerte)
+        Bandeau(
+            "Code refusé.",
+            remede: restants > 1
+                ? "Encore \(restants) essais."
+                : "Dernier essai avant que le PC ferme la connexion.",
+            ton: .alerte
+        )
     }
 
     private var bouton: some View {
         Button {
             Task { await duplexeur.saisirCode(code) }
         } label: {
-            Text(duplexeur.etape == .codeEnVerification ? "Vérification…" : "Valider")
-                .font(Voix.entete)
-                .foregroundStyle(Neutre.fond)
-                .frame(maxWidth: .infinity, minHeight: Grille.cible)
-                .background(pret ? Teinte.accent : Neutre.surfaceHaute)
-                .clipShape(.rect(cornerRadius: Rayon.controle, style: .continuous))
+            if verification {
+                ProgressView().tint(Neutre.encreDouce)
+            } else {
+                Text("Valider")
+            }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.engage)
         .disabled(!pret)
+        .sensoryFeedback(Toucher.engage, trigger: verification) { _, enCours in enCours }
+    }
+
+    private var verification: Bool {
+        duplexeur.etape == .codeEnVerification
     }
 
     private var pret: Bool {
-        code.count == Cadence.longueurCode && duplexeur.etape != .codeEnVerification
+        code.count == Cadence.longueurCode && !verification
     }
 }
 #endif

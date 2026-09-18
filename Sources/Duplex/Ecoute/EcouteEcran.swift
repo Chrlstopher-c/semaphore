@@ -1,8 +1,9 @@
-// L'écran unique du monde : les PC trouvés, et ce qu'on peut en faire.
+// L'écran unique du monde. Il ne fait qu'arbitrer entre trois vues selon l'état
+// réel de la liaison : la liste des PC, la salle d'écoute par-dessus la liste
+// quand un PC est relié, la salle seule quand le son coule.
 //
-// Rendu volontairement SOBRE — que des jetons du socle `Systeme`, aucun
-// composant maison, aucune animation. La direction artistique de Duplex viendra
-// ensuite ; ce qui compte ici est que chaque état soit visible et nommé.
+// `☠` Pendant l'écoute, la liste disparaît. C'est l'écran qu'on regarde
+// longtemps et peu souvent : tout ce qui n'est pas le son qui coule est du bruit.
 #if canImport(SwiftUI)
 import DuplexNoyau
 import SwiftUI
@@ -20,12 +21,25 @@ struct EcouteEcran: View {
     var body: some View {
         ZStack {
             Neutre.fond.ignoresSafeArea()
-            ScrollView { contenu }
+            GeometryReader { geometrie in
+                ScrollView {
+                    // La hauteur plancher laisse la salle se centrer quand elle
+                    // est seule, sans figer la page quand la liste dépasse.
+                    contenu.frame(minHeight: geometrie.size.height)
+                }
+            }
         }
         .onChange(of: duplexeur.attendUnCode) { _, attendu in jumelageAffiche = attendu }
         .sheet(isPresented: $jumelageAffiche, onDismiss: abandonnerJumelage) {
             JumelageFeuille()
+                .environment(duplexeur)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(Neutre.fond)
         }
+        .sensoryFeedback(Toucher.engage, trigger: duplexeur.ecoute)
+        .sensoryFeedback(Toucher.reussite, trigger: duplexeur.etablie) { _, reliee in reliee }
+        .sensoryFeedback(Toucher.butee, trigger: duplexeur.panne) { _, panne in panne != nil }
     }
 
     private func abandonnerJumelage() {
@@ -35,129 +49,41 @@ struct EcouteEcran: View {
 
     private var contenu: some View {
         VStack(alignment: .leading, spacing: Grille.section) {
-            Text("Duplex")
-                .font(Voix.titreEcran)
-                .foregroundStyle(Neutre.encre)
-            if let panne = duplexeur.panne { bandeauPanne(panne) }
-            listePostes
-            if duplexeur.etablie { commandes }
+            enTete
+            if let panne = duplexeur.panne {
+                Bandeau(panne.libelle, remede: panne.remede, ton: .panne)
+                    .transition(.item)
+            }
+            if duplexeur.etablie {
+                SalleEcoute()
+                    .frame(maxWidth: .infinity)
+                    .frame(maxHeight: duplexeur.ecoute ? .infinity : nil)
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            }
+            if !duplexeur.ecoute {
+                PostesListe().transition(.opacity)
+            }
         }
         .padding(.horizontal, Grille.ecran)
         .padding(.vertical, Grille.groupe)
+        .animation(Mouvement.surface, value: duplexeur.ecoute)
+        .animation(Mouvement.normal, value: duplexeur.etablie)
+        .animation(Mouvement.normal, value: duplexeur.panne)
     }
 
-    // MARK: - Les PC trouvés
+    // MARK: - En-tête
 
-    private var listePostes: some View {
-        VStack(alignment: .leading, spacing: Grille.element) {
-            Text("PC sur le réseau")
-                .font(Voix.legende)
-                .foregroundStyle(Neutre.encreEteinte)
-            if duplexeur.postes.isEmpty {
-                Text("Aucun PC trouvé. Duplex doit tourner sur le PC, et les deux appareils être sur le même Wi-Fi.")
-                    .font(Voix.note)
-                    .foregroundStyle(Neutre.encreDouce)
-            }
-            ForEach(duplexeur.postes) { poste in
-                CartePoste(poste: poste, actif: duplexeur.choisi?.id == poste.id) {
-                    Task { await duplexeur.choisir(poste) }
-                }
-            }
-        }
-    }
-
-    // MARK: - Ce qu'on fait une fois lié
-
-    private var commandes: some View {
-        VStack(alignment: .leading, spacing: Grille.element) {
-            boutonEcoute
-            if duplexeur.ecoute { releve }
-            if duplexeur.sources.count > 1 { choixSource }
-            if let etat = duplexeur.etatPoste, etat.airplay.actif {
-                Text("Le PC joue aussi vers \(etat.airplay.appareil) par AirPlay.")
-                    .font(Voix.note)
-                    .foregroundStyle(Neutre.encreDouce)
-            }
-        }
-    }
-
-    private var boutonEcoute: some View {
-        Button {
-            Task { await duplexeur.basculerEcoute() }
-        } label: {
-            Text(duplexeur.ecoute ? "Arrêter l'écoute" : "Écouter")
-                .font(Voix.entete)
-                .foregroundStyle(Neutre.fond)
-                .frame(maxWidth: .infinity, minHeight: Grille.cible)
-                .background(Teinte.accent)
-                .clipShape(.rect(cornerRadius: Rayon.controle, style: .continuous))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var choixSource: some View {
-        VStack(alignment: .leading, spacing: Grille.serre) {
-            Text("Sortie captée")
-                .font(Voix.legende)
-                .foregroundStyle(Neutre.encreEteinte)
-            ForEach(duplexeur.sources) { source in
-                Button {
-                    Task { await duplexeur.choisirSource(source) }
-                } label: {
-                    HStack {
-                        Text(source.nom).font(Voix.corps).foregroundStyle(Neutre.encre)
-                        Spacer(minLength: 0)
-                        if duplexeur.etatPoste?.source == source.id {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(Teinte.accent)
-                        }
-                    }
-                    .padding(.vertical, Grille.serre)
-                    .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-
-    /// Le relevé de qualité. Sans Mac ni débogueur au bout de cette app, c'est
-    /// la seule fenêtre sur ce que fait le flux.
-    private var releve: some View {
-        VStack(alignment: .leading, spacing: Grille.fin) {
-            ligne("Tampon", "\(Int(duplexeur.qualite.remplissageMs)) ms")
-            ligne("Trous", "\(duplexeur.qualite.trous)")
-            ligne("Coupures", "\(duplexeur.qualite.famines + duplexeur.qualite.ruptures)")
-            if !duplexeur.qualite.amorce {
-                Text("Remplissage du tampon…")
-                    .font(Voix.note)
-                    .foregroundStyle(Neutre.encreDouce)
-            }
-        }
-        .padding(Grille.bloc)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Neutre.surface)
-        .clipShape(.rect(cornerRadius: Rayon.carte, style: .continuous))
-    }
-
-    private func ligne(_ libelle: String, _ valeur: String) -> some View {
-        HStack {
-            Text(libelle).font(Voix.note).foregroundStyle(Neutre.encreDouce)
+    private var enTete: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Fronton("Duplex")
             Spacer(minLength: 0)
-            Text(valeur).font(Voix.mesure).foregroundStyle(Neutre.encre)
-        }
-    }
-
-    private func bandeauPanne(_ panne: ErreurDuplex) -> some View {
-        VStack(alignment: .leading, spacing: Grille.fin) {
-            Text(panne.libelle).font(Voix.mention).foregroundStyle(Semantique.panne)
-            if let remede = panne.remede {
-                Text(remede).font(Voix.note).foregroundStyle(Neutre.encreDouce)
+            if let liaison = EtatLiaison(etape: duplexeur.etape, choisi: duplexeur.choisi != nil) {
+                Sceau(liaison.libelle, symbole: liaison.symbole, ton: liaison.ton)
+                    .id(liaison)
+                    .transition(.item)
             }
         }
-        .padding(Grille.bloc)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Semantique.panne.opacity(0.12))
-        .clipShape(.rect(cornerRadius: Rayon.carte, style: .continuous))
+        .animation(Mouvement.normal, value: duplexeur.etape)
     }
 }
 
@@ -169,31 +95,33 @@ extension Duplexeur {
     }
 }
 
-/// Une rangée de PC : son nom, et où en est la liaison avec lui.
-struct CartePoste: View {
-    let poste: PosteTrouve
-    let actif: Bool
-    let surAppui: () -> Void
+/// Le sceau de liaison en tête d'écran : où en est-on avec le PC choisi. Nul
+/// tant qu'aucun PC n'est choisi — un sceau « au repos » ne dirait rien.
+struct EtatLiaison: Hashable {
+    let libelle: String
+    let symbole: String
+    let ton: Ton
 
-    var body: some View {
-        Button(action: surAppui) {
-            HStack(spacing: Grille.element) {
-                Image(systemName: "desktopcomputer")
-                    .foregroundStyle(actif ? Teinte.accent : Neutre.encreEteinte)
-                VStack(alignment: .leading, spacing: Grille.fin) {
-                    Text(poste.nom).font(Voix.corps).foregroundStyle(Neutre.encre)
-                    Text(poste.service).font(Voix.brut).foregroundStyle(Neutre.encreEteinte)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(Grille.bloc)
-            .frame(maxWidth: .infinity, minHeight: Grille.cible, alignment: .leading)
-            .background(Neutre.surface)
-            .clipShape(.rect(cornerRadius: Rayon.carte, style: .continuous))
+    init?(etape: EtapeLiaison, choisi: Bool) {
+        switch etape {
+        case .repos:
+            guard choisi else { return nil }
+            self.init("Connexion…", "antenna.radiowaves.left.and.right", .neutre)
+        case .demandeEnvoyee, .codeAttendu, .codeEnVerification, .authentification:
+            self.init("Jumelage…", "key", .neutre)
+        case .liee:
+            self.init("Relié", "link", .ok)
+        case .refusee:
+            self.init("Refusé", "key.slash", .panne)
+        case .fermee:
+            self.init("Déconnecté", "bolt.horizontal", .neutre)
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(poste.nom)
-        .accessibilityAddTraits(actif ? .isSelected : [])
+    }
+
+    private init(_ libelle: String, _ symbole: String, _ ton: Ton) {
+        self.libelle = libelle
+        self.symbole = symbole
+        self.ton = ton
     }
 }
 #endif
