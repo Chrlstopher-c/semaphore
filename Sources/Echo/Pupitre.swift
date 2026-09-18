@@ -1,4 +1,5 @@
 #if canImport(SwiftUI)
+import Duplex
 import EchoHub
 import Saily
 import SwiftUI
@@ -47,6 +48,7 @@ struct Pupitre: View {
                 EchoHub.Coquille(suspendreEnArrierePlan: { !MaintienVie.partage.actif })
             }
             scene(.saily) { Saily.Coquille() }
+            scene(.duplex) { Duplex.Coquille() }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

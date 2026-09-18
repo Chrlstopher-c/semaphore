@@ -15,6 +15,8 @@ public enum Monde: String, CaseIterable, Identifiable, Hashable, Sendable {
     case machine
     /// Saily — l'inbox personnelle de capture, synchronisée avec le PC.
     case saily
+    /// Duplex — l'écoute sur le téléphone du son qui sort du PC.
+    case duplex
 
     public var id: String { rawValue }
 
@@ -23,6 +25,7 @@ public enum Monde: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .quart: return "Quart"
         case .machine: return "Machine"
         case .saily: return "Saily"
+        case .duplex: return "Duplex"
         }
     }
 
@@ -33,6 +36,7 @@ public enum Monde: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .quart: return "moon.stars.fill"
         case .machine: return "cpu"
         case .saily: return "tray.full.fill"
+        case .duplex: return "hifispeaker.2.fill"
         }
     }
 }

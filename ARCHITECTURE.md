@@ -1,7 +1,8 @@
 # Architecture d'Echo
 
-Le centre de contrôle iOS de Chris : **Vigie** (le client de ccremote) et
-**EchoHub Mobile** (le client du modèle local) dans une seule app, un seul
+Le centre de contrôle iOS de Chris : **Vigie** (le client de ccremote),
+**EchoHub Mobile** (le client du modèle local), **Saily** (la besace de
+capture) et **Duplex** (l'écoute du son du PC) dans une seule app, un seul
 bundle, une seule signature hebdomadaire. Ce document dit quelles frontières
 existent et pourquoi ; chaque monde garde sa propre charte et sa propre
 architecture dans son dossier.
@@ -39,7 +40,12 @@ qui couple deux domaines indépendants.
 | `Vigie` | les écrans de Vigie, sa charte, **et le système de veille** (`Alerte/`). | `VigieNoyau` |
 | `EchoHubNoyau` | logique pure d'EchoHub Mobile : relais, conversations, modèles, flux SSE, markdown. Testable sur Linux. | — |
 | `EchoHub` | les écrans d'EchoHub Mobile et sa charte. | `EchoHubNoyau` |
-| `Echo` | **le pupitre** : point d'entrée, délégué d'application, sélecteur de monde. Quatre fichiers. | `Vigie`, `EchoHub`, `VigieNoyau` |
+| `SailyNoyau` | logique pure de Saily : état de la besace, contrat de synchro, file hors ligne. Testable sur Linux. | — |
+| `Saily` | les écrans de la besace et sa charte. | `SailyNoyau`, `Systeme` |
+| `DuplexNoyau` | logique pure de Duplex : en-tête de paquet, suivi de séquence, tampon audio, correction de dérive, machine à états du jumelage. Testable sur Linux. | — |
+| `Duplex` | la découverte mDNS, le canal de contrôle, la réception UDP, la lecture audio et ses écrans. | `DuplexNoyau`, `Systeme` |
+| `Systeme` | le socle de design commun : neutres, sémantiques, typo, grille, galbes, motion. | — |
+| `Echo` | **le pupitre** : point d'entrée, délégué d'application, sélecteur de monde. Cinq fichiers. | `Vigie`, `EchoHub`, `Saily`, `Duplex`, `VigieNoyau`, `Systeme` |
 
 `Echo` est volontairement minuscule. Tout ce qui ressemble à une fonctionnalité
 appartient à un monde ; le pupitre ne fait que choisir lequel est devant et
@@ -120,3 +126,45 @@ registre `note`.
   lignes, quelque chose a été mis au mauvais endroit.
 - Un jeton de charte ne traverse pas un module. Le sélecteur utilise ceux de
   Vigie, qualifiés — c'est l'unique exception, et elle est nommée.
+
+## Duplex — un contrat réseau qu'on ne possède pas
+
+Le monde Duplex parle à une application de bureau (Rust/Tauri, PC Arch) par un
+protocole figé qui vit **hors de ce dépôt** : `/mnt/projects/duplex/PROTOCOLE.md`.
+Les deux côtés s'y conforment, personne ne le modifie seul, et toute évolution
+passe par ce fichier d'abord.
+
+Ce qu'il impose, et qui ne se négocie pas dans le code : découverte mDNS
+`_duplex._tcp`, contrôle WebSocket sur TCP 7651, audio UDP unicast en PCM brut
+48 kHz stéréo 16 bits, en-tête de 12 octets, paquets de 5 ms, tampon cible
+100 ms, correction de dérive plafonnée à ±0,3 %.
+
+> **Tout ce qui est pur vit dans `DuplexNoyau` et rien d'autre.** L'analyse
+> d'en-tête, la détection de trou, l'anneau audio, le calcul de dérive et la
+> machine à états du jumelage n'importent ni `Network`, ni `AVFoundation`, ni
+> SwiftUI. C'est ce qui les rend éprouvables par `swift test` sur Linux — et
+> sans simulateur ni débogueur, c'est la seule preuve automatique du projet.
+
+Deux points que le protocole laisse implicites, tranchés dans
+`MachineJumelage` **sans inventer de message** : après `jumelage.accepte` on
+enchaîne sur `bonjour` (seule voie définie vers `bienvenue`, donc vers le nom du
+PC et ses sources) ; un `jumelage.refuse` reçu pendant l'authentification se lit
+comme « ce jeton est mort » et relance un jumelage complet. Sans le second, un
+PC réinstallé laisserait l'app coincée sur un jeton que personne ne reconnaît.
+
+### La session audio ne prend pas l'écran verrouillé
+
+`.playback` + `.mixWithOthers`, et rien d'autre. Avec `.mixWithOthers`, Duplex
+ne devient jamais l'app « qui joue » aux yeux du système, donc il ne prend
+**pas** les contrôles de l'écran verrouillé — Sillon en a besoin, et une
+collision là-dessus serait un défaut grave. C'est aussi ce qui laisse le son du
+PC se mêler à ce que le téléphone joue déjà.
+
+### Le fil de rendu ne se bloque jamais
+
+`TamponAudio` est un anneau à deux indices **atomiques**, un seul producteur (la
+réception UDP) et un seul consommateur (le rappel de rendu). Pas de verrou : le
+rappel d'`AVAudioEngine` tourne sur un fil temps réel, et s'y bloquer une
+milliseconde produit exactement le trou qu'on cherche à éviter. Pour la même
+raison, la correction de dérive est calculée **dans** le rappel, à partir du
+remplissage lu au même instant — aucune valeur ne traverse deux fils.

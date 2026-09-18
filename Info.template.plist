@@ -61,7 +61,15 @@
 	     SANS phrase explicative, et un refus fait échouer le transport sur une
 	     erreur opaque — au tout premier lancement, précisément. -->
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Echo joint le relais EchoHub sur ton réseau local quand tu es à la maison.</string>
+	<string>Echo joint le relais EchoHub et écoute le son de ton PC sur ton réseau local, à la maison.</string>
+	<!-- `☠` Depuis iOS 14, et strictement depuis iOS 18, un service Bonjour NON
+	     DÉCLARÉ ici ne rend simplement aucun résultat : pas d'erreur, pas
+	     d'invite, pas de trace. Le monde Duplex ne trouverait jamais le PC, et
+	     rien n'expliquerait pourquoi. -->
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_duplex._tcp</string>
+	</array>
 	<!-- Le relais est joint en clair sur le réseau local à la maison ;
 	     en HTTPS par le tunnel dehors. ATS ne laisse pas passer le premier cas
 	     sans exception, et l'exception est bornée au réseau local — jamais un

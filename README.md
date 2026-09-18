@@ -1,6 +1,6 @@
 # Echo
 
-An iOS control center that ships as a single app: **Vigie** (a ccremote client — agent fleet, decisions, terminal) and **EchoHub Mobile** (a local-model client — feed, conversations, machine) inside one binary. Swift 6 / SwiftUI, compiled from Arch Linux with [xtool](https://github.com/xtool-org/xtool) — no Xcode, no simulator, no Mac. Target: iPhone XS, iOS 18.
+An iOS control center that ships as a single app: **Vigie** (a ccremote client — agent fleet, decisions, terminal), **EchoHub Mobile** (a local-model client — feed, conversations, machine), **Saily** (a personal capture inbox) and **Duplex** (listening on the phone to whatever the PC is playing) inside one binary. Swift 6 / SwiftUI, compiled from Arch Linux with [xtool](https://github.com/xtool-org/xtool) — no Xcode, no simulator, no Mac. Target: iPhone XS, iOS 18.
 
 ## The constraint that shaped the architecture
 
@@ -40,6 +40,10 @@ xtool dev build    # the real iOS compilation
 ```
 
 `swift build` alone proves nothing for the screens: everything touching SwiftUI is under `#if canImport(SwiftUI)`, so it is compiled out on Linux. Only `xtool dev build` compiles the views.
+
+## Duplex and its protocol
+
+Duplex speaks to a desktop app over a frozen wire protocol that lives **outside this repo**: `/mnt/projects/duplex/PROTOCOLE.md`. Both sides conform to it and neither changes it alone. Everything pure — packet header parsing, sequence-gap detection, the audio ring, clock-drift correction, the pairing state machine — lives in `DuplexNoyau` and is covered by `swift test` on Linux. That separation is deliberate: with no simulator and no debugger, those tests are the only automatic proof this project has.
 
 ## Free signing
 

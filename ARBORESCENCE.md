@@ -1,12 +1,15 @@
 # Arborescence — Echo
 
-Une ligne par fichier. Générée le 28/08/2026 ; à régénérer quand la structure change.
+Une ligne par fichier. Régénérée le 18/09/2026 — Movix retiré, monde Duplex ajouté.
+À régénérer quand la structure change.
 
 - `.echoforge.yml`
+- `.env.example`
 - `.gitignore`
+- `ARBORESCENCE.md`
 - `ARCHITECTURE.md`
 - `Icone.png`
-- `Info.plist`
+- `Info.template.plist`
 - `Package.swift`
 - `README.md`
 - `STATE.md`
@@ -14,6 +17,27 @@ Une ligne par fichier. Générée le 28/08/2026 ; à régénérer quand la struc
 - `build.sh`
 - `deploy.sh`
 - `xtool.yml`
+- `Sources/Duplex/Charte/Teinte.swift`
+- `Sources/Duplex/Coquille/Coquille.swift`
+- `Sources/Duplex/Ecoute/EcouteEcran.swift`
+- `Sources/Duplex/Ecoute/JumelageFeuille.swift`
+- `Sources/Duplex/Lecture/MoteurLecture.swift`
+- `Sources/Duplex/Poste/Duplexeur.swift`
+- `Sources/Duplex/Reseau/CanalControle.swift`
+- `Sources/Duplex/Reseau/Decouverte.swift`
+- `Sources/Duplex/Reseau/ReceptionAudio.swift`
+- `Sources/DuplexNoyau/Ecoute/CorrectionDerive.swift`
+- `Sources/DuplexNoyau/Ecoute/LectureEtiree.swift`
+- `Sources/DuplexNoyau/Ecoute/TamponAudio.swift`
+- `Sources/DuplexNoyau/Jumelage/DepotJetons.swift`
+- `Sources/DuplexNoyau/Jumelage/MachineJumelage.swift`
+- `Sources/DuplexNoyau/Jumelage/MessageControle.swift`
+- `Sources/DuplexNoyau/Jumelage/SourceAudio.swift`
+- `Sources/DuplexNoyau/Paquet/EnTetePaquet.swift`
+- `Sources/DuplexNoyau/Paquet/SuiviFlux.swift`
+- `Sources/DuplexNoyau/Reseau/ErreurDuplex.swift`
+- `Sources/DuplexNoyau/Reseau/Journal.swift`
+- `Sources/Echo/CharteEcho.swift`
 - `Sources/Echo/EchoApp.swift`
 - `Sources/Echo/Monde.swift`
 - `Sources/Echo/Pupitre.swift`
@@ -112,6 +136,7 @@ Une ligne par fichier. Générée le 28/08/2026 ; à régénérer quand la struc
 - `Sources/EchoHubNoyau/Relais/EtatChargement.swift`
 - `Sources/EchoHubNoyau/Relais/Journal.swift`
 - `Sources/EchoHubNoyau/Relais/ReglagesRelais.swift`
+- `Sources/EchoHubNoyau/Relais/ToleranceSonde.swift`
 - `Sources/EchoHubNoyau/Relais/ValeurJSON.swift`
 - `Sources/Saily/Boite/Boite.swift`
 - `Sources/Saily/Capture/CaptureEcran.swift`
@@ -126,7 +151,10 @@ Une ligne par fichier. Générée le 28/08/2026 ; à régénérer quand la struc
 - `Sources/Saily/Coquille/Coquille.swift`
 - `Sources/Saily/Inbox/ApercuBlob.swift`
 - `Sources/Saily/Inbox/CarteItem.swift`
+- `Sources/Saily/Inbox/EditionNoteEcran.swift`
 - `Sources/Saily/Inbox/InboxEcran.swift`
+- `Sources/Saily/Inbox/Squelette.swift`
+- `Sources/Saily/Inbox/TexteNote.swift`
 - `Sources/Saily/Reglages/ReglagesEcran.swift`
 - `Sources/SailyNoyau/Boite/EtatBoite.swift`
 - `Sources/SailyNoyau/Modeles/Item.swift`
@@ -139,6 +167,10 @@ Une ligne par fichier. Générée le 28/08/2026 ; à régénérer quand la struc
 - `Sources/SailyNoyau/Reseau/IdentiteClient.swift`
 - `Sources/SailyNoyau/Reseau/Journal.swift`
 - `Sources/SailyNoyau/Reseau/ReglagesServeur.swift`
+- `Sources/Systeme/Couleur.swift`
+- `Sources/Systeme/Grille.swift`
+- `Sources/Systeme/Mouvement.swift`
+- `Sources/Systeme/Voix.swift`
 - `Sources/Vigie/Alerte/ActionRecue.swift`
 - `Sources/Vigie/Alerte/AlerteEcran.swift`
 - `Sources/Vigie/Alerte/Armement.swift`
@@ -153,12 +185,6 @@ Une ligne par fichier. Générée le 28/08/2026 ; à régénérer quand la struc
 - `Sources/Vigie/Artefact/RenduHTMLIsole.swift`
 - `Sources/Vigie/Charte/Allures.swift`
 - `Sources/Vigie/Charte/CHARTE.md`
-- `Sources/Vigie/Charte/Elan.swift`
-- `Sources/Vigie/Charte/Haptique.swift`
-- `Sources/Vigie/Charte/Teinte.swift`
-- `Sources/Vigie/Charte/Ton.swift`
-- `Sources/Vigie/Charte/Trame.swift`
-- `Sources/Vigie/Charte/Typo.swift`
 - `Sources/Vigie/Charte/Composants/AvisFugace.swift`
 - `Sources/Vigie/Charte/Composants/BandeauNote.swift`
 - `Sources/Vigie/Charte/Composants/BoutonArme.swift`
@@ -174,11 +200,17 @@ Une ligne par fichier. Générée le 28/08/2026 ; à régénérer quand la struc
 - `Sources/Vigie/Charte/Composants/Sceau.swift`
 - `Sources/Vigie/Charte/Composants/Semantique.swift`
 - `Sources/Vigie/Charte/Composants/TuileChiffre.swift`
+- `Sources/Vigie/Charte/Elan.swift`
+- `Sources/Vigie/Charte/Haptique.swift`
 - `Sources/Vigie/Charte/Markdown/RenduInlineTexte.swift`
 - `Sources/Vigie/Charte/Markdown/RenduMarkdown.swift`
 - `Sources/Vigie/Charte/Markdown/RenduMarkdownCode.swift`
 - `Sources/Vigie/Charte/Markdown/RenduMarkdownListe.swift`
 - `Sources/Vigie/Charte/Markdown/RenduMarkdownTableau.swift`
+- `Sources/Vigie/Charte/Teinte.swift`
+- `Sources/Vigie/Charte/Ton.swift`
+- `Sources/Vigie/Charte/Trame.swift`
+- `Sources/Vigie/Charte/Typo.swift`
 - `Sources/Vigie/Coquille/BarreDeVeille.swift`
 - `Sources/Vigie/Coquille/Cablage.swift`
 - `Sources/Vigie/Coquille/Cadence.swift`
@@ -246,7 +278,6 @@ Une ligne par fichier. Générée le 28/08/2026 ; à régénérer quand la struc
 - `Sources/Vigie/Terminal/NouvelleSessionFeuille.swift`
 - `Sources/Vigie/Terminal/SessionEcran.swift`
 - `Sources/Vigie/Terminal/TerminalEcran.swift`
-- `Sources/VigieNoyau/VigieNoyau.swift`
 - `Sources/VigieNoyau/Contrat/Compte.swift`
 - `Sources/VigieNoyau/Contrat/Decision.swift`
 - `Sources/VigieNoyau/Contrat/Ecriture.swift`
@@ -301,6 +332,14 @@ Une ligne par fichier. Générée le 28/08/2026 ; à régénérer quand la struc
 - `Sources/VigieNoyau/Veille/ProjetNotification.swift`
 - `Sources/VigieNoyau/Veille/SuiviDecisions.swift`
 - `Sources/VigieNoyau/Veille/TraductionAlerte.swift`
+- `Sources/VigieNoyau/VigieNoyau.swift`
+- `Tests/DuplexNoyauTests/DeriveTests.swift`
+- `Tests/DuplexNoyauTests/EcouteLongueTests.swift`
+- `Tests/DuplexNoyauTests/EnTetePaquetTests.swift`
+- `Tests/DuplexNoyauTests/MachineJumelageTests.swift`
+- `Tests/DuplexNoyauTests/MessageControleTests.swift`
+- `Tests/DuplexNoyauTests/SuiviFluxTests.swift`
+- `Tests/DuplexNoyauTests/TamponAudioTests.swift`
 - `Tests/EchoHubNoyauTests/AnalyseMarkdownTests.swift`
 - `Tests/EchoHubNoyauTests/AnalyseTableauTests.swift`
 - `Tests/EchoHubNoyauTests/AnalyseurSSETests.swift`
@@ -314,8 +353,14 @@ Une ligne par fichier. Générée le 28/08/2026 ; à régénérer quand la struc
 - `Tests/EchoHubNoyauTests/NavigationVarianteTests.swift`
 - `Tests/EchoHubNoyauTests/SegmenteurReponseTests.swift`
 - `Tests/EchoHubNoyauTests/SelectionOutilsTests.swift`
+- `Tests/EchoHubNoyauTests/ToleranceSondeTests.swift`
 - `Tests/EchoHubNoyauTests/TransfertsEtOutilsTests.swift`
 - `Tests/EchoHubNoyauTests/ValeurJSONTests.swift`
+- `Tests/SailyNoyauTests/ClientSailyTests.swift`
+- `Tests/SailyNoyauTests/CorpsMultipartTests.swift`
+- `Tests/SailyNoyauTests/EtatBoiteTests.swift`
+- `Tests/SailyNoyauTests/ItemCodageTests.swift`
+- `Tests/SailyNoyauTests/MessageSyncTests.swift`
 - `Tests/VigieNoyauTests/ArtefactTests.swift`
 - `Tests/VigieNoyauTests/AttenteFilsTests.swift`
 - `Tests/VigieNoyauTests/DecisionTests.swift`

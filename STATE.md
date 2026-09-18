@@ -4,8 +4,8 @@ Résumé vivant, inter-sessions. Les décisions et leurs raisons sont dans
 `ARCHITECTURE.md` ; ce qui reste à faire et ce qui demande un arbitrage sont
 dans `TODO.md`.
 
-Dernière mise à jour : **28/08/2026** — Echo tourne sur l'iPhone de Chris ;
-correctif « Machine injoignable » confirmé, balise de compaction ajoutée.
+Dernière mise à jour : **18/09/2026** — Movix retiré, monde **Duplex** ajouté
+(branche `feat/duplex`). Rien de Duplex n'a encore tourné sur l'appareil.
 
 ---
 
@@ -139,3 +139,50 @@ portable, mêmes versions. Détail : `README.md`.
 `Sources/Vigie/Diagnostic/SondeChaine.swift:158-159` — `UIDevice.current`
 depuis un contexte non isolé, six fois par build. Préexistant dans Vigie, hors
 périmètre de la fusion, listé dans `TODO.md`.
+
+---
+
+## Duplex — 18/09/2026 (branche `feat/duplex`)
+
+**Movix est retiré** : cible, produit, cas d'énumération, teinte, plein écran du
+pupitre, adresse de build. Plus aucune référence dans le code, les tests ou la
+configuration — seules ces notes d'historique en gardent le nom.
+
+**Le monde Duplex le remplace** : l'écoute sur l'iPhone du son qui sort du PC,
+conforme à `/mnt/projects/duplex/PROTOCOLE.md` (fichier hors de ce dépôt, que
+personne ne modifie seul).
+
+### Ce qui est ÉPROUVÉ
+
+- `swift test` : **303 tests XCTest + 156 swift-testing, 0 échec**, dont
+  **77 nouveaux** sur `DuplexNoyau`.
+- Le banc de dérive (`EcouteLongueTests`) simule 75 s d'écoute avec deux
+  horloges désaccordées de 0,2 %, dans les deux sens. Chaque cas corrigé est
+  doublé d'un **témoin à facteur figé qui doit échouer** ; vérifié en inversant
+  le signe de la correction : le tampon part à 443 ms d'un côté, à 0,04 ms et
+  deux famines de l'autre. Le banc sait donc échouer.
+- `xtool dev build` : **compilation iOS complète réussie** (`xtool/Echo.app`
+  produit). Elle a attrapé deux vrais défauts — une méthode appelée et jamais
+  écrite, et une feuille de jumelage dont on ne pouvait pas sortir.
+
+### Ce qui reste à CONSTATER sur l'appareil
+
+Rien de ce qui suit n'a tourné sur un iPhone ni contre le vrai PC — la
+compilation prouve que ça tient debout, pas que ça marche :
+
+- La découverte mDNS trouve-t-elle le PC (l'invite « réseau local » d'iOS 18) ?
+- Le jumelage complet : code à six chiffres, jeton conservé, retour sans code.
+- **Le son sort-il, et se mêle-t-il à ce que le téléphone joue déjà ?**
+- **Duplex ne prend PAS les contrôles de l'écran verrouillé** — Sillon en a
+  besoin, c'est le point à vérifier en priorité.
+- L'écoute longue : une heure, et vérifier au relevé que le tampon reste près
+  de 100 ms et que « Coupures » ne monte pas.
+
+### La direction artistique n'est pas faite
+
+Les écrans de `Sources/Duplex/` sont volontairement sobres : jetons du socle
+`Systeme` uniquement, aucun composant maison, aucune animation. Le seul jeton
+propre au monde est son accent, dans `Sources/Duplex/Charte/Teinte.swift` —
+rose framboise `#F2589B`, choisi pour ne ressembler à aucun des trois autres
+mondes montrés côte à côte dans la barre du pupitre.
+
