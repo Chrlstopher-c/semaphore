@@ -71,7 +71,7 @@ public actor Decouverte {
             throw ErreurDuplex.decouverteImpossible("PC disparu de la liste")
         }
         let (hote, port) = try await ResolutionBonjour.resoudre(extremite)
-        guard let url = URL(string: "ws://\(hote):\(port)") else {
+        guard let url = AdresseUrl.canal(hote: hote, port: port) else {
             throw ErreurDuplex.decouverteImpossible("adresse résolue illisible : \(hote)")
         }
         return url
