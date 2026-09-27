@@ -25,12 +25,20 @@
 
 ## Tamis — à constater sur l'appareil
 
-- Accès photos accordé, inventaire et pesée sur la vraie photothèque (durée ?).
-- Analyse Vision : vitesse réelle sur A12, `VNCalculateImageAestheticsScoresRequest`
-  disponible sur ce modèle ? (sinon, pistes « ratées/documents » vides, le reste marche).
-- Seuils de similarité et de « ratée » : juger sur de vrais groupes, ajuster.
-- Suppression d'un gros panier (> 1 000) : une seule confirmation iOS ?
-- Nouvelle barre : lisibilité de la grille des mondes.
+- [x] Accès photos, inventaire, pesée sur la vraie photothèque (13 590 éléments, 108,8 Go).
+- [x] Analyse Vision complète : 9 050 photos en ~15 min, esthétique disponible sur le XS.
+- [ ] **Piste « Documents et reçus » (52 % des photos)** : Chris regarde si ce
+      sont surtout des papiers. Sinon, la resserrer — `utilitaire` ET score bas,
+      ou ajout d'une détection de texte (`VNRecognizeTextRequest`).
+- [ ] Seuils de similarité : juger quelques groupes au réglage « Proches » (0,92).
+- [ ] Première suppression réelle : une seule confirmation iOS pour un gros panier ?
+- [ ] Nouvelle barre : lisibilité de la grille des mondes.
+
+## Tamis — dette
+
+- [ ] `Journal` (Tamis, et Duplex/Saily sur le même modèle) écrit par `print` :
+      sur l'appareil, stdout part dans le vide — rien n'apparaît dans
+      `idevicesyslog`. Passer à `os.Logger` (subsystem `com.echo.labs`).
 
 ## Tamis — suite possible
 

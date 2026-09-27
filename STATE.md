@@ -4,21 +4,32 @@ Résumé vivant, inter-sessions. Les décisions et leurs raisons sont dans
 `ARCHITECTURE.md` ; ce qui reste à faire et ce qui demande un arbitrage sont
 dans `TODO.md`.
 
-Dernière mise à jour : **18/09/2026** — Movix retiré, monde **Duplex** ajouté
-(branche `feat/duplex`). Rien de Duplex n'a encore tourné sur l'appareil.
+Dernière mise à jour : **27/09/2026** — monde **Tamis** ajouté et barre du
+pupitre refaite (branche `tamis`). Tamis tourne sur l'iPhone, analyse complète.
 
 ---
 
-## 27/09/2026 — monde Tamis + nouvelle barre (branche `tamis`)
+## 27/09/2026 — monde Tamis + nouvelle barre (branche `tamis`, `8f0d55b`)
 
-- **Tamis** : tri de la photothèque pour alléger iCloud (~100 Go). Quatre
-  onglets — Strates (poids par année/mois, tamisage par période), Tri (glisser
+- **Tamis** : tri de la photothèque pour alléger iCloud. Quatre onglets —
+  Strates (poids par année/mois, tamisage par période), Tri (glisser
   gauche/droite), Pistes (doublons, similaires, rafales, vidéos lourdes,
   captures, documents, ratées, vidéos accidentelles), Panier (suppression).
 - **Barre du pupitre refaite** : monde actif seul + grille de mondes.
-- Preuve : `swift test --filter TamisNoyauTests` vert (20), `./build.sh` vert
-  sur le **portable** (xtool n'est plus sur la tour depuis sa réinstallation).
-  **Rien n'a encore tourné sur l'appareil.**
+- **Constaté sur l'iPhone** (Chris) : l'app se lance, l'accès photos, la pesée
+  et l'analyse Vision tournent. Premier IPA : crash au lancement
+  (`No Observable object of type Atelier`) — `.environment` posé avant
+  `.overlay`, corrigé dans `8f0d55b`.
+- **Mesures réelles** (carnet lu sur l'iPhone) : 13 590 éléments, **108,8 Go** ;
+  9 050 photos analysées en ~15 min (~10 photos/s sur A12), 10 illisibles ;
+  l'esthétique Vision marche sur le XS. Paires similaires : 288 (≥ 0,95),
+  635 (≥ 0,92), 1 933 (≥ 0,88). Ratées (< −0,25) : 876.
+- **Suspect** : `isUtility` marque 4 744 photos sur 9 040 (52 %), avec une
+  note esthétique médiane identique au reste — la piste « Documents et reçus »
+  est probablement trop large. En attente du coup d'œil de Chris.
+- **Rien n'a encore été supprimé** : panier vide.
+- Le build iOS se fait sur le **portable** (`~/Downloads/echo-centre`, copie de
+  travail) ; xtool n'est plus sur la tour. La tour reste la source et le git.
 
 ---
 
