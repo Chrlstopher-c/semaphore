@@ -3,7 +3,7 @@ import Foundation
 /// Composition de l'URL du canal de contrôle à partir de ce que Bonjour rend.
 ///
 /// `☠` Une adresse résolue par Bonjour porte souvent un identifiant de zone :
-/// `192.168.1.10%en0`. Tel quel, ce texte ne fait pas une URL valide, et le PC
+/// `10.0.0.3%en0`. Tel quel, ce texte ne fait pas une URL valide, et le PC
 /// découvert devient injoignable alors qu'il répond parfaitement. Mesuré le
 /// 18/09/2026 sur l'iPhone de Chris — le PC apparaissait dans la liste, et le
 /// toucher renvoyait « adresse résolue illisible ».

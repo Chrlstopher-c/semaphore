@@ -6,11 +6,11 @@ import XCTest
 final class AdresseUrlTests: XCTestCase {
 
     func testUneAdresseIPv4PerdSaZone() {
-        XCTAssertEqual(AdresseUrl.hotePourUrl("192.168.1.10%en0"), "192.168.1.10")
+        XCTAssertEqual(AdresseUrl.hotePourUrl("10.0.0.3%en0"), "10.0.0.3")
     }
 
     func testUneAdresseIPv4SansZoneNeChangePas() {
-        XCTAssertEqual(AdresseUrl.hotePourUrl("192.168.1.10"), "192.168.1.10")
+        XCTAssertEqual(AdresseUrl.hotePourUrl("10.0.0.3"), "10.0.0.3")
     }
 
     func testUneAdresseIPv6GardeSaZoneEchappee() {
@@ -22,9 +22,9 @@ final class AdresseUrlTests: XCTestCase {
     }
 
     func testLUrlDuCanalEstFormeePourUneIPv4Zonee() {
-        let url = AdresseUrl.canal(hote: "192.168.1.10%en0", port: 7651)
-        XCTAssertEqual(url?.absoluteString, "ws://192.168.1.10:7651")
-        XCTAssertEqual(url?.host, "192.168.1.10")
+        let url = AdresseUrl.canal(hote: "10.0.0.3%en0", port: 7651)
+        XCTAssertEqual(url?.absoluteString, "ws://10.0.0.3:7651")
+        XCTAssertEqual(url?.host, "10.0.0.3")
         XCTAssertEqual(url?.port, 7651)
     }
 
