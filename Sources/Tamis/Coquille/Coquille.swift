@@ -33,10 +33,13 @@ public struct Coquille: View {
             .badge(atelier.decisions.panier.count)
         }
         .tint(Teinte.accent)
-        .environment(atelier)
         .preferredColorScheme(.dark)
         .sensoryFeedback(Toucher.selection, trigger: onglet)
         .overlay { AccesEcran() }
+        // `☠` En DERNIER : l'environnement ne descend que dans la vue qu'il
+        // modifie. Posé avant `.overlay`, il laissait `AccesEcran` sans atelier —
+        // crash au lancement d'Echo, monde Tamis ou pas.
+        .environment(atelier)
         .task(id: visible) { if visible { await atelier.demarrer() } }
         .onChange(of: phase) { _, nouvelle in reagir(nouvelle) }
     }
