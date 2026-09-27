@@ -33,6 +33,7 @@ let package = Package(
         .target(name: "EchoHubNoyau"),
         .target(name: "SailyNoyau"),
         .target(name: "DuplexNoyau"),
+        .target(name: "TamisNoyau"),
         // Le socle de design commun : neutres, sémantiques, typo, grille, galbes,
         // motion. UNE vérité pour tout ce qui doit être identique ; chaque monde
         // n'ajoute par-dessus que son accent. Tout est guardé `canImport(SwiftUI)`
@@ -59,12 +60,18 @@ let package = Package(
             exclude: ["Charte/CHARTE.md"]
         ),
         .target(
+            name: "Tamis",
+            dependencies: ["TamisNoyau", "Systeme"],
+            exclude: ["Charte/CHARTE.md"]
+        ),
+        .target(
             name: "Echo",
-            dependencies: ["Vigie", "EchoHub", "Saily", "Duplex", "VigieNoyau", "Systeme"]
+            dependencies: ["Vigie", "EchoHub", "Saily", "Duplex", "Tamis", "VigieNoyau", "Systeme"]
         ),
         .testTarget(name: "VigieNoyauTests", dependencies: ["VigieNoyau"]),
         .testTarget(name: "EchoHubNoyauTests", dependencies: ["EchoHubNoyau"]),
         .testTarget(name: "SailyNoyauTests", dependencies: ["SailyNoyau"]),
         .testTarget(name: "DuplexNoyauTests", dependencies: ["DuplexNoyau"]),
+        .testTarget(name: "TamisNoyauTests", dependencies: ["TamisNoyau"]),
     ]
 )

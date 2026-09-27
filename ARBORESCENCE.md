@@ -1,6 +1,6 @@
 # Arborescence — Echo
 
-Une ligne par fichier. Régénérée le 18/09/2026 — Movix retiré, monde Duplex ajouté.
+Une ligne par fichier. Régénérée le 27/09/2026 — monde Tamis ajouté.
 À régénérer quand la structure change.
 
 - `.echoforge.yml`
@@ -333,6 +333,48 @@ Une ligne par fichier. Régénérée le 18/09/2026 — Movix retiré, monde Dupl
 - `Sources/VigieNoyau/Veille/SuiviDecisions.swift`
 - `Sources/VigieNoyau/Veille/TraductionAlerte.swift`
 - `Sources/VigieNoyau/VigieNoyau.swift`
+- `Sources/Tamis/Atelier/Analyseur.swift`
+- `Sources/Tamis/Atelier/Atelier+Analyse.swift`
+- `Sources/Tamis/Atelier/Atelier+Suppression.swift`
+- `Sources/Tamis/Atelier/Atelier.swift`
+- `Sources/Tamis/Atelier/Images.swift`
+- `Sources/Tamis/Atelier/Inventaire.swift`
+- `Sources/Tamis/Charte/Allures.swift`
+- `Sources/Tamis/Charte/CHARTE.md`
+- `Sources/Tamis/Charte/Teinte.swift`
+- `Sources/Tamis/Charte/Ton.swift`
+- `Sources/Tamis/Charte/Trame.swift`
+- `Sources/Tamis/Charte/Typo.swift`
+- `Sources/Tamis/Coquille/Coquille.swift`
+- `Sources/Tamis/Grille/Destination.swift`
+- `Sources/Tamis/Grille/GrilleEcran.swift`
+- `Sources/Tamis/Grille/GrilleVignettes.swift`
+- `Sources/Tamis/Grille/Vignette.swift`
+- `Sources/Tamis/Panier/PanierEcran.swift`
+- `Sources/Tamis/Pistes/GroupesEcran.swift`
+- `Sources/Tamis/Pistes/PanneauAnalyse.swift`
+- `Sources/Tamis/Pistes/PisteFiche.swift`
+- `Sources/Tamis/Pistes/PistesEcran.swift`
+- `Sources/Tamis/Strates/PlageEcran.swift`
+- `Sources/Tamis/Strates/StrateBloc.swift`
+- `Sources/Tamis/Strates/StratesEcran.swift`
+- `Sources/Tamis/Tri/CarteTri.swift`
+- `Sources/Tamis/Tri/SourceTri.swift`
+- `Sources/Tamis/Tri/TriEcran+Gestes.swift`
+- `Sources/Tamis/Tri/TriEcran.swift`
+- `Sources/TamisNoyau/Carnet/Carnet.swift`
+- `Sources/TamisNoyau/Carnet/Journal.swift`
+- `Sources/TamisNoyau/Cliche/Cliche.swift`
+- `Sources/TamisNoyau/Cliche/Octets.swift`
+- `Sources/TamisNoyau/Pistes/Pistage.swift`
+- `Sources/TamisNoyau/Pistes/Piste.swift`
+- `Sources/TamisNoyau/Similarite/Election.swift`
+- `Sources/TamisNoyau/Similarite/Empreinte.swift`
+- `Sources/TamisNoyau/Similarite/Grappes.swift`
+- `Sources/TamisNoyau/Similarite/Regroupeur.swift`
+- `Sources/TamisNoyau/Strates/Stratigraphie.swift`
+- `Sources/TamisNoyau/Tamisage/PlageDates.swift`
+- `Sources/TamisNoyau/Tamisage/Tamisage.swift`
 - `Tests/DuplexNoyauTests/DeriveTests.swift`
 - `Tests/DuplexNoyauTests/EcouteLongueTests.swift`
 - `Tests/DuplexNoyauTests/EnTetePaquetTests.swift`
@@ -379,3 +421,9 @@ Une ligne par fichier. Régénérée le 18/09/2026 — Movix retiré, monde Dupl
 - `Tests/VigieNoyauTests/ParcTests.swift`
 - `Tests/VigieNoyauTests/TerminalTests.swift`
 - `Tests/VigieNoyauTests/VeilleTests.swift`
+
+- `Tests/TamisNoyauTests/Aides.swift`
+- `Tests/TamisNoyauTests/PistageTests.swift`
+- `Tests/TamisNoyauTests/SimilariteTests.swift`
+- `Tests/TamisNoyauTests/StratigraphieTests.swift`
+- `Tests/TamisNoyauTests/TamisageTests.swift`

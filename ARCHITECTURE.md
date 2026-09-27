@@ -44,8 +44,10 @@ qui couple deux domaines indépendants.
 | `Saily` | les écrans de la besace et sa charte. | `SailyNoyau`, `Systeme` |
 | `DuplexNoyau` | logique pure de Duplex : en-tête de paquet, suivi de séquence, tampon audio, correction de dérive, machine à états du jumelage. Testable sur Linux. | — |
 | `Duplex` | la découverte mDNS, le canal de contrôle, la réception UDP, la lecture audio et ses écrans. | `DuplexNoyau`, `Systeme` |
+| `TamisNoyau` | logique pure de Tamis : fiche d'un cliché, tamisage par période et nature, strates, similarité (fenêtre glissante + union-find), élection de la meilleure photo, pistes, décisions et carnet persistés. Testable sur Linux. | — |
+| `Tamis` | l'accès PhotoKit (inventaire, pesée, suppression), l'analyse Vision, les écrans et la charte. | `TamisNoyau`, `Systeme` |
 | `Systeme` | le socle de design commun : neutres, sémantiques, typo, grille, galbes, motion. | — |
-| `Echo` | **le pupitre** : point d'entrée, délégué d'application, sélecteur de monde. Cinq fichiers. | `Vigie`, `EchoHub`, `Saily`, `Duplex`, `VigieNoyau`, `Systeme` |
+| `Echo` | **le pupitre** : point d'entrée, délégué d'application, sélecteur de monde. Cinq fichiers. | `Vigie`, `EchoHub`, `Saily`, `Duplex`, `Tamis`, `VigieNoyau`, `Systeme` |
 
 `Echo` est volontairement minuscule. Tout ce qui ressemble à une fonctionnalité
 appartient à un monde ; le pupitre ne fait que choisir lequel est devant et
@@ -77,9 +79,13 @@ par opacité — exactement comme Vigie fait pour ses propres piles. Changer de
 monde ne démonte rien : la génération EchoHub continue pendant qu'on tranche une
 décision au Quart, et le Quart sonde le Pi pendant qu'on lit une réponse.
 
-Le sélecteur (`SelecteurMonde`) est peint avec la charte de Vigie : le centre
-de contrôle **est** le Quart, la Machine y est un monde invité. Chaque monde
-garde sa barre en bas — les deux directions artistiques ne se mélangent pas.
+La barre (`SelecteurMonde`, refaite le 27/09/2026) ne montre que le monde
+actif : glyphe à son accent, nom, chevron. La toucher déroule `GrilleMondes`,
+une grille de tuiles à trois colonnes par-dessus le monde assombri. Raison : la
+rangée de pilules ne tenait plus à cinq mondes sur 335 pt ; la grille en tient
+dix sans changer de forme. Ajouter un monde = un cas à `Monde` (titre, rôle,
+symbole), un à `TeinteEcho`, une `scene` au pupitre. Chaque monde garde sa barre
+en bas.
 
 ## Le bundle
 
@@ -168,3 +174,25 @@ rappel d'`AVAudioEngine` tourne sur un fil temps réel, et s'y bloquer une
 milliseconde produit exactement le trou qu'on cherche à éviter. Pour la même
 raison, la correction de dérive est calculée **dans** le rappel, à partir du
 remplissage lu au même instant — aucune valeur ne traverse deux fils.
+
+## Tamis — la photothèque sans rien envoyer
+
+- **Rien ne quitte l'iPhone.** Similarité et jugement esthétique par Vision
+  (`VNGenerateImageFeaturePrintRequest`, `VNCalculateImageAestheticsScoresRequest`
+  d'iOS 18), sur des vignettes locales de 360 px — aucun téléchargement iCloud.
+- **Similarité en fenêtre glissante** : chaque photo n'est comparée qu'à ses
+  voisines de moins de 15 min (32 au plus). Linéaire, et c'est là que vivent
+  les quasi-doublons. Seules les paires au-dessus de 0,80 sont gardées (pas les
+  vecteurs : 3 Ko × 35 000) ; le seuil affiché se règle après coup sans relancer.
+- **Seuils Vision non étalonnés** (similaires 0,88–0,95, ratée < −0,25) : estimés,
+  exposés à l'écran, à ajuster après les premiers essais réels.
+- **Poids** : somme des `PHAssetResource` lue par KVC (`fileSize`, non public
+  mais stable depuis iOS 10). Inconnu ≠ zéro.
+- **Suppression** : seul le panier supprime ; iOS confirme ; les éléments
+  passent 30 jours dans « Supprimés récemment » avant de quitter iCloud.
+- **Persistance** : `Application Support/Tamis/decisions.json` (panier, gardés)
+  et `carnet.json` (analyses, paires, poids), séparés parce qu'ils ne valent pas
+  pareil.
+- L'analyse se suspend en arrière-plan (Vision y échoue) et reprend au retour.
+- Le monde ne démarre qu'à sa première visite : sinon la demande d'accès aux
+  photos surgirait au lancement d'Echo.

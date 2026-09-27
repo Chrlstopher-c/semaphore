@@ -80,6 +80,11 @@
 		<true/>
 	</dict>
 
+	<!-- ======== Tamis : la photothèque ========
+	     Sans cette clé, la première demande d'accès aux photos TUE le processus. -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Tamis trie ta photothèque pour alléger iCloud : strates, doublons, similaires. L'analyse se fait sur l'iPhone, aucune photo n'est envoyée.</string>
+
 	<!-- ======== Commun ======== -->
 	<key>UIStatusBarStyle</key>
 	<string>UIStatusBarStyleLightContent</string>

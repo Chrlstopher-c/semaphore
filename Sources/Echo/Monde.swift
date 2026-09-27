@@ -17,8 +17,21 @@ public enum Monde: String, CaseIterable, Identifiable, Hashable, Sendable {
     case saily
     /// Duplex — l'écoute sur le téléphone du son qui sort du PC.
     case duplex
+    /// Tamis — le tri de la photothèque, pour alléger iCloud.
+    case tamis
 
     public var id: String { rawValue }
+
+    /// Ce que fait le monde, en quelques mots, sous son nom dans la grille.
+    public var role: String {
+        switch self {
+        case .quart: return "Agents"
+        case .machine: return "Modèle local"
+        case .saily: return "Capture"
+        case .duplex: return "Son du PC"
+        case .tamis: return "Photos"
+        }
+    }
 
     public var titre: String {
         switch self {
@@ -26,6 +39,7 @@ public enum Monde: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .machine: return "Machine"
         case .saily: return "Saily"
         case .duplex: return "Duplex"
+        case .tamis: return "Tamis"
         }
     }
 
@@ -37,6 +51,7 @@ public enum Monde: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .machine: return "cpu"
         case .saily: return "tray.full.fill"
         case .duplex: return "hifispeaker.2.fill"
+        case .tamis: return "photo.stack.fill"
         }
     }
 }

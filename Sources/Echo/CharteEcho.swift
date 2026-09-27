@@ -4,6 +4,7 @@ import EchoHub
 import Saily
 import SwiftUI
 import Systeme
+import Tamis
 import Vigie
 
 /// La charte du chrome — le seul jeton que le centre de contrôle ajoute au
@@ -25,6 +26,7 @@ enum TeinteEcho {
         case .machine: return EchoHub.Teinte.accent
         case .saily: return Saily.Teinte.accent
         case .duplex: return Duplex.Teinte.accent
+        case .tamis: return Tamis.Teinte.accent
         }
     }
 }

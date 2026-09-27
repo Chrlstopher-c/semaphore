@@ -23,6 +23,20 @@
       génération qui franchit 90 % du contexte) ET au rechargement d'un fil
       compacté. Compile, jamais vu à l'œil.
 
+## Tamis — à constater sur l'appareil
+
+- Accès photos accordé, inventaire et pesée sur la vraie photothèque (durée ?).
+- Analyse Vision : vitesse réelle sur A12, `VNCalculateImageAestheticsScoresRequest`
+  disponible sur ce modèle ? (sinon, pistes « ratées/documents » vides, le reste marche).
+- Seuils de similarité et de « ratée » : juger sur de vrais groupes, ajuster.
+- Suppression d'un gros panier (> 1 000) : une seule confirmation iOS ?
+- Nouvelle barre : lisibilité de la grille des mondes.
+
+## Tamis — suite possible
+
+- Archivage vers la tour avant suppression (originaux via
+  `PHAssetResourceManager`, serveur sur le disque backup) : supprimer sans perdre.
+
 ## À faire — seul
 
 - [ ] **L'écran du canal de Vigie** affiche l'état audio explicitement. Pendant

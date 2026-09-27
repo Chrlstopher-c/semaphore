@@ -9,6 +9,19 @@ Dernière mise à jour : **18/09/2026** — Movix retiré, monde **Duplex** ajou
 
 ---
 
+## 27/09/2026 — monde Tamis + nouvelle barre (branche `tamis`)
+
+- **Tamis** : tri de la photothèque pour alléger iCloud (~100 Go). Quatre
+  onglets — Strates (poids par année/mois, tamisage par période), Tri (glisser
+  gauche/droite), Pistes (doublons, similaires, rafales, vidéos lourdes,
+  captures, documents, ratées, vidéos accidentelles), Panier (suppression).
+- **Barre du pupitre refaite** : monde actif seul + grille de mondes.
+- Preuve : `swift test --filter TamisNoyauTests` vert (20), `./build.sh` vert
+  sur le **portable** (xtool n'est plus sur la tour depuis sa réinstallation).
+  **Rien n'a encore tourné sur l'appareil.**
+
+---
+
 ## En une phrase
 
 Echo est **installée et utilisée sur l'iPhone de Chris**. Le pupitre, les deux

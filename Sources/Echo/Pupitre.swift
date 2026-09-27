@@ -4,6 +4,7 @@ import EchoHub
 import Saily
 import SwiftUI
 import Systeme
+import Tamis
 import Vigie
 
 /// Le pupitre : les mondes montés en permanence, un sélecteur en tête.
@@ -26,12 +27,17 @@ import Vigie
 /// `opacity` sur les vues persistantes — même geste, zéro démontage.
 struct Pupitre: View {
     @State private var monde: Monde = .quart
+    @State private var grilleOuverte = false
     @Environment(\.accessibilityReduceMotion) private var reduireMouvement
 
     var body: some View {
         VStack(spacing: 0) {
-            SelecteurMonde(monde: $monde, bascule: basculer(vers:))
-            mondes
+            SelecteurMonde(monde: monde, ouverte: $grilleOuverte)
+            mondes.overlay(alignment: .top) {
+                if grilleOuverte {
+                    GrilleMondes(monde: monde, fermer: fermerGrille, bascule: basculer(vers:))
+                }
+            }
         }
         .background(Neutre.fond.ignoresSafeArea())
         .preferredColorScheme(.dark)
@@ -49,6 +55,7 @@ struct Pupitre: View {
             }
             scene(.saily) { Saily.Coquille() }
             scene(.duplex) { Duplex.Coquille() }
+            scene(.tamis) { Tamis.Coquille(visible: monde == .tamis) }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -70,9 +77,16 @@ struct Pupitre: View {
     /// avec le même mouvement, réduit à un fondu court quand « Réduire les
     /// animations » est actif.
     private func basculer(vers cible: Monde) {
+        fermerGrille()
         guard cible != monde else { return }
         withAnimation(reduireMouvement ? Mouvement.fonduReduit : Mouvement.surface) {
             monde = cible
+        }
+    }
+
+    private func fermerGrille() {
+        withAnimation(reduireMouvement ? Mouvement.fonduReduit : Mouvement.normal) {
+            grilleOuverte = false
         }
     }
 }
