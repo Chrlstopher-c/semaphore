@@ -49,7 +49,7 @@ struct ListeSessionsEcran: View {
 
     /// Une machine hors ligne n'a plus de session vivante : ses sessions ne comptent pas comme ouvertes.
     private func estOuverte(_ s: Session) -> Bool {
-        s.ouverte && (modele.machines.first { $0.id == s.machine }?.enLigne ?? false)
+        s.vivante && (modele.machines.first { $0.id == s.machine }?.enLigne ?? false)
     }
 
     @ToolbarContentBuilder private var barreOutils: some ToolbarContent {
@@ -67,7 +67,9 @@ struct ListeSessionsEcran: View {
     }
 
     @ViewBuilder private func actionsBalayage(_ s: Session) -> some View {
-        if estOuverte(s) {
+        if s.terminal == true {
+            EmptyView()
+        } else if estOuverte(s) {
             Button(role: .destructive) { agir(.fermer, s) } label: { Label("Fermer", systemImage: "power") }
             Button { agir(.interrompre, s) } label: { Label("Interrompre", systemImage: "stop.fill") }.tint(.orange)
         } else if s.claudeSessionId != nil {
@@ -76,7 +78,9 @@ struct ListeSessionsEcran: View {
     }
 
     @ViewBuilder private func menuContextuel(_ s: Session) -> some View {
-        if estOuverte(s) {
+        if s.terminal == true {
+            Text("Ouverte dans un terminal : lecture seule")
+        } else if estOuverte(s) {
             Button { agir(.interrompre, s) } label: { Label("Interrompre", systemImage: "stop.fill") }
             Button { agir(.compacter, s) } label: { Label("Compacter", systemImage: "arrow.down.right.and.arrow.up.left") }
             Button(role: .destructive) { agir(.fermer, s) } label: { Label("Fermer", systemImage: "power") }

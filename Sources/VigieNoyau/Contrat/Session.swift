@@ -61,8 +61,12 @@ public struct Session: Codable, Sendable, Identifiable, Equatable {
     public let tmux: String?
     public let attachee: Bool
     public let pilotee: Bool
+    /// Vivante dans un terminal ordinaire, hors tmux : suivie en lecture seule (absent des relais anciens).
+    public let terminal: Bool?
     public let creeLe: String
     public let majLe: String
 
+    /// Pilotable à distance : elle a un tmux. Une session de terminal est vivante mais se lit seulement.
     public var ouverte: Bool { tmux != nil }
+    public var vivante: Bool { tmux != nil || terminal == true }
 }

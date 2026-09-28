@@ -13,7 +13,7 @@ struct SessionEcran: View {
         Group {
             if let s = modele.session(id) {
                 FilVue(evenements: modele.fils[id] ?? [], dossier: s.cwd, entete: { EtatSession(session: s) })
-                    .safeAreaInset(edge: .bottom) { ComposeurSession(session: s, erreur: $erreur) }
+                    .safeAreaInset(edge: .bottom) { basDePage(s) }
                     .navigationTitle(s.titre)
                     .toolbar { ToolbarItem(placement: .topBarTrailing) { MenuSession(session: s, erreur: $erreur) } }
             } else {
@@ -28,6 +28,39 @@ struct SessionEcran: View {
         .alert("Commande refusée", isPresented: Binding(get: { erreur != nil }, set: { if !$0 { erreur = nil } })) {
             Button("OK", role: .cancel) {}
         } message: { Text(erreur ?? "") }
+    }
+}
+
+extension SessionEcran {
+    /// Le compositeur, ou la raison pour laquelle on ne peut pas écrire (machine éteinte, session de terminal).
+    @ViewBuilder func basDePage(_ s: Session) -> some View {
+        let enLigne = modele.machines.first { $0.id == s.machine }?.enLigne ?? false
+        if !enLigne {
+            LectureSeule(texte: "\(s.machine) est hors ligne : réveille-la pour reprendre cette session.", symbole: "moon.zzz",
+                         action: modele.reveilPossible.contains(s.machine) ? ("Réveiller", { _ = await modele.reveiller(s.machine) }) : nil)
+        } else if s.terminal == true {
+            LectureSeule(texte: "Ouverte dans un terminal, hors tmux : lisible ici, pilotable seulement depuis ce terminal.",
+                         symbole: "terminal", action: nil)
+        } else {
+            ComposeurSession(session: s, erreur: $erreur)
+        }
+    }
+}
+
+struct LectureSeule: View {
+    let texte: String
+    let symbole: String
+    let action: (String, () async -> Void)?
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: symbole).foregroundStyle(.secondary)
+            Text(texte).font(.footnote).foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+            if let action { Button(action.0) { Task { await action.1() } }.buttonStyle(.bordered).controlSize(.small) }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+        .background(.bar)
     }
 }
 
@@ -67,6 +100,9 @@ struct MenuSession: View {
 
     var body: some View {
         Menu {
+            if session.terminal == true {
+                Text("Ouverte dans un terminal : lecture seule")
+            }
             if session.ouverte {
                 Button { agir(.interrompre) } label: { Label("Interrompre", systemImage: "stop.fill") }
                 Button { agir(.compacter) } label: { Label("Compacter", systemImage: "arrow.down.right.and.arrow.up.left") }
@@ -79,7 +115,7 @@ struct MenuSession: View {
             Divider()
             if session.ouverte {
                 Button(role: .destructive) { agir(.fermer) } label: { Label("Fermer la session", systemImage: "power") }
-            } else {
+            } else if session.terminal != true {
                 Button { agir(.reprendre) } label: { Label("Reprendre", systemImage: "play.fill") }.disabled(session.claudeSessionId == nil)
             }
         } label: { Image(systemName: "ellipsis.circle") }
