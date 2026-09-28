@@ -46,8 +46,10 @@ qui couple deux domaines indépendants.
 | `Duplex` | la découverte mDNS, le canal de contrôle, la réception UDP, la lecture audio et ses écrans. | `DuplexNoyau`, `Systeme` |
 | `TamisNoyau` | logique pure de Tamis : fiche d'un cliché, tamisage par période et nature, strates, similarité (fenêtre glissante + union-find), élection de la meilleure photo, pistes, décisions et carnet persistés. Testable sur Linux. | — |
 | `Tamis` | l'accès PhotoKit (inventaire, pesée, suppression), l'analyse Vision, les écrans et la charte. | `TamisNoyau`, `Systeme` |
+| `IrisNoyau` | logique pure d'Iris : contrat du relais Iris, conversion AVCC → Annex-B et trame TCP, régulation par liaison (saut jusqu'à la clé suivante), réglages. Testable sur Linux. | — |
+| `Iris` | la caméra (AVFoundation, rotation à l'horizon), l'encodeur H.264 matériel (une compression pour tous les PC), la diffusion TCP directe sur le réseau local, le lien au relais du Pi, l'écran. Récepteurs PC et relais : dépôt `~/iris`. | `IrisNoyau`, `Systeme` |
 | `Systeme` | le socle de design commun : neutres, sémantiques, typo, grille, galbes, motion. | — |
-| `Echo` | **le pupitre** : point d'entrée, délégué d'application, sélecteur de monde. Cinq fichiers. | `Vigie`, `EchoHub`, `Saily`, `Duplex`, `Tamis`, `VigieNoyau`, `Systeme` |
+| `Echo` | **le pupitre** : point d'entrée, délégué d'application, sélecteur de monde. Cinq fichiers. | `Vigie`, `EchoHub`, `Saily`, `Duplex`, `Tamis`, `Iris`, `VigieNoyau`, `Systeme` |
 
 `Echo` est volontairement minuscule. Tout ce qui ressemble à une fonctionnalité
 appartient à un monde ; le pupitre ne fait que choisir lequel est devant et

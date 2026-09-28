@@ -19,6 +19,8 @@ public enum Monde: String, CaseIterable, Identifiable, Hashable, Sendable {
     case duplex
     /// Tamis — le tri de la photothèque, pour alléger iCloud.
     case tamis
+    /// Iris — la caméra de l'iPhone prêtée aux PC comme webcam.
+    case iris
 
     public var id: String { rawValue }
 
@@ -30,6 +32,7 @@ public enum Monde: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .saily: return "Capture"
         case .duplex: return "Son du PC"
         case .tamis: return "Photos"
+        case .iris: return "Caméra des PC"
         }
     }
 
@@ -40,6 +43,7 @@ public enum Monde: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .saily: return "Saily"
         case .duplex: return "Duplex"
         case .tamis: return "Tamis"
+        case .iris: return "Iris"
         }
     }
 
@@ -52,6 +56,7 @@ public enum Monde: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .saily: return "tray.full.fill"
         case .duplex: return "hifispeaker.2.fill"
         case .tamis: return "photo.stack.fill"
+        case .iris: return "video.fill"
         }
     }
 }

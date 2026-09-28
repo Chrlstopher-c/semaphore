@@ -9,6 +9,18 @@ Dernière mise à jour : **28/09/2026** — **Vigie v2** : le monde Vigie refait
 
 ---
 
+## 28/09/2026 — monde Iris (branche `dev`)
+
+- **Iris** : la caméra de l'iPhone devient la webcam « iPhone (Iris) » (`/dev/video10`) du portable et de la tour,
+  les deux à la fois. Capture AVFoundation, H.264 matériel encodé UNE fois, envoyé en TCP direct à chaque PC
+  (port 8798) ; le Pi (`iris.christophercouspeyre.com`) ne fait que présenter les PC. Un PC ne reçoit l'image que
+  si une application lit sa webcam. Récepteurs et relais : dépôt `~/iris`.
+- Clé partagée dans `.env.local` (`ECHO_CLE_IRIS`), injectée par `build.sh` ; `NSCameraUsageDescription` ajoutée.
+- **Vérifié** : noyau (15 tests `swift test`), compilation iOS, chaîne récepteur H.264/TCP → v4l2loopback (émetteur
+  simulé). **Non vérifié** : sur l'iPhone (capture, rotation, encodeur, liaison).
+
+---
+
 ## 28/09/2026 — Vigie v2 (branche `dev`)
 
 - **Pourquoi** : ccremote a été refondu (plus d'orchestrateur ni de mandats ; des sessions Claude Code persistantes

@@ -1,6 +1,7 @@
 #if canImport(SwiftUI)
 import Duplex
 import EchoHub
+import Iris
 import Saily
 import SwiftUI
 import Systeme
@@ -57,6 +58,7 @@ struct Pupitre: View {
             scene(.saily) { Saily.Coquille() }
             scene(.duplex) { Duplex.Coquille() }
             scene(.tamis) { Tamis.Coquille(visible: monde == .tamis) }
+            scene(.iris) { Iris.Coquille(visible: monde == .iris) }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

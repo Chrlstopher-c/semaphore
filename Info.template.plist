@@ -19,6 +19,11 @@
 	<string>http://10.0.0.2:8766</string>
 	<key>EchoAdresseEchoHub</key>
 	<string>http://10.0.0.2:8947</string>
+	<!-- Iris : le relais de signalisation et sa clé partagée (jamais réelle ici). -->
+	<key>EchoAdresseIris</key>
+	<string>wss://iris.example.com/ws</string>
+	<key>EchoCleIris</key>
+	<string></string>
 
 	<!-- ======== Vigie : le maintien en vie et les réveils ======== -->
 	<key>UIBackgroundModes</key>
@@ -82,6 +87,9 @@
 
 	<!-- ======== Tamis : la photothèque ========
 	     Sans cette clé, la première demande d'accès aux photos TUE le processus. -->
+	<!-- Iris : sans cette clé, le premier accès à la caméra tue le processus. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Iris prête la caméra de l'iPhone à tes ordinateurs, comme webcam.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Tamis trie ta photothèque pour alléger iCloud : strates, doublons, similaires. L'analyse se fait sur l'iPhone, aucune photo n'est envoyée.</string>
 

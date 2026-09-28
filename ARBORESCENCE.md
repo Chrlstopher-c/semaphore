@@ -305,3 +305,25 @@ Une ligne par fichier. Régénérée le 27/09/2026 — monde Tamis ajouté.
 - `Tests/TamisNoyauTests/SimilariteTests.swift`
 - `Tests/TamisNoyauTests/StratigraphieTests.swift`
 - `Tests/TamisNoyauTests/TamisageTests.swift`
+## Monde Iris (28/09/2026)
+- `Sources/Iris/Capture/CaptureCamera.swift`
+- `Sources/Iris/Capture/Encodeur.swift`
+- `Sources/Iris/Charte/CHARTE.md`
+- `Sources/Iris/Charte/Teinte.swift`
+- `Sources/Iris/Coquille/Coquille.swift`
+- `Sources/Iris/Ecran/AllureFilmer.swift`
+- `Sources/Iris/Ecran/Apercu.swift`
+- `Sources/Iris/Ecran/IrisEcran.swift`
+- `Sources/Iris/Ecran/PostesListe.swift`
+- `Sources/Iris/Poste/Configuration.swift`
+- `Sources/Iris/Poste/Emetteur.swift`
+- `Sources/Iris/Poste/Reglages.swift`
+- `Sources/Iris/Reseau/Diffusion.swift`
+- `Sources/Iris/Reseau/Signalisation.swift`
+- `Sources/IrisNoyau/Flux/AnnexeB.swift`
+- `Sources/IrisNoyau/Flux/Regulateur.swift`
+- `Sources/IrisNoyau/Protocole/MessageRelais.swift`
+- `Sources/IrisNoyau/Protocole/Reglages.swift`
+- `Tests/IrisNoyauTests/AnnexeBTests.swift`
+- `Tests/IrisNoyauTests/MessageRelaisTests.swift`
+- `Tests/IrisNoyauTests/RegulateurTests.swift`

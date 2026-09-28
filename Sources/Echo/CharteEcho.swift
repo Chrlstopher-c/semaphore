@@ -1,6 +1,7 @@
 #if canImport(SwiftUI)
 import Duplex
 import EchoHub
+import Iris
 import Saily
 import SwiftUI
 import Systeme
@@ -27,6 +28,7 @@ enum TeinteEcho {
         case .saily: return Saily.Teinte.accent
         case .duplex: return Duplex.Teinte.accent
         case .tamis: return Tamis.Teinte.accent
+        case .iris: return Iris.Teinte.accent
         }
     }
 }
