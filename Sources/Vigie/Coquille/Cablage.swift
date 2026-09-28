@@ -29,7 +29,6 @@ public final class Cablage {
     public func amorcer() async {
         guard !amorce else { return }
         amorce = true
-        _ = Voix.enregistrer
         DelegueApplication.ecouteur = Aiguillage.partage
         Aiguillage.partage.modele = modele
         brancher(jeton: Trousseau.lire())

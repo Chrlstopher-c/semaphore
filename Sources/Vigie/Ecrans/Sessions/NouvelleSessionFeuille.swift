@@ -6,7 +6,6 @@ import VigieNoyau
 
 struct NouvelleSessionFeuille: View {
     @Environment(ModeleRelais.self) private var modele
-    @Environment(\.palette) private var p
     @Environment(\.dismiss) private var fermer
     @State private var machine = ""
     @State private var projet: Projet?
@@ -26,12 +25,10 @@ struct NouvelleSessionFeuille: View {
                 Section("Quoi") {
                     TextField("Objectif (la session travaille jusqu’à l’atteindre)", text: $objectif, axis: .vertical).lineLimit(2...4)
                     TextField("Premier message", text: $message, axis: .vertical).lineLimit(3...8)
-                    Toggle("Autonomie", isOn: $autonomie).tint(p.accent)
+                    Toggle("Autonomie", isOn: $autonomie)
                 }
-                if let erreur { Section { Text(erreur).foregroundStyle(p.danger) } }
+                if let erreur { Section { Text(erreur).foregroundStyle(.red) } }
             }
-            .scrollContentBackground(.hidden)
-            .background(p.fond)
             .navigationTitle("Nouvelle session")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -43,8 +40,7 @@ struct NouvelleSessionFeuille: View {
             .onAppear(perform: choisirParDefaut)
         }
         .presentationDetents([.large])
-        .presentationCornerRadius(Rayon.feuille)
-        .tint(p.accent)
+        .presentationDragIndicator(.visible)
     }
 
     private var enLigne: [Machine] { modele.machines.filter(\.enLigne) }

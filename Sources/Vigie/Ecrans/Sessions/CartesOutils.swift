@@ -1,111 +1,72 @@
-// Un appel d'outil et un sous-agent dans le fil : une ligne compacte, qui se déplie pour tout voir (entrée, résultat,
-// et pour un sous-agent, chacun de ses outils et son rapport).
+// Un appel d'outil et un sous-agent dans le fil : `DisclosureGroup` natifs — une ligne, et tout le détail au toucher.
 #if canImport(SwiftUI)
 import SwiftUI
 import VigieNoyau
 
-struct CarteOutilVue: View {
-    @Environment(\.palette) private var p
+struct LigneOutil: View {
     let appel: AppelOutil
     let dossier: String
-    @State private var ouvert = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Espace.s) {
-            Button { withAnimation(Mouvement.standard) { ouvert.toggle() } } label: { entete }.buttonStyle(.plain)
-            if ouvert {
-                BlocMono(titre: "Entrée", texte: appel.detail, erreur: false)
-                if let r = appel.resultat { BlocMono(titre: r.erreur ? "Erreur" : "Résultat", texte: r.extrait, erreur: r.erreur) }
+        DisclosureGroup {
+            BlocCode(titre: "Entrée", texte: appel.detail, erreur: false)
+            if let r = appel.resultat { BlocCode(titre: r.erreur ? "Erreur" : "Résultat", texte: r.extrait, erreur: r.erreur) }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: Charte.symbole(appel.nom)).foregroundStyle(appel.resultat?.erreur == true ? .red : .secondary)
+                Text(appel.nom).font(.footnote.weight(.semibold))
+                Text(appel.resume.replacingOccurrences(of: dossier + "/", with: ""))
+                    .font(.footnote.monospaced()).foregroundStyle(.secondary).lineLimit(1)
+                if appel.resultat == nil { ProgressView().controlSize(.mini) }
             }
         }
-        .sensoryFeedback(.selection, trigger: ouvert)
-    }
-
-    private var entete: some View {
-        HStack(spacing: Espace.s) {
-            Image(systemName: "chevron.right").font(.system(size: 10, weight: .bold)).foregroundStyle(p.discret)
-                .rotationEffect(.degrees(ouvert ? 90 : 0))
-            Image(systemName: symbole(appel.nom)).font(.system(size: 12)).foregroundStyle(appel.resultat?.erreur == true ? p.danger : p.accentTexte)
-            Text(appel.nom).font(Voix.petit.weight(.bold)).foregroundStyle(p.encre)
-            Text(appel.resume.replacingOccurrences(of: dossier + "/", with: "")).font(Voix.etiquette).foregroundStyle(p.discret).lineLimit(1)
-            Spacer(minLength: 0)
-            if appel.resultat == nil { PointEtat(ton: .actif) }
-        }
-        .frame(minHeight: 32).contentShape(Rectangle())
+        .tint(.secondary)
     }
 }
 
-struct CarteSousAgentVue: View {
-    @Environment(\.palette) private var p
+struct LigneSousAgent: View {
     let agent: SousAgent
     let dossier: String
-    @State private var ouvert = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Espace.s) {
-            Button { withAnimation(Mouvement.standard) { ouvert.toggle() } } label: { entete }.buttonStyle(.plain)
-            if ouvert { interieur }
-        }
-        .carte()
-        .sensoryFeedback(.selection, trigger: ouvert)
-    }
-
-    private var entete: some View {
-        HStack(spacing: Espace.m) {
-            Image(systemName: "sparkles").font(.system(size: 14, weight: .semibold)).foregroundStyle(p.accentTexte)
-                .frame(width: 30, height: 30).background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(p.accentFond))
-            VStack(alignment: .leading, spacing: Espace.xs) {
-                Text(agent.description.isEmpty ? "Sous-agent" : agent.description).font(Voix.courant.weight(.bold))
-                    .foregroundStyle(p.encre).lineLimit(1)
-                Text("\(agent.genre) · \(agent.nombreOutils) outil\(agent.nombreOutils > 1 ? "s" : "")\(agent.modele.isEmpty ? "" : " · \(agent.modele)")")
-                    .font(Voix.etiquette).foregroundStyle(p.discret)
-            }
-            Spacer(minLength: 0)
-            Pastille(texte: agent.fin == nil ? "en cours" : "terminé", ton: agent.fin == nil ? .accent : .succes)
-        }
-        .contentShape(Rectangle())
-    }
-
-    private var interieur: some View {
-        VStack(alignment: .leading, spacing: Espace.xs) {
+        DisclosureGroup {
             ForEach(agent.interieur) { element in
-                if case .outil(let o) = element { CarteOutilVue(appel: o, dossier: dossier) }
+                if case .outil(let o) = element { LigneOutil(appel: o, dossier: dossier) }
             }
-            if let rapport = agent.rapport { BlocMono(titre: agent.fin == nil ? "Dernier message" : "Rapport", texte: rapport, erreur: false) }
+            if let rapport = agent.rapport { BlocCode(titre: agent.fin == nil ? "Dernier message" : "Rapport", texte: rapport, erreur: false) }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "sparkles").foregroundStyle(Charte.accent)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(agent.description.isEmpty ? "Sous-agent" : agent.description).font(.subheadline.weight(.semibold)).lineLimit(1)
+                    Text("\(agent.genre) · \(agent.nombreOutils) outil\(agent.nombreOutils > 1 ? "s" : "") · \(agent.fin == nil ? "en cours" : "terminé")")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
         }
-        .padding(.leading, Espace.m)
-        .overlay(alignment: .leading) { Rectangle().fill(p.accentFond).frame(width: 2) }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color(.secondarySystemBackground)))
+        .tint(.secondary)
     }
 }
 
-struct BlocMono: View {
-    @Environment(\.palette) private var p
+private struct BlocCode: View {
     let titre: String
     let texte: String
     let erreur: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Espace.xs) {
-            Text(titre.uppercased()).font(Voix.etiquette).tracking(1.2).foregroundStyle(p.discret)
+        VStack(alignment: .leading, spacing: 4) {
+            Text(titre).font(.caption2.weight(.semibold)).foregroundStyle(.secondary).textCase(.uppercase)
             ScrollView(.horizontal, showsIndicators: false) {
-                Text(texte.isEmpty ? "—" : String(texte.prefix(3_000))).font(.custom("JetBrains Mono", size: 11))
-                    .foregroundStyle(erreur ? p.danger : p.encreDouce).textSelection(.enabled)
+                Text(texte.isEmpty ? "—" : String(texte.prefix(3_000))).font(.caption.monospaced())
+                    .foregroundStyle(erreur ? .red : .primary).textSelection(.enabled)
             }
-            .padding(Espace.s)
+            .padding(8)
             .frame(maxWidth: .infinity, maxHeight: 220, alignment: .topLeading)
-            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(erreur ? p.danger.opacity(0.1) : p.surface2))
+            .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
-    }
-}
-
-private func symbole(_ outil: String) -> String {
-    switch outil {
-    case "Bash": return "terminal"
-    case "Read": return "doc.text"
-    case "Edit", "Write": return "pencil"
-    case "Grep", "Glob": return "magnifyingglass"
-    case "WebFetch", "WebSearch": return "globe"
-    default: return "wrench.and.screwdriver"
+        .padding(.vertical, 2)
     }
 }
 #endif

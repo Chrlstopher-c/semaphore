@@ -5,55 +5,63 @@ import VigieNoyau
 
 struct AlertesEcran: View {
     @Environment(ModeleRelais.self) private var modele
-    @Environment(\.palette) private var p
     let ouvrir: (String) -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Espace.m) {
-                EnTeteEcran(surtitre: "fil d’alerte", titre: "Alertes") {
-                    Button("Tout lu") { Task { _ = await modele.marquerLues() } }.buttonStyle(StyleBoutonDiscret())
-                        .disabled(modele.notifications.isEmpty)
-                }
+        NavigationStack {
+            List {
                 if modele.notifications.isEmpty {
-                    EtatVide(symbole: "bell.slash", titre: "Rien à signaler", texte: "Les objectifs atteints et les questions arrivent ici.")
+                    ContentUnavailableView("Rien à signaler", systemImage: "bell.slash",
+                                           description: Text("Les objectifs atteints et les questions arrivent ici."))
                 }
                 ForEach(modele.notifications) { n in
                     Button { if let s = n.sessionId { ouvrir(s) } } label: { LigneAlerte(notification: n) }
-                        .buttonStyle(.plain).padding(.horizontal, Espace.marge)
+                        .foregroundStyle(.primary)
                 }
             }
-            .padding(.bottom, Espace.xxl)
+            .listStyle(.plain)
+            .navigationTitle("Alertes")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Tout lu") { Task { _ = await modele.marquerLues() } }.disabled(modele.notifications.isEmpty)
+                }
+            }
         }
-        .background(p.fond.ignoresSafeArea())
     }
 }
 
 private struct LigneAlerte: View {
-    @Environment(\.palette) private var p
     let notification: NotificationRelais
 
     var body: some View {
-        HStack(alignment: .top, spacing: Espace.m) {
-            Circle().fill(couleur).frame(width: 8, height: 8).padding(.top, 6)
-            VStack(alignment: .leading, spacing: Espace.xs) {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: symbole).foregroundStyle(couleur)
+            VStack(alignment: .leading, spacing: 3) {
                 HStack {
-                    Text(notification.titre).font(Voix.courant.weight(.bold)).foregroundStyle(p.encre).lineLimit(1)
-                    Spacer(minLength: Espace.s)
-                    Text(Format.depuis(notification.ts)).font(Voix.etiquette).foregroundStyle(p.discret)
+                    Text(notification.titre).font(.subheadline.weight(.semibold)).lineLimit(1)
+                    Spacer()
+                    Text(Format.depuis(notification.ts)).font(.caption).foregroundStyle(.secondary)
                 }
-                Text(notification.texte).font(Voix.petit).foregroundStyle(p.encreDouce).lineLimit(3)
+                Text(notification.texte).font(.subheadline).foregroundStyle(.secondary).lineLimit(3)
             }
         }
-        .carte()
-        .opacity(notification.lue ? 0.6 : 1)
+        .opacity(notification.lue ? 0.55 : 1)
+        .padding(.vertical, 2)
+    }
+
+    private var symbole: String {
+        switch notification.niveau {
+        case .info: return "flag.fill"
+        case .important: return notification.titre.hasSuffix("question") ? "questionmark.circle.fill" : "checkmark.circle.fill"
+        case .alerte: return "exclamationmark.triangle.fill"
+        }
     }
 
     private var couleur: Color {
         switch notification.niveau {
-        case .info: return p.accentVif
-        case .important: return p.succes
-        case .alerte: return p.danger
+        case .info: return Charte.accent
+        case .important: return notification.titre.hasSuffix("question") ? .orange : .green
+        case .alerte: return .red
         }
     }
 }

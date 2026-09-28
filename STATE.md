@@ -18,8 +18,11 @@ Dernière mise à jour : **28/09/2026** — **Vigie v2** : le monde Vigie refait
   outil, jalons étape / objectif / question), Parc (mesures, réveil, extinction), Alertes, Réglages. Ouvrir une session
   sur n'importe quelle machine (projet d'une autre machine compris), lui parler, l'interrompre, la compacter, la reprendre,
   basculer son autonomie.
-- **Charte Echo Agency**, clair / night **selon le mode de l'iPhone** (le pupitre force le sombre ; Vigie relit
-  l'apparence de l'écran et l'impose à son seul sous-arbre). Manrope + JetBrains Mono embarquées.
+- **iOS natif Apple** (refonte du 28/09, choix de Chris : « ça fait trop webapp ») : listes groupées, balayage
+  Interrompre / Fermer, menus contextuels, menu « … » de session, fil façon Messages, outils en `DisclosureGroup`,
+  compositeur sur la matière `.bar`, formulaires système. Typo et couleurs du système ; la teinte Echo Agency
+  (brand-600 clair / brand-400 night) est le seul accent. **Le pupitre ne force plus le sombre quand Vigie est au
+  premier plan** : elle suit le mode de l'iPhone avec tout le natif (barres, barre d'état, listes).
 - **Veille conservée** (maintien en vie audio / localisation, réveils de fond, alarme de silence, échéance de
   signature) ; le centre d'alerte lit maintenant `/api/attente` du relais. **Répondre à une question de Claude depuis la
   notification** (action à saisie de texte, écran verrouillé).

@@ -1,9 +1,7 @@
-// La coquille de Vigie : connexion ou quatre onglets (Sessions, Parc, Alertes, Réglages), au thème de l'iPhone.
-// Le pupitre force le sombre pour toute l'app ; Vigie relit l'apparence réelle (celle de l'écran, que le pupitre ne
-// force pas) et l'impose à son seul sous-arbre.
+// La coquille de Vigie : connexion, ou quatre onglets natifs (Sessions, Parc, Alertes, Réglages) à la teinte Echo.
+// Le pupitre laisse Vigie suivre le mode de l'iPhone (clair / sombre) quand elle est au premier plan.
 #if canImport(SwiftUI)
 import SwiftUI
-import UIKit
 import VigieNoyau
 
 public struct Coquille: View {
@@ -11,25 +9,22 @@ public struct Coquille: View {
 
     @Environment(Cablage.self) private var cablage
     @Environment(\.scenePhase) private var phase
-    @State private var schema = Coquille.apparenceSysteme()
     @State private var onglet = Onglet.sessions
     @State private var pile = NavigationPath()
 
     public init() {}
 
     public var body: some View {
-        let palette = Palette.pour(schema)
         Group {
-            if cablage.connecte { onglets(palette) } else { ConnexionEcran() }
+            if cablage.connecte { onglets } else { ConnexionEcran() }
         }
-        .environment(\.colorScheme, schema)
-        .environment(\.palette, palette)
+        .tint(Charte.accent)
         .task { await cablage.amorcer() }
         .onChange(of: phase) { _, nouvelle in suivrePhase(nouvelle) }
         .onChange(of: Aiguillage.partage.sessionDemandee) { _, id in ouvrirDemandee(id) }
     }
 
-    private func onglets(_ p: Palette) -> some View {
+    private var onglets: some View {
         TabView(selection: $onglet) {
             Tab("Sessions", systemImage: "bubble.left.and.text.bubble.right", value: .sessions) {
                 NavigationStack(path: $pile) {
@@ -42,9 +37,6 @@ public struct Coquille: View {
                 .badge(cablage.modele.notifications.filter { !$0.lue && $0.niveau != .info }.count)
             Tab("Réglages", systemImage: "gearshape", value: .reglages) { ReglagesEcran() }
         }
-        .tint(p.accent)
-        .toolbarBackground(p.surface, for: .tabBar)
-        .toolbarBackground(.visible, for: .tabBar)
     }
 
     private func ouvrir(_ id: String) {
@@ -58,20 +50,15 @@ public struct Coquille: View {
         Aiguillage.partage.sessionDemandee = nil
     }
 
-    /// Premier plan : long-poll actif et relecture de l'apparence ; arrière-plan : la veille prend le relais.
+    /// Premier plan : long-poll actif ; arrière-plan : la veille (audio, réveils de fond) prend le relais.
     private func suivrePhase(_ nouvelle: ScenePhase) {
         switch nouvelle {
         case .active:
-            schema = Coquille.apparenceSysteme()
             cablage.modele.demarrer()
             Task { await CentreAlerte.partage.sonder(origine: .ouverture) }
         case .background: cablage.modele.arreter()
         default: break
         }
-    }
-
-    static func apparenceSysteme() -> ColorScheme {
-        UIScreen.main.traitCollection.userInterfaceStyle == .dark ? .dark : .light
     }
 }
 #endif

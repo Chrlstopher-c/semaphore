@@ -1,99 +1,93 @@
-// Le fil d'une session : messages de Chris, texte de Claude, outils dépliables, sous-agents et leur travail, jalons.
-// Collé en bas à l'arrivée d'un événement (défilement ancré), comme une conversation.
+// Le fil d'une session, façon Messages : bulles pour Chris, texte pour Claude, outils et sous-agents repliés en
+// `DisclosureGroup` natifs, jalons en libellés colorés. Ancré en bas, comme une conversation.
 #if canImport(SwiftUI)
 import SwiftUI
 import VigieNoyau
 
-struct FilVue: View {
-    @Environment(\.palette) private var p
+struct FilVue<Entete: View>: View {
     let evenements: [EvenementDate]
     let dossier: String
+    @ViewBuilder let entete: () -> Entete
 
     var body: some View {
         let elements = StructureFil.structurer(evenements)
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: Espace.s) {
+            LazyVStack(alignment: .leading, spacing: 10) {
+                entete()
                 if elements.isEmpty {
-                    EtatVide(symbole: "text.bubble", titre: "Rien pour l’instant", texte: "Le fil s’affiche dès que Claude travaille.")
+                    ContentUnavailableView("Rien pour l’instant", systemImage: "text.bubble",
+                                           description: Text("Le fil s’affiche dès que Claude travaille."))
                 }
                 ForEach(elements) { element in
                     switch element {
-                    case .outil(let o): CarteOutilVue(appel: o, dossier: dossier)
-                    case .sousAgent(let a): CarteSousAgentVue(agent: a, dossier: dossier)
-                    case .simple(_, let ts, let evt): ElementSimpleVue(evt: evt, ts: ts)
+                    case .outil(let o): LigneOutil(appel: o, dossier: dossier)
+                    case .sousAgent(let a): LigneSousAgent(agent: a, dossier: dossier)
+                    case .simple(_, let ts, let evt): ElementFil(evt: evt, ts: ts)
                     }
                 }
             }
-            .padding(.horizontal, Espace.marge).padding(.vertical, Espace.l)
+            .padding(.horizontal, 16).padding(.vertical, 12)
         }
         .defaultScrollAnchor(.bottom)
         .scrollDismissesKeyboard(.interactively)
+        .background(Color(.systemBackground))
     }
 }
 
-struct ElementSimpleVue: View {
-    @Environment(\.palette) private var p
+struct ElementFil: View {
     let evt: Evenement
     let ts: String
 
     var body: some View {
         switch evt {
-        case .message(let texte): bulle(texte)
-        case .texte(let texte, _): Text(markdown(texte)).font(Voix.lecture).foregroundStyle(p.encre).textSelection(.enabled)
-        case .reflexion(let texte, _): reflexion(texte)
-        case .etape(let resume, let suite): Jalon(symbole: "flag.fill", titre: "Étape livrée", texte: "\(resume)\n→ \(suite)", ton: p.accentTexte)
-        case .objectifAtteint(let bilan): Jalon(symbole: "checkmark.circle.fill", titre: "Objectif atteint", texte: bilan, ton: p.succes)
-        case .question(let q): Jalon(symbole: "questionmark.circle.fill", titre: "Question pour toi", texte: q, ton: p.alerte)
-        case .erreur(let m): Jalon(symbole: "exclamationmark.triangle.fill", titre: "Erreur", texte: m, ton: p.danger)
-        case .compaction(let avant, let apres, _): filet("compactée · \(Format.tokens(avant)) → \(Format.tokens(apres))")
-        case .relance(let raison): filet(raison)
+        case .message(let texte): Bulle(texte: texte)
+        case .texte(let texte, _): Text(markdown(texte)).font(.callout).textSelection(.enabled)
+        case .reflexion(let texte, _): Text(String(texte.prefix(900))).font(.footnote).italic().foregroundStyle(.secondary)
+        case .etape(let resume, let suite): Jalon(titre: "Étape livrée", texte: "\(resume)\n→ \(suite)", symbole: "flag.fill", couleur: Charte.accent)
+        case .objectifAtteint(let bilan): Jalon(titre: "Objectif atteint", texte: bilan, symbole: "checkmark.circle.fill", couleur: .green)
+        case .question(let q): Jalon(titre: "Question pour toi", texte: q, symbole: "questionmark.circle.fill", couleur: .orange)
+        case .erreur(let m): Jalon(titre: "Erreur", texte: m, symbole: "exclamationmark.triangle.fill", couleur: .red)
+        case .compaction(let avant, let apres, _): Signal(texte: "Compactée · \(Format.tokens(avant)) → \(Format.tokens(apres))")
+        case .relance(let raison): Signal(texte: raison)
         default: EmptyView()
         }
     }
+}
 
-    private func bulle(_ texte: String) -> some View {
+private struct Bulle: View {
+    let texte: String
+
+    var body: some View {
         HStack {
             Spacer(minLength: 48)
-            Text(texte).font(Voix.lecture).foregroundStyle(.white).padding(.horizontal, Espace.l).padding(.vertical, Espace.m)
-                .background(UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: 18, bottomTrailingRadius: 6,
-                                                   topTrailingRadius: 18, style: .continuous).fill(p.accent))
+            Text(texte).font(.callout).foregroundStyle(.white).textSelection(.enabled)
+                .padding(.horizontal, 14).padding(.vertical, 9)
+                .background(Charte.accent, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
-        .padding(.vertical, Espace.xs)
-    }
-
-    private func reflexion(_ texte: String) -> some View {
-        Text(String(texte.prefix(900))).font(Voix.petit).italic().foregroundStyle(p.discret)
-            .padding(.leading, Espace.m).overlay(alignment: .leading) { Rectangle().fill(p.filet).frame(width: 2) }
-    }
-
-    private func filet(_ texte: String) -> some View {
-        HStack(spacing: Espace.s) {
-            Rectangle().fill(p.filet).frame(height: 1)
-            Text(texte).font(Voix.etiquette).foregroundStyle(p.discret).lineLimit(1).fixedSize()
-            Rectangle().fill(p.filet).frame(height: 1)
-        }
-        .padding(.vertical, Espace.xs)
     }
 }
 
-struct Jalon: View {
-    @Environment(\.palette) private var p
-    let symbole: String
+private struct Jalon: View {
     let titre: String
     let texte: String
-    let ton: Color
+    let symbole: String
+    let couleur: Color
 
     var body: some View {
-        HStack(alignment: .top, spacing: Espace.m) {
-            Image(systemName: symbole).foregroundStyle(ton)
-            VStack(alignment: .leading, spacing: Espace.xs) {
-                Text(titre).font(Voix.petit.weight(.heavy)).foregroundStyle(ton)
-                Text(texte).font(Voix.lecture).foregroundStyle(p.encre)
-            }
-            Spacer(minLength: 0)
+        VStack(alignment: .leading, spacing: 4) {
+            Label(titre, systemImage: symbole).font(.subheadline.weight(.semibold)).foregroundStyle(couleur)
+            Text(texte).font(.callout).textSelection(.enabled)
         }
-        .padding(Espace.m)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(ton.opacity(0.12)))
+        .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+        .background(couleur.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
+private struct Signal: View {
+    let texte: String
+
+    var body: some View {
+        Text(texte).font(.caption2).foregroundStyle(.secondary).frame(maxWidth: .infinity)
     }
 }
 

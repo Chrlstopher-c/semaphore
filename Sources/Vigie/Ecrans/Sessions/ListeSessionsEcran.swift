@@ -1,100 +1,114 @@
-// Les sessions du parc, regroupées par machine ; un bouton pour en lancer une nouvelle.
-// Cet écran sert à choisir une session ; l'élément dominant est la liste des sessions ouvertes.
+// Les sessions du parc, en liste groupée par machine (usages d'Apple Mail) : balayer pour interrompre ou fermer,
+// toucher longuement pour tout le reste, rechercher, tirer pour rafraîchir.
 #if canImport(SwiftUI)
 import SwiftUI
 import VigieNoyau
 
 struct ListeSessionsEcran: View {
     @Environment(ModeleRelais.self) private var modele
-    @Environment(\.palette) private var p
     @State private var toutes = false
+    @State private var recherche = ""
     @State private var nouvelle = false
+    @State private var erreur: String?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Espace.l) {
-                EnTeteEcran(surtitre: etatLien, titre: "Sessions") {
-                    Button { nouvelle = true } label: { Image(systemName: "plus").font(.system(size: 18, weight: .bold)) }
-                        .buttonStyle(StyleBoutonPlein())
-                        .accessibilityLabel("Nouvelle session")
-                }
-                Picker("Filtre", selection: $toutes) {
-                    Text("Ouvertes").tag(false)
-                    Text("Toutes").tag(true)
-                }
-                .pickerStyle(.segmented).padding(.horizontal, Espace.marge)
-                groupes
+        List {
+            if visibles.isEmpty {
+                ContentUnavailableView(toutes ? "Aucune session" : "Aucune session ouverte", systemImage: "bubble.left.and.text.bubble.right",
+                                       description: Text("Lance-en une sur n’importe quelle machine du parc."))
             }
-            .padding(.bottom, Espace.xxl)
-        }
-        .background(p.fond.ignoresSafeArea())
-        .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $nouvelle) { NouvelleSessionFeuille() }
-        .refreshable { modele.arreter(); modele.demarrer() }
-    }
-
-    private var etatLien: String {
-        switch modele.lien {
-        case .connecte: return "relais connecté"
-        case .attente: return "connexion…"
-        case .coupe: return "relais injoignable"
-        case .nonConnecte: return "non connecté"
-        }
-    }
-
-    @ViewBuilder private var groupes: some View {
-        let visibles = modele.sessions.filter { toutes || $0.ouverte }
-        if visibles.isEmpty {
-            EtatVide(symbole: "bubble.left.and.text.bubble.right", titre: "Aucune session ouverte",
-                     texte: "Lance-en une sur n’importe quelle machine du parc.")
-        }
-        ForEach(Dictionary(grouping: visibles, by: \.machine).sorted { $0.key < $1.key }, id: \.key) { machine, liste in
-            VStack(alignment: .leading, spacing: Espace.s) {
-                Surtitre(texte: machine).padding(.horizontal, Espace.marge)
-                VStack(spacing: 0) {
-                    ForEach(liste) { s in
-                        NavigationLink(value: s.id) { LigneSession(session: s) }.buttonStyle(.plain)
-                        if s.id != liste.last?.id { Divider().overlay(p.filet).padding(.leading, Espace.xl + Espace.m) }
+            ForEach(groupes, id: \.machine) { groupe in
+                Section(groupe.machine) {
+                    ForEach(groupe.sessions) { s in
+                        NavigationLink(value: s.id) { LigneSession(session: s) }
+                            .swipeActions(edge: .trailing) { actionsBalayage(s) }
+                            .contextMenu { menuContextuel(s) }
                     }
                 }
-                .background(RoundedRectangle(cornerRadius: Rayon.carte, style: .continuous).fill(p.surface))
-                .overlay(RoundedRectangle(cornerRadius: Rayon.carte, style: .continuous).strokeBorder(p.filet))
-                .padding(.horizontal, Espace.marge)
             }
         }
+        .listStyle(.insetGrouped)
+        .navigationTitle("Sessions")
+        .searchable(text: $recherche, prompt: "Titre, projet, machine")
+        .refreshable { modele.arreter(); modele.demarrer() }
+        .toolbar { barreOutils }
+        .sheet(isPresented: $nouvelle) { NouvelleSessionFeuille() }
+        .alert("Commande refusée", isPresented: Binding(get: { erreur != nil }, set: { if !$0 { erreur = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: { Text(erreur ?? "") }
+    }
+
+    private var visibles: [Session] {
+        let q = recherche.trimmingCharacters(in: .whitespaces).lowercased()
+        return modele.sessions.filter { (toutes || estOuverte($0)) && (q.isEmpty || "\($0.titre) \($0.projet.nom) \($0.machine)".lowercased().contains(q)) }
+    }
+
+    private var groupes: [(machine: String, sessions: [Session])] {
+        Dictionary(grouping: visibles, by: \.machine).sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
+    }
+
+    /// Une machine hors ligne n'a plus de session vivante : ses sessions ne comptent pas comme ouvertes.
+    private func estOuverte(_ s: Session) -> Bool {
+        s.ouverte && (modele.machines.first { $0.id == s.machine }?.enLigne ?? false)
+    }
+
+    @ToolbarContentBuilder private var barreOutils: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Menu {
+                Picker("Afficher", selection: $toutes) {
+                    Label("Ouvertes", systemImage: "bolt").tag(false)
+                    Label("Toutes", systemImage: "tray.full").tag(true)
+                }
+            } label: { Image(systemName: "line.3.horizontal.decrease.circle") }
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Button { nouvelle = true } label: { Image(systemName: "plus") }.accessibilityLabel("Nouvelle session")
+        }
+    }
+
+    @ViewBuilder private func actionsBalayage(_ s: Session) -> some View {
+        if estOuverte(s) {
+            Button(role: .destructive) { agir(.fermer, s) } label: { Label("Fermer", systemImage: "power") }
+            Button { agir(.interrompre, s) } label: { Label("Interrompre", systemImage: "stop.fill") }.tint(.orange)
+        } else if s.claudeSessionId != nil {
+            Button { agir(.reprendre, s) } label: { Label("Reprendre", systemImage: "play.fill") }.tint(Charte.accent)
+        }
+    }
+
+    @ViewBuilder private func menuContextuel(_ s: Session) -> some View {
+        if estOuverte(s) {
+            Button { agir(.interrompre, s) } label: { Label("Interrompre", systemImage: "stop.fill") }
+            Button { agir(.compacter, s) } label: { Label("Compacter", systemImage: "arrow.down.right.and.arrow.up.left") }
+            Button(role: .destructive) { agir(.fermer, s) } label: { Label("Fermer", systemImage: "power") }
+        } else {
+            Button { agir(.reprendre, s) } label: { Label("Reprendre", systemImage: "play.fill") }.disabled(s.claudeSessionId == nil)
+        }
+    }
+
+    private func agir(_ action: ActionSession, _ s: Session) {
+        Task { erreur = await modele.agir(action, sur: s.id) }
     }
 }
 
 struct LigneSession: View {
-    @Environment(\.palette) private var p
     let session: Session
 
     var body: some View {
-        HStack(spacing: Espace.m) {
-            PointEtat(ton: ton(session.statut))
-            VStack(alignment: .leading, spacing: Espace.xs) {
-                Text(session.titre).font(Voix.courant.weight(.bold)).foregroundStyle(p.encre).lineLimit(1)
+        HStack(spacing: 12) {
+            PointEtat(statut: session.statut)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(session.titre).font(.body.weight(.semibold)).lineLimit(1)
                 Text("\(session.projet.nom) · \(session.statut.libelle.lowercased())")
-                    .font(Voix.etiquette).foregroundStyle(p.discret).lineLimit(1)
+                    .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
             }
-            Spacer(minLength: Espace.s)
-            if session.statut == .question { Pastille(texte: "?", ton: .alerte) }
+            Spacer(minLength: 8)
+            if session.statut == .question {
+                Image(systemName: "questionmark.circle.fill").foregroundStyle(.orange)
+            }
             Text(session.contexte.tokens > 0 ? Format.tokens(session.contexte.tokens) : Format.depuis(session.majLe))
-                .font(Voix.chiffre).foregroundStyle(p.discret).monospacedDigit()
-            Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(p.discret)
+                .font(.footnote.monospacedDigit()).foregroundStyle(.secondary)
         }
-        .padding(.horizontal, Espace.l)
-        .frame(minHeight: 60)
-        .contentShape(Rectangle())
-    }
-}
-
-func ton(_ statut: StatutSession) -> PointEtat.Ton {
-    switch statut {
-    case .demarrage, .travail, .compaction: return .actif
-    case .attente, .terminee: return .calme
-    case .question, .erreur: return .alerte
-    case .fermee: return .eteint
+        .padding(.vertical, 2)
     }
 }
 #endif

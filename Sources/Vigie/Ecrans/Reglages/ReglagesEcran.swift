@@ -5,7 +5,6 @@ import VigieNoyau
 
 struct ReglagesEcran: View {
     @Environment(Cablage.self) private var cablage
-    @Environment(\.palette) private var p
     @State private var maintien = PreferencesAlerte.maintienEnVie
 
     var body: some View {
@@ -16,19 +15,16 @@ struct ReglagesEcran: View {
                     Button("Se déconnecter", role: .destructive) { cablage.deconnecter() }
                 }
                 Section {
-                    Toggle("Veille en arrière-plan", isOn: $maintien).tint(p.accent)
+                    Toggle("Veille en arrière-plan", isOn: $maintien)
                         .onChange(of: maintien) { _, actif in basculerVeille(actif) }
                 } header: { Text("Veille") } footer: {
                     Text("Garde Vigie éveillée pour sonner les objectifs atteints et les questions, écran éteint.")
                 }
                 SanteVeille()
-                Section { Text("ccremote v2 · un outil Echo Agency").font(Voix.etiquette).foregroundStyle(p.discret) }
+                Section { Text("ccremote v2 · un outil Echo Agency").font(.footnote).foregroundStyle(.secondary) }
             }
-            .scrollContentBackground(.hidden)
-            .background(p.fond.ignoresSafeArea())
             .navigationTitle("Réglages")
         }
-        .tint(p.accent)
     }
 
     private func basculerVeille(_ actif: Bool) {
