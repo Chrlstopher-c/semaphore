@@ -9,6 +9,14 @@ import VideoToolbox
 /// depuis la file de capture (série), qui seule appelle `encoder` ; les
 /// demandes venues d'ailleurs (clé forcée, débit) passent par `demandes`, verrouillé.
 final class Encodeur: @unchecked Sendable {
+    /// `☠` La closure vit dans une classe, jamais nue dans le verrou : un type fonction
+    /// passé en `inout` générique est ré-abstrait à chaque `withLock` et s'enveloppe d'un
+    /// thunk de plus — une image après l'autre, la pile déborde au bout de ~3 min (SIGBUS).
+    private final class Livreur: Sendable {
+        let livrer: @Sendable (Data, Bool) -> Void
+        init(livrer: @escaping @Sendable (Data, Bool) -> Void) { self.livrer = livrer }
+    }
+
     private struct Demandes {
         var cle = false
         var debit: Int
@@ -19,7 +27,7 @@ final class Encodeur: @unchecked Sendable {
     private var hauteur: Int32 = 0
     private var debitApplique = 0
     private let demandes: OSAllocatedUnfairLock<Demandes>
-    private let sortie = OSAllocatedUnfairLock<(@Sendable (Data, Bool) -> Void)?>(initialState: nil)
+    private let sortie = OSAllocatedUnfairLock<Livreur?>(initialState: nil)
     private let journal = Logger(subsystem: "com.echo.labs", category: "iris.encodeur")
 
     init(debit: Int) {
@@ -29,7 +37,8 @@ final class Encodeur: @unchecked Sendable {
     /// Où partent les unités compressées : branché une fois, après construction
     /// (la diffusion et l'encodeur se connaissent mutuellement).
     func brancher(_ livrer: @escaping @Sendable (Data, Bool) -> Void) {
-        sortie.withLock { $0 = livrer }
+        let livreur = Livreur(livrer: livrer)
+        sortie.withLock { $0 = livreur }
     }
 
     /// Un PC vient de se joindre : il ne décode rien avant une image clé.
@@ -52,7 +61,7 @@ final class Encodeur: @unchecked Sendable {
         guard let session else { return }
         if voulu.debit != debitApplique { appliquerDebit(voulu.debit, a: session) }
         let proprietes = voulu.cle ? [kVTEncodeFrameOptionKey_ForceKeyFrame: kCFBooleanTrue!] as CFDictionary : nil
-        guard let livrer = sortie.withLock({ $0 }) else { return }
+        guard let livrer = sortie.withLock({ $0 })?.livrer else { return }
         let statut = VTCompressionSessionEncodeFrame(
             session, imageBuffer: image, presentationTimeStamp: instant, duration: .invalid,
             frameProperties: proprietes, infoFlagsOut: nil
