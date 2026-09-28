@@ -59,7 +59,7 @@ final class Emetteur {
     private func demarrer() async {
         panne = nil
         guard Parametres.urlRelais != nil else {
-            panne = "Clé Iris absente : ECHO_CLE_IRIS dans .env.local, puis recompiler."
+            panne = "Relais Iris non configuré : ECHO_CLE_IRIS et ECHO_ADRESSE_IRIS dans .env.local, puis recompiler."
             return
         }
         guard await AVCaptureDevice.requestAccess(for: .video) else {
