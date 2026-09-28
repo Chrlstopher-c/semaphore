@@ -1,0 +1,131 @@
+{
+  "version": 493,
+  "machines": [
+    {
+      "id": "pi",
+      "description": "Raspberry Pi, production (sites, relais) : exploitation seulement, aucun build",
+      "racines": [
+        "/mnt/projects"
+      ],
+      "projets": [
+        {
+          "machine": "pi",
+          "chemin": "/mnt/projects/ccremote-relais",
+          "nom": "ccremote-relais"
+        },
+        {
+          "machine": "pi",
+          "chemin": "/mnt/projects/ccremote-harness",
+          "nom": "ccremote-harness"
+        },
+        {
+          "machine": "pi",
+          "chemin": "/mnt/projects/claude-arcade",
+          "nom": "claude-arcade"
+        },
+        {
+          "machine": "pi",
+          "chemin": "/mnt/projects/Portfolio",
+          "nom": "Portfolio"
+        },
+        {
+          "machine": "pi",
+          "chemin": "/mnt/projects/access-gate",
+          "nom": "access-gate"
+        },
+        {
+          "machine": "pi",
+          "chemin": "/mnt/projects/saily",
+          "nom": "saily"
+        },
+        {
+          "machine": "pi",
+          "chemin": "/mnt/projects/studio",
+          "nom": "studio"
+        },
+        {
+          "machine": "pi",
+          "chemin": "/mnt/projects/homelab-vm-manager",
+          "nom": "homelab-vm-manager"
+        },
+        {
+          "machine": "pi",
+          "chemin": "/mnt/projects/nullnode-relay",
+          "nom": "nullnode-relay"
+        }
+      ],
+      "comptes": [
+        "principal"
+      ],
+      "version": "2.0.0",
+      "etat": {
+        "cpu": 3.3,
+        "memoire": {
+          "utilisee": 1018568704,
+          "totale": 3981168640
+        },
+        "disque": {
+          "utilise": 45961818112,
+          "total": 62239682560
+        },
+        "charge": 0.35,
+        "demarreeDepuis": 299011
+      },
+      "derniereVue": "2026-09-28T01:16:46.961Z",
+      "enLigne": true
+    }
+  ],
+  "sessions": [
+    {
+      "id": "45919252-ea37-43a2-8bc7-f11b2a16b1d2",
+      "machine": "pi",
+      "projet": {
+        "machine": "tour",
+        "chemin": "/tmp/ccremote-essai",
+        "nom": "ccremote-essai"
+      },
+      "cwd": "/home/pi/.local/share/ccremote/poste/espaces/45919252-ea37-43a2-8bc7-f11b2a16b1d2",
+      "titre": "Prod B3 — pi sur la tour",
+      "objectif": "Via ssh tour, lire /tmp/ccremote-essai/README.md et écrire sur la tour /tmp/ccremote-essai/RESUME.md (une phrase qui le résume), le vérifier via ssh, puis appeler objectif_atteint.",
+      "modele": "haiku",
+      "compte": "principal",
+      "autonomie": true,
+      "statut": "terminee",
+      "contexte": {
+        "tokens": 50658,
+        "max": 1000000
+      },
+      "etapes": 0,
+      "compactions": 0,
+      "claudeSessionId": "45919252-ea37-43a2-8bc7-f11b2a16b1d2",
+      "tmux": "claude-ccremote-essai",
+      "attachee": false,
+      "pilotee": true,
+      "creeLe": "2026-09-28T00:59:10.995Z",
+      "majLe": "2026-09-28T00:59:41.177Z"
+    }
+  ],
+  "notifications": [
+    {
+      "seq": 2,
+      "sessionId": "45919252-ea37-43a2-8bc7-f11b2a16b1d2",
+      "niveau": "important",
+      "titre": "Prod B3 — pi sur la tour — objectif atteint",
+      "texte": "Lecture du README.md sur tour confirmée. RESUME.md écrit et vérifié sur tour avec une phrase résumé du projet (essai temporaire pour valider v2 en production). Aucun reste.",
+      "ts": "2026-09-28T00:59:39.081Z",
+      "lue": false
+    },
+    {
+      "seq": 1,
+      "sessionId": "da988b04-09ef-4660-9535-6a625c829745",
+      "niveau": "important",
+      "titre": "Prod A — tour — objectif atteint",
+      "texte": "Objectif atteint : NOTES.md créé avec la date du jour (Mon Sep 28 02:45:45 AM CEST 2026), vérifié et commité sous le hash 85fa73c.",
+      "ts": "2026-09-28T00:45:55.599Z",
+      "lue": false
+    }
+  ],
+  "reveilPossible": [
+    "tour"
+  ]
+}

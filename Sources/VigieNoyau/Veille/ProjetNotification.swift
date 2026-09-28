@@ -17,39 +17,16 @@ public enum Insistance: String, Codable, Sendable {
 /// La nature du fait alerté. Détermine la catégorie (donc les boutons) et le
 /// regroupement dans le centre de notifications.
 public enum GenreAlerte: String, Codable, Sendable, CaseIterable {
-    /// Un mandat attend une autorisation humaine. Le seul genre qui porte des
-    /// boutons engageants.
-    case mandat
-    /// Une demande d'élargissement d'autonomie.
-    case rallonge
-    /// Une inspection a rendu un verdict de boucle et attend un arbitrage.
-    /// `☠` Sans boutons, délibérément : contrairement à un mandat, on ne peut
-    /// pas trancher sans avoir lu le motif du verdict. Deux boutons sur l'écran
-    /// verrouillé feraient arrêter — ou laisser courir — une équipe à l'aveugle.
-    case arbitrage
-    /// Un fil quitté en pleine génération vient de répondre.
-    case reponse
-    /// Une équipe a rendu.
-    case equipe
-    /// Une équipe s'est arrêtée sur un échec.
-    case echec
-    /// L'alarme de silence — voir `AlarmeSilence`.
+    case objectif
+    case question
+    case etape
+    case erreur
     case silence
-    /// La signature de l'IPA expire.
     case signature
-    /// Tout le reste : ce que le parc dit sans qu'on ait à agir.
-    case parc
 
-    /// Identifiant de catégorie `UNNotificationCategory`. Préfixe `vigie.` pour
-    /// ne jamais collisionner avec les catégories du laboratoire EchoLabs, qui
-    /// partage le même identifiant de paquet.
     public var categorie: String {
         switch self {
-        case .mandat: return "vigie.mandat"
-        case .rallonge: return "vigie.rallonge"
-        case .arbitrage: return "vigie.arbitrage"
-        case .reponse: return "vigie.fil"
-        case .equipe, .echec, .parc: return "vigie.parc"
+        case .objectif, .question, .etape, .erreur: return "vigie.session"
         case .silence: return "vigie.silence"
         case .signature: return "vigie.signature"
         }
@@ -57,15 +34,12 @@ public enum GenreAlerte: String, Codable, Sendable, CaseIterable {
 
     public var libelle: String {
         switch self {
-        case .mandat: return "Mandat"
-        case .rallonge: return "Rallonge"
-        case .arbitrage: return "Arbitrage"
-        case .reponse: return "Réponse"
-        case .equipe: return "Équipe"
-        case .echec: return "Échec"
+        case .objectif: return "Objectif atteint"
+        case .question: return "Question"
+        case .etape: return "Étape"
+        case .erreur: return "Erreur"
         case .silence: return "Silence"
         case .signature: return "Signature"
-        case .parc: return "Parc"
         }
     }
 }
@@ -123,10 +97,7 @@ extension ProjetNotification {
     /// Clés de `donnees`, écrites une fois. Une clé recopiée à la main dans un
     /// écran finit toujours par diverger de celle qui a été postée.
     public enum Cle {
-        public static let fil = "fil"
-        public static let mission = "mission"
-        public static let proposition = "proposition"
-        public static let rallonge = "rallonge"
         public static let genre = "genre"
+        public static let session = "session"
     }
 }
