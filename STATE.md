@@ -4,8 +4,29 @@ Résumé vivant, inter-sessions. Les décisions et leurs raisons sont dans
 `ARCHITECTURE.md` ; ce qui reste à faire et ce qui demande un arbitrage sont
 dans `TODO.md`.
 
-Dernière mise à jour : **27/09/2026** — monde **Tamis** ajouté et barre du
-pupitre refaite (branche `tamis`). Tamis tourne sur l'iPhone, analyse complète.
+Dernière mise à jour : **28/09/2026** — **Vigie v2** : le monde Vigie refait de zéro sur l'API ccremote v2
+(branche `dev`). Compilé, noyau éprouvé ; pas encore posé sur l'iPhone.
+
+---
+
+## 28/09/2026 — Vigie v2 (branche `dev`)
+
+- **Pourquoi** : ccremote a été refondu (plus d'orchestrateur ni de mandats ; des sessions Claude Code persistantes
+  dans tmux, pilotées depuis le relais du Pi). L'ancienne Vigie (18 500 lignes, conversation avec l'orchestrateur,
+  décisions, équipes) parlait à une API qui n'existe plus.
+- **Nouvelle Vigie** : onglets Sessions (fil détaillé : outils dépliables avec leur entrée, sous-agents suivis outil par
+  outil, jalons étape / objectif / question), Parc (mesures, réveil, extinction), Alertes, Réglages. Ouvrir une session
+  sur n'importe quelle machine (projet d'une autre machine compris), lui parler, l'interrompre, la compacter, la reprendre,
+  basculer son autonomie.
+- **Charte Echo Agency**, clair / night **selon le mode de l'iPhone** (le pupitre force le sombre ; Vigie relit
+  l'apparence de l'écran et l'impose à son seul sous-arbre). Manrope + JetBrains Mono embarquées.
+- **Veille conservée** (maintien en vie audio / localisation, réveils de fond, alarme de silence, échéance de
+  signature) ; le centre d'alerte lit maintenant `/api/attente` du relais. **Répondre à une question de Claude depuis la
+  notification** (action à saisie de texte, écran verrouillé).
+- **Premier plan** : un seul long-poll en vol (`/api/attente`), rendu par le relais dès qu'une session, un fil ou une
+  notification change ; le fil de la session affichée est suivi en direct.
+- **À vérifier sur l'iPhone** (non fait, Chris dormait) : connexion, rendu clair/sombre, polices, notification
+  « Répondre ».
 
 ---
 

@@ -11,6 +11,9 @@
 
 ## À constater sur l'appareil — Chris
 
+- [ ] **Vigie v2 sur l'iPhone** : poser l'IPA, se connecter, vérifier clair/sombre, polices, fil, et « Répondre »
+      depuis une notification de question. Les anciennes entrées Vigie ci-dessous (badge, canal, SondeChaine) sont
+      caduques depuis la refonte v2.
 - [ ] **La veille tient-elle le monde Machine ?** Lancer une génération longue
       dans EchoHub, éteindre l'écran, revenir : la réponse doit avoir continué.
       C'est LA promesse du centre, et elle n'est prouvée nulle part.

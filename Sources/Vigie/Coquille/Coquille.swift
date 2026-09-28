@@ -1,206 +1,77 @@
+// La coquille de Vigie : connexion ou quatre onglets (Sessions, Parc, Alertes, Réglages), au thème de l'iPhone.
+// Le pupitre force le sombre pour toute l'app ; Vigie relit l'apparence réelle (celle de l'écran, que le pupitre ne
+// force pas) et l'impose à son seul sous-arbre.
 #if canImport(SwiftUI)
 import SwiftUI
+import UIKit
 import VigieNoyau
 
-/// Les domaines de Vigie.
-///
-/// `☠` **C'est le SEUL point de couplage entre les domaines.** Aucun écran n'a
-/// le droit d'en nommer un autre autrement qu'à travers ce type.
-///
-/// La refonte d'août 2026 fusionne l'atterrissage et les décisions : `quart`
-/// et `decisions` mènent à la même pièce. Le défaut fondateur de la webapp
-/// était une décision noyée ; la réponse est une seule pièce d'entrée où la
-/// file se tranche directement, pas un accueil qui renvoie ailleurs.
-public enum Domaine: String, CaseIterable, Identifiable, Hashable, Sendable {
-    case quart
-    case decisions
-    case fil
-    case parc
-    case machines
-    case terminal
-    /// Portillon (roue dentée de l'en-tête du Quart), pas un onglet.
-    case reglages
-    /// La cloche de l'en-tête du Quart, et les notifications y renvoient.
-    case alerte
-
-    public var id: String { rawValue }
-
-    /// La barre : cinq entrées. Réglages et Alerte s'atteignent depuis
-    /// l'en-tête du Quart — on y va trop rarement pour un cinquième d'écran.
-    public static let barre: [Domaine] = [.quart, .fil, .parc, .machines, .terminal]
-
-    public var titre: String {
-        switch self {
-        case .quart: return "Quart"
-        case .decisions: return "Décisions"
-        case .fil: return "Fil"
-        case .parc: return "Parc"
-        case .machines: return "Machines"
-        case .terminal: return "Terminal"
-        case .reglages: return "Réglages"
-        case .alerte: return "Alerte"
-        }
-    }
-
-    /// Symboles volontairement anciens (iOS 14 au plus tard) : un symbole
-    /// absent se rend en carré vide, sans erreur ni avertissement.
-    public var symbole: String {
-        switch self {
-        case .quart: return "moon.stars.fill"
-        case .decisions: return "hand.raised.fill"
-        case .fil: return "bubble.left.and.bubble.right.fill"
-        case .parc: return "square.stack.3d.up.fill"
-        case .machines: return "desktopcomputer"
-        case .terminal: return "terminal.fill"
-        case .reglages: return "gearshape.fill"
-        case .alerte: return "bell.badge.fill"
-        }
-    }
-
-    /// La vue racine. Chaque racine s'instancie SANS argument : tout vient de
-    /// l'environnement (`\.clientPi`, `\.miroir`, `Cadence`, `Liaison`).
-    @MainActor @ViewBuilder
-    public var racine: some View {
-        switch self {
-        case .quart, .decisions: QuartEcran()
-        case .fil: FilEcran()
-        case .parc: ParcEcran()
-        case .machines: MachinesEcran()
-        case .terminal: TerminalEcran()
-        case .reglages: ReglagesEcran()
-        case .alerte: AlerteEcran()
-        }
-    }
-}
-
-/// Ce que la coquille sait du parc sans le sonder elle-même : les compteurs de
-/// badge, tenus à jour par les écrans qui lisent déjà ces routes. Aucun réseau
-/// ici — un badge n'achète pas un aller-retour de plus.
-@MainActor @Observable
-public final class TableauDeVeille {
-    public var decisionsEnAttente = 0
-    public var notificationsNonLues = 0
-
-    public init() {}
-}
-
-/// La coquille : cinq piles de navigation vivantes, la barre de veille en bas.
-///
-/// `☠` Les piles vivent en permanence — changer d'onglet ne rejette jamais la
-/// position de lecture. Conséquence : `onAppear` se déclenche pour les cinq,
-/// d'où `\.ecranVisible`, qui empêche quatre écrans invisibles de sonder le Pi.
 public struct Coquille: View {
-    @Environment(Cablage.self) private var cablage
-    @Environment(Cadence.self) private var cadence
-    @Environment(Liaison.self) private var liaison
-    @Environment(\.scenePhase) private var phaseScene
-    @Environment(\.clientPi) private var client
+    enum Onglet: Hashable { case sessions, parc, alertes, reglages }
 
-    @State private var onglet: Domaine = .quart
-    @State private var cheminQuart = NavigationPath()
-    @State private var cheminFil = NavigationPath()
-    @State private var veille = TableauDeVeille()
-    @State private var amorce = false
-    @State private var action = ActionRecue.partage
+    @Environment(Cablage.self) private var cablage
+    @Environment(\.scenePhase) private var phase
+    @State private var schema = Coquille.apparenceSysteme()
+    @State private var onglet = Onglet.sessions
+    @State private var pile = NavigationPath()
 
     public init() {}
 
     public var body: some View {
-        VStack(spacing: 0) {
-            contenu
-            BarreDeVeille(onglet: $onglet, decisions: veille.decisionsEnAttente)
+        let palette = Palette.pour(schema)
+        Group {
+            if cablage.connecte { onglets(palette) } else { ConnexionEcran() }
         }
-        .background(Teinte.fond.ignoresSafeArea())
-        .environment(veille)
-        .preferredColorScheme(.dark)
-        .task { await amorcer() }
-        .onChange(of: phaseScene) { _, phase in reagirALaScene(phase) }
-        .onChange(of: action.ouverture) { _, demande in suivre(demande) }
-        .fullScreenCover(isPresented: sessionAOuvrir) { EcranConnexion() }
+        .environment(\.colorScheme, schema)
+        .environment(\.palette, palette)
+        .task { await cablage.amorcer() }
+        .onChange(of: phase) { _, nouvelle in suivrePhase(nouvelle) }
+        .onChange(of: Aiguillage.partage.sessionDemandee) { _, id in ouvrirDemandee(id) }
     }
 
-    private var contenu: some View {
-        ZStack {
-            ForEach(Domaine.barre) { candidat in
-                pile(candidat)
-                    .opacity(candidat == onglet ? 1 : 0)
-                    .allowsHitTesting(candidat == onglet)
-                    .environment(\.ecranVisible, candidat == onglet)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    @ViewBuilder private func pile(_ domaine: Domaine) -> some View {
-        switch domaine {
-        case .quart:
-            NavigationStack(path: $cheminQuart) { racineNue(domaine) }
-        case .fil:
-            NavigationStack(path: $cheminFil) { racineNue(domaine) }
-        default:
-            NavigationStack { racineNue(domaine) }
-        }
-    }
-
-    private func racineNue(_ domaine: Domaine) -> some View {
-        domaine.racine
-            .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(for: Domaine.self) { pousse in
-                pousse.racine.toolbar(.hidden, for: .navigationBar)
-            }
-    }
-
-    /// La connexion s'impose dès que la session est requise : sans elle, rien
-    /// n'est lisible, il n'y a donc rien d'autre à montrer.
-    private var sessionAOuvrir: Binding<Bool> {
-        Binding(
-            get: { amorce && liaison.regime == .sessionRequise },
-            set: { _ in }
-        )
-    }
-
-    private func amorcer() async {
-        guard !amorce else { return }
-        await cablage.amorcer()
-        let ouverte = await client.sessionOuverte
-        if !ouverte { liaison.exigerSession() }
-        amorce = true
-    }
-
-    /// Une notification touchée mène à sa pièce. Les décisions vivent au
-    /// Quart ; Réglages et Alerte se poussent sur sa pile.
-    private func suivre(_ demande: OuvertureDemandee?) {
-        guard let demande else { return }
-        withAnimation(Elan.pose) {
-            switch demande.domaine {
-            case .quart, .decisions:
-                onglet = .quart
-            case .reglages, .alerte:
-                onglet = .quart
-                cheminQuart.append(demande.domaine)
-            case .fil:
-                onglet = .fil
-                if let fil = demande.fil {
-                    cheminFil.append(RouteFil.conversation(fil, ""))
+    private func onglets(_ p: Palette) -> some View {
+        TabView(selection: $onglet) {
+            Tab("Sessions", systemImage: "bubble.left.and.text.bubble.right", value: .sessions) {
+                NavigationStack(path: $pile) {
+                    ListeSessionsEcran().navigationDestination(for: String.self) { SessionEcran(id: $0) }
                 }
-            default:
-                onglet = demande.domaine
             }
+            .badge(cablage.modele.sessions.filter { $0.statut == .question }.count)
+            Tab("Parc", systemImage: "server.rack", value: .parc) { ParcEcran() }
+            Tab("Alertes", systemImage: "bell", value: .alertes) { AlertesEcran(ouvrir: ouvrir) }
+                .badge(cablage.modele.notifications.filter { !$0.lue && $0.niveau != .info }.count)
+            Tab("Réglages", systemImage: "gearshape", value: .reglages) { ReglagesEcran() }
         }
-        action.ouverture = nil
+        .tint(p.accent)
+        .toolbarBackground(p.surface, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
     }
 
-    private func reagirALaScene(_ phase: ScenePhase) {
-        cadence.scene(phase)
-        // Le rattrapage d'ouverture : le canal 2, déterministe — il rend compte
-        // de tout ce qui s'est passé pendant que Vigie ne tournait pas.
-        if phase == .active, amorce {
+    private func ouvrir(_ id: String) {
+        onglet = .sessions
+        pile = NavigationPath([id])
+    }
+
+    private func ouvrirDemandee(_ id: String?) {
+        guard let id else { return }
+        ouvrir(id)
+        Aiguillage.partage.sessionDemandee = nil
+    }
+
+    /// Premier plan : long-poll actif et relecture de l'apparence ; arrière-plan : la veille prend le relais.
+    private func suivrePhase(_ nouvelle: ScenePhase) {
+        switch nouvelle {
+        case .active:
+            schema = Coquille.apparenceSysteme()
+            cablage.modele.demarrer()
             Task { await CentreAlerte.partage.sonder(origine: .ouverture) }
+        case .background: cablage.modele.arreter()
+        default: break
         }
-        guard phase != .active else { return }
-        // Dernier instant garanti avant une mise à mort : le miroir doit être
-        // sur le disque, pas dans un regroupement d'écriture en attente.
-        Task { [miroir = cablage.miroir] in await miroir.ecrireMaintenant() }
+    }
+
+    static func apparenceSysteme() -> ColorScheme {
+        UIScreen.main.traitCollection.userInterfaceStyle == .dark ? .dark : .light
     }
 }
 #endif

@@ -42,7 +42,8 @@ let package = Package(
         .target(
             name: "Vigie",
             dependencies: ["VigieNoyau", "Systeme"],
-            exclude: ["Charte/CHARTE.md"]
+            // Manrope et JetBrains Mono (OFL), enregistrées au démarrage : la charte Echo Agency de Vigie v2.
+            resources: [.copy("Ressources/Polices")]
         ),
         .target(
             name: "EchoHub",

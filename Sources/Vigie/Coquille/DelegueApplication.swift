@@ -57,7 +57,6 @@ public final class DelegueApplication: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = RelaisNotifications.partage
-        Self.ecouteur = ActionRecue.partage
         // `☠` L'enregistrement des tâches de fond DOIT se faire ici, avant tout
         // retour : iOS refuse tout enregistrement passé le lancement, et l'échec
         // ne se manifeste qu'à l'exécution.
