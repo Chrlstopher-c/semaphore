@@ -22,28 +22,28 @@ final class Emetteur {
     @ObservationIgnored private var signalisation: Signalisation?
     @ObservationIgnored private var tacheRelais: Task<Void, Never>?
     @ObservationIgnored private var visible = false
+    @ObservationIgnored private var generation = 0
     @ObservationIgnored private let journal = Logger(subsystem: "com.echo.labs", category: "iris")
 
-    init() {
+    private init() {
         let depart = Reglages.charger()
         reglages = depart
         let encodeur = Encodeur(debit: depart.qualite.debit)
         let diffusion = Diffusion(
             cle: Parametres.cle,
             demanderCle: { @Sendable in encodeur.forcerCle() },
-            signaler: { @Sendable nom, etat in Task { @MainActor in Emetteur.courant?.noter(nom, etat) } }
+            signaler: { @Sendable nom, etat in Task { @MainActor in Emetteur.partage.noter(nom, etat) } }
         )
         encodeur.brancher { @Sendable unite, cle in diffusion.envoyer(unite, cle: cle) }
         self.encodeur = encodeur
         self.diffusion = diffusion
         capture = CaptureCamera(recevoir: { @Sendable image, instant in encodeur.encoder(image, instant: instant) })
-        Emetteur.courant = self
     }
 
-    /// L'unique émetteur du processus (une caméra, un monde) : c'est par lui que
-    /// les rappels venus des files réseau reviennent sur le fil principal sans
-    /// capturer un objet `@MainActor` dans une closure `@Sendable`.
-    @ObservationIgnored private static weak var courant: Emetteur?
+    /// L'unique émetteur du processus (une caméra, un monde). Pas de `@State Emetteur()` :
+    /// SwiftUI réévalue cet initialiseur à chaque reconstruction de la coquille, et les
+    /// rappels réseau partaient vers une instance jetée — liste des PC et état du relais perdus.
+    static let partage = Emetteur()
 
     // MARK: - Cycle de vie
 
@@ -141,16 +141,21 @@ final class Emetteur {
 
     private func lancerRelais() {
         guard let url = Parametres.urlRelais else { return }
+        generation += 1
+        let numero = generation
         let signalisation = Signalisation(
             url: url,
-            recevoir: { @Sendable message in await MainActor.run { Emetteur.courant?.recevoir(message) } },
-            changerEtat: { @Sendable etat in await MainActor.run { Emetteur.courant?.changer(etat) } }
+            recevoir: { @Sendable message in await MainActor.run { Emetteur.partage.recevoir(message, de: numero) } },
+            changerEtat: { @Sendable etat in await MainActor.run { Emetteur.partage.changer(etat, de: numero) } }
         )
         self.signalisation = signalisation
         tacheRelais = Task { await signalisation.tourner() }
     }
 
-    private func changer(_ etat: EtatRelais) {
+    /// `numero` : une signalisation annulée finit par annoncer `.repos` ; si une nouvelle
+    /// l'a déjà remplacée, cet état périmé ne doit pas écraser le sien.
+    private func changer(_ etat: EtatRelais, de numero: Int) {
+        guard numero == generation else { return }
         relais = etat
         if etat == .connecte, let signalisation {
             let texte = MessageSortant.reglages(cadrage: reglages.cadrage)
@@ -159,7 +164,8 @@ final class Emetteur {
         if etat == .remplace { tacheRelais = nil }
     }
 
-    private func recevoir(_ message: MessageRelais) {
+    private func recevoir(_ message: MessageRelais, de numero: Int) {
+        guard numero == generation else { return }
         switch message {
         case .recepteurs(let liste):
             recepteurs = liste

@@ -4,7 +4,7 @@ import SwiftUI
 
 public struct Coquille: View {
     private let visible: Bool
-    @State private var emetteur = Emetteur()
+    private let emetteur = Emetteur.partage
 
     /// `visible` : le relais n'est joint que monde devant ou flux en cours ;
     /// monté d'office par le pupitre, Iris ne doit rien ouvrir au lancement.
