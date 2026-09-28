@@ -25,6 +25,10 @@ let package = Package(
         // xtool exige exactement un produit `.library` : c'est l'app.
         .library(name: "Echo", targets: ["Echo"]),
     ],
+    // SwiftTerm : l'émulateur de terminal natif (UIKit) du terminal à distance de Vigie — copié, voir son manifeste.
+    dependencies: [
+        .package(path: "Vendor/SwiftTerm"),
+    ],
     targets: [
         // Les noyaux purs : aucun import SwiftUI ni UIKit, donc compilables et
         // testables sur Linux par `swift test`. Sans simulateur ni débogueur,
@@ -42,7 +46,7 @@ let package = Package(
         .target(name: "Systeme"),
         .target(
             name: "Vigie",
-            dependencies: ["VigieNoyau", "Systeme"]
+            dependencies: ["VigieNoyau", "Systeme", .product(name: "SwiftTerm", package: "SwiftTerm")]
         ),
         .target(
             name: "EchoHub",

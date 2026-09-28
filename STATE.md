@@ -9,6 +9,22 @@ Dernière mise à jour : **28/09/2026** — **Vigie v2** : le monde Vigie refait
 
 ---
 
+## 28/09/2026 soir — Vigie : accès à distance (branche `dev`)
+
+- Nouvel onglet **Accès** : chaque appareil du parc → Fichiers (parcourir, image zoomable, texte/code éditable et
+  enregistré, Markdown mis en forme, PDF/vidéo/son/documents par QuickLook, partage, dépôt de fichiers et de photos,
+  renommer, supprimer, nouveau dossier, fichiers cachés), Terminal (shell, ou « Terminal ici » depuis un dossier),
+  Sessions Claude (fil, terminal attaché à la session tmux, nouvelle session sur cette machine).
+- Tout passe par le relais ccremote (`/api/machines/:id/fichier(s)`, WebSocket `/api/terminal`, jeton en Bearer) :
+  marche en 4G. Terminal : SwiftTerm 1.20.0 copié dans `Vendor/SwiftTerm` (son manifeste retire les sources Apple dès
+  que l'hôte de compilation est Linux ; fichiers Apple/iOS gardés `canImport(UIKit)` pour `swift test`, rendu Metal
+  retiré). Session URL dédiée sans délai d'inactivité + ping 25 s.
+- **Vérifié** : noyau (tests `AppareilTests`), compilation iOS, et les mêmes requêtes que l'iPhone rejouées depuis le
+  VPS (dépôt/relecture/suppression, terminal par jeton en en-tête — ce qui a révélé et fait corriger un plantage du
+  relais). **Non vérifié** : sur l'iPhone lui-même.
+
+---
+
 ## 28/09/2026 — monde Iris (branche `dev`)
 
 - **Iris** : la caméra de l'iPhone devient la webcam « iPhone (Iris) » (`/dev/video10`) du portable et de la tour,

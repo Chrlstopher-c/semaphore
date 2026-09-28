@@ -17,6 +17,13 @@ Une ligne par fichier. Régénérée le 27/09/2026 — monde Tamis ajouté.
 - `build.sh`
 - `deploy.sh`
 - `xtool.yml`
+- `Sources/Vigie/Ecrans/Acces/AccesEcran.swift`
+- `Sources/Vigie/Ecrans/Acces/DossierEcran.swift`
+- `Sources/Vigie/Ecrans/Acces/FichierEcran.swift`
+- `Sources/Vigie/Ecrans/Acces/TerminalEcran.swift`
+- `Sources/VigieNoyau/Contrat/Appareil.swift`
+- `Tests/VigieNoyauTests/AppareilTests.swift`
+- `Vendor/SwiftTerm/` — émulateur de terminal (MIT), copié et adapté (voir son `Package.swift`)
 - `Sources/Vigie/Alerte/Armement.swift`
 - `Sources/Vigie/Alerte/Categories.swift`
 - `Sources/Vigie/Alerte/CentreAlerte.swift`

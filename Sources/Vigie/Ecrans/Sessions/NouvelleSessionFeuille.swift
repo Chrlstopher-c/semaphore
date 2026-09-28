@@ -7,7 +7,11 @@ import VigieNoyau
 struct NouvelleSessionFeuille: View {
     @Environment(ModeleRelais.self) private var modele
     @Environment(\.dismiss) private var fermer
-    @State private var machine = ""
+    @State private var machine: String
+
+    init(machine: String = "") {
+        _machine = State(initialValue: machine)
+    }
     @State private var projet: Projet?
     @State private var objectif = ""
     @State private var message = ""
@@ -69,6 +73,7 @@ struct NouvelleSessionFeuille: View {
     }
 
     private func choisirParDefaut() {
+        if projet == nil, let choisie = enLigne.first(where: { $0.id == machine }) { projet = choisie.projets.first }
         guard machine.isEmpty, let premiere = enLigne.first(where: { $0.id == "tour" }) ?? enLigne.first else { return }
         machine = premiere.id
         projet = premiere.projets.first
