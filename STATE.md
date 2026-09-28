@@ -15,7 +15,8 @@ Dernière mise à jour : **28/09/2026** (nuit : monde Lueur) — **Vigie v2** : 
   (dépôt local `~/lueur`, API HTTP, adresse dans `.env.local` → `ECHO_ADRESSE_LUEUR`). Roue chromatique HSV exacte,
   interrupteur au cœur, intensité, préréglages + favoris, animations du contrôleur avec interrupteur « Animation » et
   vitesse. File d'envoi « la dernière gagne » par famille de commande (noyau `LueurNoyau`, 8 tests).
-- **Vérifié** : noyau (`swift test`), compilation iOS sans avertissement. **Non vérifié** : sur l'iPhone.
+- **Vérifié** : noyau (`swift test`), compilation iOS sans avertissement, et **sur l'iPhone** par Chris le 29/09
+  (« tout fonctionne », après correction côté serveur du Pi : trames BLE de 9 octets).
 
 ---
 
