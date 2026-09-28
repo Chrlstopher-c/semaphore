@@ -19,6 +19,7 @@ public enum Route {
 
     public static func messages(_ session: String) -> String { "/api/sessions/\(session)/messages" }
     public static func autonomie(_ session: String) -> String { "/api/sessions/\(session)/autonomie" }
+    public static func repondre(_ session: String) -> String { "/api/sessions/\(session)/repondre" }
     public static func action(_ session: String, _ action: ActionSession) -> String {
         "/api/sessions/\(session)/\(action.rawValue)"
     }

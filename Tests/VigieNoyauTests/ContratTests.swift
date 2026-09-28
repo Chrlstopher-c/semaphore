@@ -33,3 +33,15 @@ private func echantillon(_ nom: String) throws -> Data {
     let evts = try JSONDecoder().decode([EvenementDate].self, from: Data(json.utf8))
     #expect(evts.first?.evt == .inconnu(type: "futur"))
 }
+
+@Test func dialogueDuRelaisDecodeEtReponseSEncodeSansChampsVides() throws {
+    let json = """
+    {"id":"menu-j85da49pqtaq","titre":"Quelle est votre ville préférée?","options":[{"libelle":"Paris",\
+    "description":"La capitale française"},{"libelle":"Type something.","description":""}],"multiple":false,\
+    "saisie":1,"coches":[]}
+    """
+    let d = try JSONDecoder().decode(Dialogue.self, from: Data(json.utf8))
+    #expect(d.saisie == 1 && d.options.first?.libelle == "Paris" && !d.multiple)
+    let r = String(decoding: try JSONEncoder().encode(ReponseDialogue(id: d.id, index: 0)), as: UTF8.self)
+    #expect(r.contains("\"index\":0") && !r.contains("texte") && !r.contains("cases"))
+}

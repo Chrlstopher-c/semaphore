@@ -106,7 +106,7 @@ struct LigneSession: View {
                     .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer(minLength: 8)
-            if session.statut == .question {
+            if session.statut == .question || session.dialogue != nil {
                 Image(systemName: "questionmark.circle.fill").foregroundStyle(.orange)
             }
             Text(session.contexte.tokens > 0 ? Format.tokens(session.contexte.tokens) : Format.depuis(session.majLe))

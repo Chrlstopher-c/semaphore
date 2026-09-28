@@ -17,6 +17,10 @@ extension ModeleRelais {
         await executer { try await $0.ecrire(Route.action(session, action), Vide()) }
     }
 
+    func repondre(_ reponse: ReponseDialogue, a session: String) async -> String? {
+        await executer { try await $0.ecrire(Route.repondre(session), reponse) }
+    }
+
     func basculerAutonomie(_ active: Bool, de session: String) async -> String? {
         await executer { try await $0.ecrire(Route.autonomie(session), Active(active: active)) }
     }

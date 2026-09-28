@@ -13,7 +13,7 @@ struct SessionEcran: View {
         Group {
             if let s = modele.session(id) {
                 FilVue(evenements: modele.fils[id] ?? [], dossier: s.cwd, entete: { EtatSession(session: s) })
-                    .safeAreaInset(edge: .bottom) { basDePage(s) }
+                    .safeAreaInset(edge: .bottom) { VStack(spacing: 0) { basDePage(s) } }
                     .navigationTitle(s.titre)
                     .toolbar { ToolbarItem(placement: .topBarTrailing) { MenuSession(session: s, erreur: $erreur) } }
             } else {
@@ -35,6 +35,9 @@ extension SessionEcran {
     /// Le compositeur, ou la raison pour laquelle on ne peut pas écrire (machine éteinte, session de terminal).
     @ViewBuilder func basDePage(_ s: Session) -> some View {
         let enLigne = modele.machines.first { $0.id == s.machine }?.enLigne ?? false
+        if let d = s.dialogue {
+            DialogueVue(session: s.id, dialogue: d, repondable: enLigne && s.ouverte, erreur: $erreur)
+        }
         if !enLigne {
             LectureSeule(texte: "\(s.machine) est hors ligne : réveille-la pour reprendre cette session.", symbole: "moon.zzz",
                          action: modele.reveilPossible.contains(s.machine) ? ("Réveiller", { _ = await modele.reveiller(s.machine) }) : nil)

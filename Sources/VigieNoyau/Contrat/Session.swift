@@ -43,6 +43,39 @@ public struct Contexte: Codable, Sendable, Equatable {
     public var ratio: Double { max > 0 ? Double(tokens) / Double(max) : 0 }
 }
 
+/// Un dialogue du TUI qui attend une réponse (AskUserQuestion, permission, validation de plan), relevé à l'écran du
+/// pane par le poste : une question à la fois, comme au clavier.
+public struct Dialogue: Codable, Sendable, Equatable {
+    public struct Option: Codable, Sendable, Equatable {
+        public let libelle: String
+        public let description: String
+    }
+
+    public let id: String
+    public let titre: String
+    public let options: [Option]
+    /// Cases à cocher (AskUserQuestion multiSelect).
+    public let multiple: Bool
+    /// L'option « Type something » : réponse libre.
+    public let saisie: Int?
+    public let coches: [Int]
+}
+
+/// Choix unique : `index`. Choix multiple : `cases` (état voulu de toutes les cases). `texte` : réponse libre.
+public struct ReponseDialogue: Codable, Sendable, Equatable {
+    public let id: String
+    public let index: Int?
+    public let cases: [Int]?
+    public let texte: String?
+
+    public init(id: String, index: Int? = nil, cases: [Int]? = nil, texte: String? = nil) {
+        self.id = id
+        self.index = index
+        self.cases = cases
+        self.texte = texte
+    }
+}
+
 public struct Session: Codable, Sendable, Identifiable, Equatable {
     public let id: String
     public let machine: String
@@ -63,6 +96,8 @@ public struct Session: Codable, Sendable, Identifiable, Equatable {
     public let pilotee: Bool
     /// Vivante dans un terminal ordinaire, hors tmux : suivie en lecture seule (absent des relais anciens).
     public let terminal: Bool?
+    /// Dialogue du TUI en attente d'une réponse (absent des relais anciens).
+    public let dialogue: Dialogue?
     public let creeLe: String
     public let majLe: String
 
