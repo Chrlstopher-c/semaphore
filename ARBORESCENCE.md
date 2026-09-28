@@ -334,3 +334,20 @@ Une ligne par fichier. Régénérée le 27/09/2026 — monde Tamis ajouté.
 - `Tests/IrisNoyauTests/AnnexeBTests.swift`
 - `Tests/IrisNoyauTests/MessageRelaisTests.swift`
 - `Tests/IrisNoyauTests/RegulateurTests.swift`
+
+## Monde Lueur (28/09/2026)
+- `Sources/Lueur/Charte/CHARTE.md`
+- `Sources/Lueur/Charte/Teinte.swift`
+- `Sources/Lueur/Coquille/Coquille.swift`
+- `Sources/Lueur/Ecran/Effets.swift`
+- `Sources/Lueur/Ecran/LueurEcran.swift`
+- `Sources/Lueur/Ecran/Nuancier.swift`
+- `Sources/Lueur/Ecran/Roue.swift`
+- `Sources/Lueur/Liaison/Client.swift`
+- `Sources/Lueur/Liaison/Lampe.swift`
+- `Sources/Lueur/Liaison/Parametres.swift`
+- `Sources/LueurNoyau/Couleur/Nuance.swift`
+- `Sources/LueurNoyau/Couleur/Roue.swift`
+- `Sources/LueurNoyau/Protocole/Commande.swift`
+- `Sources/LueurNoyau/Protocole/EtatLumiere.swift`
+- `Tests/LueurNoyauTests/LueurNoyauTests.swift`

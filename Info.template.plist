@@ -24,6 +24,9 @@
 	<string>wss://iris.example.com/ws</string>
 	<key>EchoCleIris</key>
 	<string></string>
+	<!-- Lueur : le serveur du ruban de LED, sur le Pi (réseau local). -->
+	<key>EchoAdresseLueur</key>
+	<string>http://10.0.0.2:8450</string>
 
 	<!-- ======== Vigie : le maintien en vie et les réveils ======== -->
 	<key>UIBackgroundModes</key>

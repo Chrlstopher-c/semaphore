@@ -49,7 +49,9 @@ qui couple deux domaines indépendants.
 | `IrisNoyau` | logique pure d'Iris : contrat du relais Iris, conversion AVCC → Annex-B et trame TCP, régulation par liaison (saut jusqu'à la clé suivante), réglages. Testable sur Linux. | — |
 | `Iris` | la caméra (AVFoundation, rotation à l'horizon), l'encodeur H.264 matériel (une compression pour tous les PC), la diffusion TCP directe sur le réseau local, le lien au relais du Pi, l'écran. Récepteurs PC et relais : dépôt `~/iris`. | `IrisNoyau`, `Systeme` |
 | `Systeme` | le socle de design commun : neutres, sémantiques, typo, grille, galbes, motion. | — |
-| `Echo` | **le pupitre** : point d'entrée, délégué d'application, sélecteur de monde. Cinq fichiers. | `Vigie`, `EchoHub`, `Saily`, `Duplex`, `Tamis`, `Iris`, `VigieNoyau`, `Systeme` |
+| `LueurNoyau` | logique pure de Lueur : nuance ↔ hexadécimal ↔ place sur la roue (HSV, repère écran), contrat de l'API du serveur Lueur, file d'envoi « la dernière gagne » par famille. Testable sur Linux. | — |
+| `Lueur` | le ruban de LED par le serveur Lueur du Pi (HTTP, réseau local) : la lampe (état + file), la roue, le nuancier, les effets. Serveur et protocole ELK-BLEDOM : dépôt `~/lueur`. | `LueurNoyau`, `Systeme` |
+| `Echo` | **le pupitre** : point d'entrée, délégué d'application, sélecteur de monde. Cinq fichiers. | `Vigie`, `EchoHub`, `Saily`, `Duplex`, `Tamis`, `Iris`, `Lueur`, `VigieNoyau`, `Systeme` |
 
 `Echo` est volontairement minuscule. Tout ce qui ressemble à une fonctionnalité
 appartient à un monde ; le pupitre ne fait que choisir lequel est devant et

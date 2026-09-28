@@ -2,6 +2,7 @@
 import Duplex
 import EchoHub
 import Iris
+import Lueur
 import Saily
 import SwiftUI
 import Systeme
@@ -29,6 +30,7 @@ enum TeinteEcho {
         case .duplex: return Duplex.Teinte.accent
         case .tamis: return Tamis.Teinte.accent
         case .iris: return Iris.Teinte.accent
+        case .lueur: return Lueur.Teinte.accent
         }
     }
 }

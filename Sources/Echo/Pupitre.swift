@@ -2,6 +2,7 @@
 import Duplex
 import EchoHub
 import Iris
+import Lueur
 import Saily
 import SwiftUI
 import Systeme
@@ -59,6 +60,7 @@ struct Pupitre: View {
             scene(.duplex) { Duplex.Coquille() }
             scene(.tamis) { Tamis.Coquille(visible: monde == .tamis) }
             scene(.iris) { Iris.Coquille(visible: monde == .iris) }
+            scene(.lueur) { Lueur.Coquille(visible: monde == .lueur) }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
