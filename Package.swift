@@ -26,14 +26,19 @@ let package = Package(
         .library(name: "Echo", targets: ["Echo"]),
     ],
     // SwiftTerm : l'émulateur de terminal natif (UIKit) du terminal à distance de Vigie — copié, voir son manifeste.
+    // swift-crypto : seulement sous Linux, où CryptoKit n'existe pas ; l'API est la même (tests `swift test`).
     dependencies: [
         .package(path: "Vendor/SwiftTerm"),
+        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.0.0"),
     ],
     targets: [
         // Les noyaux purs : aucun import SwiftUI ni UIKit, donc compilables et
         // testables sur Linux par `swift test`. Sans simulateur ni débogueur,
         // c'est la seule preuve automatique dont dispose ce projet.
-        .target(name: "VigieNoyau"),
+        .target(
+            name: "VigieNoyau",
+            dependencies: [.product(name: "Crypto", package: "swift-crypto", condition: .when(platforms: [.linux]))]
+        ),
         .target(name: "EchoHubNoyau"),
         .target(name: "SailyNoyau"),
         .target(name: "DuplexNoyau"),
