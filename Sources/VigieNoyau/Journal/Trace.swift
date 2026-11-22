@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(os)
+import os
+#endif
 
 /// Le seul journal de Vigie.
 ///
@@ -44,6 +47,15 @@ public enum Trace {
     private static func ecrire(_ niveau: NiveauTrace, _ domaine: String, _ message: String) {
         guard niveau >= seuil else { return }
         print("\(horodatage()) [\(marque(niveau))][\(domaine)] \(message)")
+        #if canImport(os)
+        // Depuis iOS 17, la sortie standard n'arrive plus dans idevicesyslog : le journal unifié, lui, y arrive
+        // (sous-système « vigie », message public pour être lisible hors débogueur).
+        let journal = Logger(subsystem: "vigie", category: domaine)
+        switch niveau {
+        case .erreur: journal.error("\(message, privacy: .public)")
+        default: journal.notice("\(message, privacy: .public)")
+        }
+        #endif
     }
 
     private static func marque(_ niveau: NiveauTrace) -> String {
