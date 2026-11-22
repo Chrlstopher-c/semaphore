@@ -62,26 +62,37 @@ final class MoteurVocal {
         lecteur.stop()
     }
 
+    /// Le traitement de la voix n'est activé qu'UNE fois, sur un moteur unique : l'activer sur un moteur neuf fait
+    /// reconfigurer la puce, qui reposte un changement de configuration — reconstruire à chaque fois bouclait sans fin
+    /// (journal iPhone du 22/11 : le micro ne tournait jamais). Sur changement, on rebranche le même moteur.
     private func construire() throws {
         let moteur = AVAudioEngine()
-        let entree = moteur.inputNode
         do {
-            try entree.setVoiceProcessingEnabled(true)
+            try moteur.inputNode.setVoiceProcessingEnabled(true)
         } catch {
             Trace.erreur("vocal", "traitement de la voix indisponible (écho possible)", error)
         }
+        let lecteur = AVAudioPlayerNode()
+        moteur.attach(lecteur)
+        self.moteur = moteur
+        self.lecteur = lecteur
+        try brancher()
+    }
+
+    /// (Re)branche le micro et la voix sur le moteur courant puis le démarre.
+    private func brancher() throws {
+        guard let moteur else { throw ErreurVocale("moteur absent") }
+        let entree = moteur.inputNode
+        entree.removeTap(onBus: 0)
         let format = entree.outputFormat(forBus: 0)
         guard format.sampleRate > 0, format.channelCount > 0 else {
             throw ErreurVocale("micro sans format exploitable")
         }
-        let lecteur = AVAudioPlayerNode()
-        moteur.attach(lecteur)
+        moteur.disconnectNodeOutput(lecteur)
         moteur.connect(lecteur, to: moteur.mainMixerNode, format: Self.formatLecture)
         entree.installTap(onBus: 0, bufferSize: 1024, format: format, block: Self.bloc(surMicro))
         moteur.prepare()
         try moteur.start()
-        self.moteur = moteur
-        self.lecteur = lecteur
     }
 
     private func demonter() {
@@ -91,24 +102,27 @@ final class MoteurVocal {
         moteur = nil
     }
 
+    /// Changement de configuration : on attend que la puce se stabilise (les notifications arrivent en rafale),
+    /// puis on rebranche le même moteur. Plusieurs changements pendant l'attente n'en font qu'un.
     private func reconstruire() {
-        // La puce change de configuration en arrêtant le moteur ; s'il tourne encore, rien à reconstruire.
-        guard reconstruction == nil, observateur != nil, moteur?.isRunning != true else { return }
+        guard observateur != nil else { return }
+        reconstruction?.cancel()
         reconstruction = Task { @MainActor in
-            defer { reconstruction = nil }
             for essai in 1...5 {
-                demonter()
-                try? await Task.sleep(for: .milliseconds(150 * essai))
+                try? await Task.sleep(for: .milliseconds(250 * essai))
                 guard !Task.isCancelled else { return }
+                if moteur?.isRunning == true { reconstruction = nil; return }
                 do {
-                    try construire()
-                    Trace.info("vocal", "moteur reconstruit (essai \(essai))")
+                    try brancher()
+                    Trace.info("vocal", "moteur rebranché (essai \(essai))")
+                    reconstruction = nil
                     surReconstruit?()
                     return
                 } catch {
-                    Trace.erreur("vocal", "reconstruction du moteur, essai \(essai)", error)
+                    Trace.erreur("vocal", "rebranchement du moteur, essai \(essai)", error)
                 }
             }
+            reconstruction = nil
         }
     }
 
