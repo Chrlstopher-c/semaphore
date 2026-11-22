@@ -27,7 +27,8 @@ struct AutreElement: View {
         case .dialogueResolu(let d, let reponses, let decision): Signal(texte: resolu(d, reponses, decision))
         case .fichiersTour(_, let fichiers): Signal(texte: modifies(fichiers))
         case .tourAnnule: Signal(texte: "Modifications du tour annulées")
-        case .image(_, let nom, _, _, _, _): Piece(symbole: "photo", nom: nom)
+        case .image(let fichier, let nom, _, _, let origine, _):
+            ImageFil(fichier: fichier, nom: nom, deChris: origine == "utilisateur")
         case .fichier(_, let nom, _, let taille, _):
             Piece(symbole: "doc", nom: "\(nom) · \(Format.octets(Double(taille)))")
         case .relais(let sens, _, let titre, let texte):

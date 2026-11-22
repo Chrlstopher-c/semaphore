@@ -7,12 +7,24 @@ import VigieNoyau
 extension ModeleRelais {
     private struct Jusqua: Encodable { let jusqua: Int }
 
-    public func envoyer(_ texte: String, a session: String) async -> String? {
-        await executer { try await $0.ecrire(Route.messages(session), CorpsTexte(texte: texte)) }
+    /// Comme Lanterne : les écritures vont à la jumelle Remote Control d'une fiche de poste quand elle existe.
+    public func cibleEcriture(_ session: String) -> String { JumellesDistantes.ecriture(session, sessions) }
+
+    /// Comme Lanterne : on lit le fil de la fiche de poste d'une session Remote Control quand elle existe.
+    public func sourceLecture(_ session: String) -> String { JumellesDistantes.lecture(session, sessions) }
+
+    public func envoyer(_ texte: String, pieces: [PieceJointe] = [], a session: String) async -> String? {
+        let corps = CorpsMessage(texte: texte, pieces: pieces)
+        let cible = cibleEcriture(session)
+        return await executer { try await $0.ecrire(Route.messages(cible), corps) }
     }
 
+    /// Pilotage (interrompre, compacter, fermer, reprendre) : à la cible d'écriture. Rangement (archiver, épingler,
+    /// lue / non lue) : à la fiche montrée, celle que Lanterne épingle aussi.
     public func agir(_ action: ActionSession, sur session: String) async -> String? {
-        await executer { try await $0.ecrire(Route.action(session, action), Vide()) }
+        let pilotage: Set<ActionSession> = [.interrompre, .compacter, .fermer, .reprendre]
+        let cible = pilotage.contains(action) ? cibleEcriture(session) : session
+        return await executer { try await $0.ecrire(Route.action(cible, action), Vide()) }
     }
 
     public func interrompre(_ session: String) async -> String? {
@@ -20,7 +32,7 @@ extension ModeleRelais {
     }
 
     public func repondre(_ reponse: ReponseDialogue, a session: String) async -> String? {
-        await executer { try await $0.ecrire(Route.repondre(session), reponse) }
+        await executer { try await $0.ecrire(Route.repondre(cibleEcriture(session)), reponse) }
     }
 
     public func basculerAutonomie(_ active: Bool, de session: String) async -> String? {
@@ -28,23 +40,23 @@ extension ModeleRelais {
     }
 
     public func changerModele(_ modele: String, de session: String) async -> String? {
-        await executer { try await $0.ecrire(Route.modele(session), CorpsModele(modele: modele)) }
+        await executer { try await $0.ecrire(Route.modele(cibleEcriture(session)), CorpsModele(modele: modele)) }
     }
 
     public func changerEffort(_ effort: String?, de session: String) async -> String? {
-        await executer { try await $0.ecrire(Route.effort(session), CorpsEffort(effort: effort)) }
+        await executer { try await $0.ecrire(Route.effort(cibleEcriture(session)), CorpsEffort(effort: effort)) }
     }
 
     public func changerMode(_ mode: String, de session: String) async -> String? {
-        await executer { try await $0.ecrire(Route.mode(session), CorpsMode(mode: mode)) }
+        await executer { try await $0.ecrire(Route.mode(cibleEcriture(session)), CorpsMode(mode: mode)) }
     }
 
     public func basculerUltracode(_ actif: Bool, de session: String) async -> String? {
-        await executer { try await $0.ecrire(Route.ultracode(session), CorpsActif(actif: actif)) }
+        await executer { try await $0.ecrire(Route.ultracode(cibleEcriture(session)), CorpsActif(actif: actif)) }
     }
 
     public func renommer(_ titre: String, de session: String) async -> String? {
-        await executer { try await $0.ecrire(Route.renommerSession(session), CorpsTitre(titre: titre)) }
+        await executer { try await $0.ecrire(Route.renommerSession(cibleEcriture(session)), CorpsTitre(titre: titre)) }
     }
 
     public func arreterTache(_ tache: String, de session: String) async -> String? {
@@ -64,15 +76,15 @@ extension ModeleRelais {
 
     /// `nil` : le nœud n'a pas de détail pour cette session (non pilotée par le SDK, pas encore lu) — rien à montrer.
     public func contexte(de session: String) async -> Result<ContexteSession?, ErreurRelais> {
-        await lecture(Route.contexte(session))
+        await lire(Route.contexte(session))
     }
 
     public func taches(de session: String) async -> Result<[TacheSession], ErreurRelais> {
-        await lecture(Route.taches(session))
+        await lire(Route.taches(session))
     }
 
     public func environnements() async -> Result<[Environnement], ErreurRelais> {
-        await lecture(Route.environnements)
+        await lire(Route.environnements)
     }
 
     public func marquerLues() async -> String? {
@@ -88,7 +100,7 @@ extension ModeleRelais {
         await executer { try await $0.ecrire(Route.eteindre(machine), Vide()) }
     }
 
-    private func lecture<T: Decodable>(_ chemin: String) async -> Result<T, ErreurRelais> {
+    func lire<T: Decodable>(_ chemin: String) async -> Result<T, ErreurRelais> {
         guard let client else { return .failure(.nonConnecte) }
         do {
             let valeur: T = try await client.lire(chemin)

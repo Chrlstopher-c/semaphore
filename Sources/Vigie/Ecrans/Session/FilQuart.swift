@@ -14,24 +14,28 @@ struct FilQuart: View {
     // `DirectVue`, seule vue invalidée à chaque paquet de deltas. Les blocs sont `Equatable` : un bloc inchangé
     // n'est jamais réévalué, même quand la session (statut, contexte) bouge.
     var body: some View {
-        let blocs = modele.blocs(session.id) ?? []
+        let blocs = modele.blocs(lu) ?? []
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 20) {
                 debut(vide: blocs.isEmpty)
                 ForEach(blocs) { bloc in BlocVue(bloc: bloc, ouvrirActions: ouvrirActions).equatable() }
-                DirectVue(id: session.id, statut: session.statut, taches: TachesFond.enCours(blocs),
+                DirectVue(id: lu, statut: session.statut, taches: TachesDuFil.enCours(blocs),
                           ouvrirTaches: ouvrirTaches)
             }
             .padding(.horizontal, Q.margeTexte).padding(.top, 12).padding(.bottom, 24)
         }
+        .environment(\.sessionFil, lu)
         .defaultScrollAnchor(.bottom)
         .scrollDismissesKeyboard(.interactively)
         .background(Q.fondFil)
     }
 
+    /// La fiche dont on lit le fil : celle du poste quand la session montrée est sa jumelle Remote Control.
+    private var lu: String { modele.sourceLecture(session.id) }
+
     /// En tête du fil : charger plus ancien à l'apparition, ou l'état vide / chargement.
     @ViewBuilder private func debut(vide: Bool) -> some View {
-        if modele.fils[session.id] == nil {
+        if modele.fils[lu] == nil {
             ChargementFil()
         } else if vide && !session.statut.enActivite {
             Text("Rien pour l’instant.\nLe fil s’affiche dès que Claude travaille.").font(Q.detail)
@@ -39,9 +43,9 @@ struct FilQuart: View {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 80)
-        } else if !modele.debutAtteint.contains(session.id) {
+        } else if !modele.debutAtteint.contains(lu) {
             IndicateurTravail().frame(width: 18, height: 18).frame(maxWidth: .infinity)
-                .task { await modele.chargerPlusAncien(session.id) }
+                .task { await modele.chargerPlusAncien(lu) }
         }
     }
 }
@@ -77,7 +81,7 @@ private struct DirectVue: View {
 }
 
 /// Les sous-agents encore au travail dans le fil (le compteur « N tâches en cours » de l'étalon).
-enum TachesFond {
+enum TachesDuFil {
     static func enCours(_ blocs: [BlocFil]) -> Int {
         blocs.reduce(0) { total, bloc in
             guard case .actions(let g) = bloc else { return total }

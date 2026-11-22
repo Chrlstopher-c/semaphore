@@ -34,7 +34,10 @@ struct Tiroir: View {
         .background(Q.fondTiroir.ignoresSafeArea())
     }
 
-    private var sessionsEpinglees: [Session] { modele.sessions.filter { $0.epinglee == true && $0.archivee != true } }
+    /// Comme Lanterne : une jumelle Remote Control d'une fiche de poste n'est jamais listée à part.
+    private var visibles: [Session] { JumellesDistantes.sansDoublons(modele.sessions) }
+
+    private var sessionsEpinglees: [Session] { visibles.filter { $0.epinglee == true && $0.archivee != true } }
 
     @ViewBuilder private var epinglees: some View {
         let liste = sessionsEpinglees
@@ -56,7 +59,7 @@ struct Tiroir: View {
     }
 
     @ViewBuilder private var recentes: some View {
-        let liste = modele.sessions.filter { $0.archivee != true }.prefix(12)
+        let liste = visibles.filter { $0.archivee != true }.prefix(12)
         if !liste.isEmpty {
             TitreTiroir(texte: "Récentes")
             ForEach(Array(liste)) { s in

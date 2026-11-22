@@ -19,7 +19,8 @@ public enum DateRelative {
     }
 
     /// `☠` Construire un `ISO8601DateFormatter` coûte cher (~0,1 ms sur A12) : la liste en créait deux par session à
-    /// chaque rendu, donc à chaque message du flux. Formateurs partagés (sûrs entre fils d'exécution, doc Apple).
+    /// chaque rendu, donc à chaque message du flux. Formateurs partagés, sous verrou : la Foundation de Linux ne les
+    /// garantit pas sûrs entre fils d'exécution (plantage relevé en tests parallèles).
     nonisolated(unsafe) private static let avecFractions: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -31,8 +32,12 @@ public enum DateRelative {
         return f
     }()
 
+    private static let verrou = NSLock()
+
     public static func date(_ iso: String) -> Date? {
-        avecFractions.date(from: iso) ?? simple.date(from: iso)
+        verrou.lock()
+        defer { verrou.unlock() }
+        return avecFractions.date(from: iso) ?? simple.date(from: iso)
     }
 
     private static func calendaire(_ date: Date, maintenant: Date, fuseau: TimeZone) -> String {

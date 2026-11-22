@@ -8,6 +8,30 @@ public struct CorpsTexte: Encodable, Sendable, Equatable {
     public init(texte: String) { self.texte = texte }
 }
 
+/// Une pièce jointe d'un message (`PieceJointe` du relais) : 3 au plus, 3 Mio chacune avant base64.
+public struct PieceJointe: Codable, Sendable, Equatable {
+    public static let nombreMax = 3
+    public static let tailleMax = 3 * 1024 * 1024
+    public let nom: String
+    public let mime: String
+    public let base64: String
+    public init(nom: String, mime: String, base64: String) {
+        self.nom = nom
+        self.mime = mime
+        self.base64 = base64
+    }
+}
+
+/// Un message avec ses pièces ; `pieces` est omis quand il n'y en a pas.
+public struct CorpsMessage: Encodable, Sendable, Equatable {
+    public let texte: String
+    public let pieces: [PieceJointe]?
+    public init(texte: String, pieces: [PieceJointe]) {
+        self.texte = texte
+        self.pieces = pieces.isEmpty ? nil : pieces
+    }
+}
+
 public struct CorpsModele: Encodable, Sendable, Equatable {
     public let modele: String
     public init(modele: String) { self.modele = modele }

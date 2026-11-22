@@ -41,7 +41,7 @@ struct ListeCodeEcran: View {
 
     private var lignes: [LigneSession] {
         let toutes = ListeSessions.lignes(
-            modele.sessions, machines: modele.machines,
+            JumellesDistantes.sansDoublons(modele.sessions), machines: modele.machines,
             maintenant: .now, archivees: archivees, premiersMessages: modele.premiersMessages)
         let cle = recherche.trimmingCharacters(in: .whitespaces)
         return cle.isEmpty ? toutes : toutes.filter { $0.titre.localizedCaseInsensitiveContains(cle) }

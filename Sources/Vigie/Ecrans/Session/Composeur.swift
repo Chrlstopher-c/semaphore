@@ -1,5 +1,6 @@
-// Le composeur (étalon 001/002). Au repos : capsule « Réponds à Claude » avec « + » à gauche et arrêt à droite pendant
-// le travail. En saisie : carte arrondie, champ en haut, rangée « + », pilule du modèle, envoyer / arrêter en bas.
+// Le composeur (étalon 001/002). UN SEUL champ, toujours présent (le toucher donne le clavier) : au repos, capsule
+// 52 pt « Réponds à Claude » entre « + » et arrêter ; au focus, la même forme s'agrandit en carte (champ en haut,
+// rangée « + », pilule du modèle, envoyer / arrêter en bas) et monte avec le clavier. Pièces en vignettes au-dessus.
 #if canImport(SwiftUI)
 import SwiftUI
 import VigieNoyau
@@ -12,52 +13,65 @@ struct Composeur: View {
     let ouvrirTaches: () -> Void
     let erreur: (String) -> Void
     @State private var texte = ""
+    @State private var pieces: [PieceSaisie] = []
     @State private var envoi = 0
+    @State private var enEnvoi = false
     @FocusState private var focus: Bool
 
+    private var etendu: Bool { focus || !texte.isEmpty || !pieces.isEmpty }
+    private var pret: Bool { !texte.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pieces.isEmpty }
+
     var body: some View {
-        Group {
-            // Comme Lanterne : la saisie est toujours offerte (session fermée : l'envoi la reprend ; claude.ai,
-            // Desktop, terminal : le relais aiguille ou refuse). Un refus du relais s'affiche en bandeau.
-            if focus || !texte.isEmpty { etendu } else { repos }
+        VStack(alignment: .leading, spacing: 0) {
+            if !pieces.isEmpty { BandePieces(pieces: $pieces).padding(.top, 12) }
+            HStack(alignment: .center, spacing: 0) {
+                if !etendu { plus }
+                champ
+                if !etendu && session.statut.enActivite { boutonArret }
+            }
+            if etendu { rangeeBas }
         }
+        .padding(.horizontal, 4)
+        .background(Q.carte, in: .rect(cornerRadius: 26, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(etendu ? Q.pilule : .clear))
         .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 8)
-        .background(Q.entete.ignoresSafeArea(edges: .bottom))
-        .animation(.smooth(duration: 0.3), value: focus)
+        .background((etendu ? Q.fondFil : Q.entete).ignoresSafeArea(edges: .bottom))
+        .animation(.smooth(duration: 0.25), value: etendu)
         .sensoryFeedback(.impact(weight: .medium), trigger: envoi)
     }
 
-    private var repos: some View {
-        HStack(spacing: 0) {
-            MenuPlus(session: session, ouvrirUsage: ouvrirUsage, ouvrirTaches: ouvrirTaches, erreur: erreur)
-            Text(invite).font(Q.rangee).foregroundStyle(Q.tertiaire).lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 4)
-                .contentShape(.rect).onTapGesture { focus = true }
-            if session.statut.enActivite { boutonArret }
-        }
-        .padding(.horizontal, 4).frame(height: 52)
-        .background(Q.carte, in: .capsule)
+    private var champ: some View {
+        TextField(etendu ? "Tape / pour les commandes" : invite, text: $texte, axis: .vertical)
+            .font(Q.rangee).foregroundStyle(Q.texte).tint(Q.coche)
+            .lineLimit(1...8)
+            .focused($focus)
+            .padding(.leading, etendu ? 12 : 4).padding(.trailing, 8)
+            .padding(.top, etendu ? 14 : 0).padding(.bottom, etendu ? 6 : 0)
+            .frame(minHeight: etendu ? 44 : 52)
+            .contentShape(.rect)
+            .simultaneousGesture(TapGesture().onEnded { focus = true }) // marges du champ comprises
     }
 
-    private var etendu: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            TextField(invite, text: $texte, axis: .vertical).font(Q.rangee).foregroundStyle(Q.texte)
-                .lineLimit(1...8).focused($focus).padding(.horizontal, 16).padding(.top, 14)
-            HStack(spacing: 4) {
-                MenuPlus(session: session, ouvrirUsage: ouvrirUsage, ouvrirTaches: ouvrirTaches, erreur: erreur)
-                PiluleModele(session: session, action: ouvrirModele)
-                Spacer(minLength: 0)
-                if !texte.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    BoutonRond(symbole: "arrow.up", fond: Q.texte, encre: Q.carte, poids: .semibold) { envoyer() }
-                        .accessibilityLabel("Envoyer")
-                } else if session.statut.enActivite {
-                    boutonArret
-                }
+    private var rangeeBas: some View {
+        HStack(spacing: 4) {
+            plus
+            PiluleModele(session: session, action: ouvrirModele)
+            Spacer(minLength: 0)
+            if enEnvoi {
+                IndicateurTravail().frame(width: 18, height: 18).frame(width: 44, height: 44)
+            } else if pret {
+                BoutonRond(symbole: "arrow.up", fond: Q.texte, encre: Q.carte, poids: .semibold) { envoyer() }
+                    .accessibilityLabel("Envoyer")
+            } else if session.statut.enActivite {
+                boutonArret
             }
-            .padding(.horizontal, 4).padding(.bottom, 4)
         }
-        .background(Q.carte, in: .rect(cornerRadius: 26, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(Q.pilule))
+        .padding(.bottom, 4)
+    }
+
+    private var plus: some View {
+        MenuPlus(session: session, pieces: $pieces, ouvrirUsage: ouvrirUsage, ouvrirTaches: ouvrirTaches,
+                 erreur: erreur)
     }
 
     private var boutonArret: some View {
@@ -76,14 +90,20 @@ struct Composeur: View {
 
     private func envoyer() {
         let message = texte.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !message.isEmpty else { return }
+        let jointes = pieces
+        guard !message.isEmpty || !jointes.isEmpty else { return }
         texte = ""
+        pieces = []
         envoi += 1
+        enEnvoi = true
         Task {
-            if let e = await modele.envoyer(message, a: session.id) {
+            let corps = message.isEmpty ? "Pièce jointe" : message
+            if let e = await modele.envoyer(corps, pieces: jointes.map(\.piece), a: session.id) {
                 texte = message
+                pieces = jointes
                 erreur(e)
             }
+            enEnvoi = false
         }
     }
 }
@@ -106,39 +126,6 @@ private struct PiluleModele: View {
             .background(Q.rond, in: .capsule)
         }
         .buttonStyle(StyleAppui())
-    }
-}
-
-/// Le « + » : mode de permission, compaction, usage, tâches de fond.
-private struct MenuPlus: View {
-    @Environment(ModeleRelais.self) private var modele
-    let session: Session
-    let ouvrirUsage: () -> Void
-    let ouvrirTaches: () -> Void
-    let erreur: (String) -> Void
-
-    var body: some View {
-        Menu {
-            Picker("Permissions", selection: mode) {
-                ForEach(CatalogueModeles.modesPermission, id: \.0) { Text($0.1).tag($0.0) }
-            }
-            .pickerStyle(.menu)
-            Button("Compacter le contexte", systemImage: "arrow.down.right.and.arrow.up.left") {
-                Task { if let e = await modele.agir(.compacter, sur: session.id) { erreur(e) } }
-            }
-            Button("Usage", systemImage: "gauge.with.dots.needle.33percent", action: ouvrirUsage)
-            Button("Tâches de fond", systemImage: "diamond", action: ouvrirTaches)
-        } label: {
-            Image(systemName: "plus").font(.system(size: 17)).foregroundStyle(Q.texte)
-                .frame(width: 36, height: 36).background(Q.rond, in: .circle).frame(width: 44, height: 44)
-        }
-        .accessibilityLabel("Options")
-    }
-
-    private var mode: Binding<String> {
-        Binding(get: { session.mode ?? ModeSession.bypassPermissions.rawValue }, set: { nouveau in
-            Task { if let e = await modele.changerMode(nouveau, de: session.id) { erreur(e) } }
-        })
     }
 }
 #endif

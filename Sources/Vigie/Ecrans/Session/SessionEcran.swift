@@ -34,7 +34,7 @@ struct SessionEcran: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Q.entete, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
-        .task(id: id) { await modele.suivreFil(id) }
+        .task(id: id) { await modele.suivreFil(modele.sourceLecture(id)) }
         .task(id: id) { if modele.session(id)?.nonLue == true { _ = await modele.agir(.marquerLue, sur: id) } }
         .overlay(alignment: .top) { if let bandeau { Bandeau(texte: bandeau).padding(.top, 4) } }
         .sheet(item: $feuille) { f in feuilleVue(f) }
