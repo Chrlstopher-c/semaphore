@@ -40,7 +40,7 @@ struct ElementFil: View {
 
     var body: some View {
         switch evt {
-        case .message(let texte): Bulle(texte: texte)
+        case .message(let texte, _, _): Bulle(texte: texte)
         case .texte(let texte, _): Text(markdown(texte)).font(.callout).textSelection(.enabled)
         case .reflexion(let texte, _): Text(String(texte.prefix(900))).font(.footnote).italic().foregroundStyle(.secondary)
         case .etape(let resume, let suite): Jalon(titre: "Étape livrée", texte: "\(resume)\n→ \(suite)", symbole: "flag.fill", couleur: Charte.accent)

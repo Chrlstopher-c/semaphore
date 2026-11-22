@@ -47,6 +47,13 @@ public final class ClientRelais: Sendable {
         return r.jeton
     }
 
+    /// Échange un code d'appairage contre la clé de cet appareil (route ouverte, comme la connexion).
+    public static func appairer(adresse: URL, code: String, nom: String) async throws -> String {
+        let client = ClientRelais(adresse: adresse, jeton: "")
+        let r: ReponseAppairage = try await client.envoyer("POST", Route.appairer, CorpsAppairage(code: code, nom: nom))
+        return r.cle
+    }
+
     public func lire<T: Decodable>(_ chemin: String) async throws -> T {
         try await envoyer("GET", chemin, Optional<Vide>.none)
     }
@@ -84,6 +91,16 @@ public final class ClientRelais: Sendable {
         }
         composants.scheme = composants.scheme == "https" ? "wss" : "ws"
         r.url = composants.url
+        return r
+    }
+
+    /// Requête du flux temps réel (`/api/flux`) : ws(s), jeton en `Authorization: Bearer`.
+    public func requeteFlux() throws -> URLRequest {
+        var r = try requete("GET", Route.flux)
+        guard let url = r.url, let flux = LiaisonRelais.adresseFlux(url) else {
+            throw ErreurRelais.illisible("adresse du flux")
+        }
+        r.url = flux
         return r
     }
 

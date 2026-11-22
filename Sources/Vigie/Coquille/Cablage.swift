@@ -14,6 +14,7 @@ public final class Cablage {
     }()
 
     private static let cleAdresse = "vigie.v2.adresse"
+    private static let nomAppareil = "iPhone (Quart)"
 
     public let modele = ModeleRelais()
     public private(set) var adresse: URL
@@ -38,15 +39,25 @@ public final class Cablage {
 
     public func connecter(adresse: URL, motDePasse: String) async throws {
         let jeton = try await ClientRelais.connecter(adresse: adresse, motDePasse: motDePasse)
-        self.adresse = adresse
-        UserDefaults.standard.set(adresse.absoluteString, forKey: Self.cleAdresse)
-        Trousseau.ecrire(jeton)
-        brancher(jeton: jeton)
+        memoriser(adresse: adresse, jeton: jeton)
+    }
+
+    /// Appairage par code : le relais remet la clé de cet appareil, rangée comme un jeton de connexion.
+    public func appairer(adresse: URL, code: String) async throws {
+        let cle = try await ClientRelais.appairer(adresse: adresse, code: code, nom: Self.nomAppareil)
+        memoriser(adresse: adresse, jeton: cle)
     }
 
     public func deconnecter() {
         Trousseau.ecrire(nil)
         brancher(jeton: nil)
+    }
+
+    private func memoriser(adresse: URL, jeton: String) {
+        self.adresse = adresse
+        UserDefaults.standard.set(adresse.absoluteString, forKey: Self.cleAdresse)
+        Trousseau.ecrire(jeton)
+        brancher(jeton: jeton)
     }
 
     private func brancher(jeton: String?) {
