@@ -9,26 +9,52 @@ struct FilQuart: View {
     let session: Session
     let ouvrirActions: (GroupeActions) -> Void
     let ouvrirTaches: () -> Void
+    @State private var position = ScrollPosition(edge: .bottom)
+    @State private var auBas = true
 
     // `☠` Fluidité : ce corps ne lit que le fil (blocs mis en cache par le modèle) ; le texte en flux vit dans
     // `DirectVue`, seule vue invalidée à chaque paquet de deltas. Les blocs sont `Equatable` : un bloc inchangé
     // n'est jamais réévalué, même quand la session (statut, contexte) bouge.
     var body: some View {
         let blocs = modele.blocs(lu) ?? []
+        let envois = modele.envois[lu] ?? []
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 20) {
-                debut(vide: blocs.isEmpty)
-                ForEach(blocs) { bloc in BlocVue(bloc: bloc, ouvrirActions: ouvrirActions).equatable() }
+                debut(vide: blocs.isEmpty && envois.isEmpty)
+                ForEach(blocs) { bloc in
+                    BlocVue(bloc: bloc, ouvrirActions: ouvrirActions).equatable().transition(Self.arrivee)
+                }
+                ForEach(Array(envois.enumerated()), id: \.offset) { _, texte in
+                    BulleChris(texte: texte).transition(Self.arrivee)
+                }
                 DirectVue(id: lu, statut: session.statut, taches: TachesDuFil.enCours(blocs),
                           ouvrirTaches: ouvrirTaches)
             }
             .padding(.horizontal, Q.margeTexte).padding(.top, 12).padding(.bottom, 24)
+            .animation(.smooth(duration: 0.3), value: blocs.last?.id)
+            .animation(.smooth(duration: 0.3), value: envois.count)
         }
         .environment(\.sessionFil, lu)
-        .defaultScrollAnchor(.bottom)
+        // `☠` iOS 18 : sans le rôle `sizeChanges`, un fil qui grandit sous un défilement ancré en bas laissait la vue
+        // vide jusqu'au geste suivant (constaté après un envoi). Ancré en bas au départ ET quand la taille change.
+        .defaultScrollAnchor(.bottom, for: .initialOffset)
+        .defaultScrollAnchor(.bottom, for: .sizeChanges)
+        .scrollPosition($position)
+        .onScrollGeometryChange(for: Bool.self) { g in
+            g.contentOffset.y + g.containerSize.height >= g.contentSize.height - 160
+        } action: { _, enBas in auBas = enBas }
+        .onChange(of: blocs.count + envois.count) { _, _ in suivreLeBas() }
         .scrollDismissesKeyboard(.interactively)
         .background(Q.fondFil)
     }
+
+    /// Un message ou un bloc arrive : si Chris lisait le bas du fil, on l'y garde (sinon on ne bouge pas sa lecture).
+    private func suivreLeBas() {
+        guard auBas else { return }
+        withAnimation(.smooth(duration: 0.3)) { position.scrollTo(edge: .bottom) }
+    }
+
+    private static let arrivee = AnyTransition.opacity.combined(with: .offset(y: 12))
 
     /// La fiche dont on lit le fil : celle du poste quand la session montrée est sa jumelle Remote Control.
     private var lu: String { modele.sourceLecture(session.id) }

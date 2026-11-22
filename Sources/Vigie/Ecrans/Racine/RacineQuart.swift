@@ -5,7 +5,7 @@ import SwiftUI
 import VigieNoyau
 
 enum FeuilleRacine: String, Identifiable {
-    case nouvelle, reglages, machines
+    case reglages, machines
     var id: String { rawValue }
 }
 
@@ -20,14 +20,14 @@ struct RacineQuart: View {
     var body: some View {
         ZStack(alignment: .leading) {
             NavigationStack(path: $pile) {
-                ListeCodeEcran(nouvelleSession: { feuille = .nouvelle })
-                    .navigationDestination(for: String.self) { SessionEcran(id: $0) }
+                ListeCodeEcran(nouvelleSession: { pile = [NouvelleSessionEcran.route] })
+                    .navigationDestination(for: String.self) { destination($0) }
             }
             .environment(\.ouvrirTiroir, { ouvrir(true) })
             .overlay { voile }
             .offset(x: decalage)
             .overlay(alignment: .leading) { bordGauche }
-            Tiroir(choisir: choisir).frame(width: largeur).offset(x: decalage - largeur)
+            Tiroir(courante: pile.last, choisir: choisir).frame(width: largeur).offset(x: decalage - largeur)
         }
         .background(Q.fondTiroir.ignoresSafeArea())
         .sheet(item: $feuille) { f in contenu(f) }
@@ -55,11 +55,11 @@ struct RacineQuart: View {
     private func finGlisse(_ g: DragGesture.Value) {
         let arrivee = g.predictedEndTranslation.width
         let cible = tiroir ? arrivee > -largeur / 3 : arrivee > largeur / 3
-        withAnimation(.smooth(duration: 0.35)) { tiroir = cible; glisse = 0 }
+        withAnimation(.spring(duration: 0.4, bounce: 0)) { tiroir = cible; glisse = 0 }
     }
 
     private func ouvrir(_ etat: Bool) {
-        withAnimation(.smooth(duration: 0.35)) { tiroir = etat; glisse = 0 }
+        withAnimation(.spring(duration: 0.4, bounce: 0)) { tiroir = etat; glisse = 0 }
     }
 
     private func choisir(_ choix: ChoixTiroir) {
@@ -67,17 +67,24 @@ struct RacineQuart: View {
         switch choix {
         case .code: pile = []
         case .session(let id): pile = [id]
-        case .nouvelle: feuille = .nouvelle
+        case .nouvelle: pile = [NouvelleSessionEcran.route]
         case .reglages: feuille = .reglages
         case .machines: feuille = .machines
         }
     }
 
+    @ViewBuilder private func destination(_ valeur: String) -> some View {
+        if valeur == NouvelleSessionEcran.route {
+            NouvelleSessionEcran { id in pile = [id] }
+        } else {
+            SessionEcran(id: valeur)
+        }
+    }
+
     @ViewBuilder private func contenu(_ f: FeuilleRacine) -> some View {
         switch f {
-        case .nouvelle: NouvelleSessionFeuille { id in pile = [id] }
         case .reglages: ReglagesFeuille()
-        case .machines: AccesEcran().presentationBackground(Q.fondFil)
+        case .machines: MachinesFeuille { id in feuille = nil; pile = [id] }
         }
     }
 }

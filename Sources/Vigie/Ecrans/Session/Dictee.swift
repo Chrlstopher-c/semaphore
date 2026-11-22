@@ -99,15 +99,16 @@ final class Dictee {
     // MARK: - Moteur et requêtes
 
     private func lancerAudio() -> String? {
+        // Modèle vérifié AVANT de toucher la session audio : rien n'est téléchargé, rien n'est capturé pour rien.
+        guard let reco = Self.reconnaissanceFrancaise() else {
+            return "Modèle de dictée français absent : télécharge-le dans Réglages iOS."
+        }
         guard preparerSession() else { return "Micro indisponible." }
         let moteur = AVAudioEngine()
         let format = moteur.inputNode.inputFormat(forBus: 0)
         guard format.sampleRate > 0, format.channelCount > 0 else {
             Trace.erreur("dictee", "entrée micro sans format exploitable")
             return "Micro indisponible."
-        }
-        guard let reco = Self.reconnaissanceFrancaise() else {
-            return "Modèle de dictée français absent : télécharge-le dans Réglages iOS."
         }
         let pont = PontAudio()
         moteur.inputNode.installTap(onBus: 0, bufferSize: 1024, format: format, block: Self.blocAudio(pont))
@@ -234,7 +235,7 @@ final class Dictee {
         { resultat, erreurReco in
             if let erreurReco {
                 let code = (erreurReco as NSError).code
-                let sansParole = code == SFSpeechRecognitionErrorCode.noSpeechDetected.rawValue
+                let sansParole = code == 1110 // « No speech detected » (kAFAssistantErrorDomain)
                 let detail = "\(code) \(erreurReco.localizedDescription)"
                 dictee.transmettre(.erreur(sansParole: sansParole, detail: detail), ronde: numero)
             } else if let resultat {

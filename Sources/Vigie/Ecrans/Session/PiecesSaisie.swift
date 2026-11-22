@@ -91,10 +91,11 @@ struct BandePieces: View {
 /// Le « + » : ajouter des photos, prendre une photo, joindre un fichier ; mode de permission ; compacter.
 struct MenuPlus: View {
     @Environment(ModeleRelais.self) private var modele
-    let session: Session
+    /// nil : nouvelle session (pièces seulement, pas encore de mode ni de compaction).
+    let session: Session?
     @Binding var pieces: [PieceSaisie]
-    let ouvrirUsage: () -> Void
-    let ouvrirTaches: () -> Void
+    var ouvrirUsage: () -> Void = {}
+    var ouvrirTaches: () -> Void = {}
     let erreur: (String) -> Void
     @State private var phototheque = false
     @State private var choix: [PhotosPickerItem] = []
@@ -106,7 +107,7 @@ struct MenuPlus: View {
     var body: some View {
         Menu { contenu } label: {
             Image(systemName: "plus").font(.system(size: 17)).foregroundStyle(Q.texte)
-                .frame(width: 36, height: 36).background(Q.rond, in: .circle).frame(width: 44, height: 44)
+                .frame(width: 36, height: 36).background(Q.rond, in: .circle).contentShape(.circle)
         }
         .accessibilityLabel("Ajouter")
         .photosPicker(isPresented: $phototheque, selection: $choix, maxSelectionCount: max(place, 1), matching: .images)
@@ -127,8 +128,12 @@ struct MenuPlus: View {
             Button("Appareil photo", systemImage: "camera") { if verifierPlace() { camera = true } }
             Button("Fichiers", systemImage: "paperclip") { if verifierPlace() { fichiers = true } }
         }
+        if let session { reglages(session) }
+    }
+
+    @ViewBuilder private func reglages(_ session: Session) -> some View {
         Section {
-            Picker("Permissions", systemImage: "hand.raised", selection: mode) {
+            Picker("Permissions", systemImage: "hand.raised", selection: mode(session)) {
                 ForEach(CatalogueModeles.modesPermission, id: \.0) { Text($0.1).tag($0.0) }
             }
             .pickerStyle(.menu)
@@ -176,7 +181,7 @@ struct MenuPlus: View {
         }
     }
 
-    private var mode: Binding<String> {
+    private func mode(_ session: Session) -> Binding<String> {
         Binding(get: { session.mode ?? ModeSession.bypassPermissions.rawValue }, set: { nouveau in
             Task { if let e = await modele.changerMode(nouveau, de: session.id) { erreur(e) } }
         })

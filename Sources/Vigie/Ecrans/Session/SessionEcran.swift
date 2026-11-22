@@ -109,7 +109,8 @@ struct SessionEcran: View {
     }
 }
 
-/// Le menu « ··· » (étalon 011) : tâches de fond ; partager, renommer, archiver ; épingler.
+/// Le menu « ··· » (étalon 011) : tâches de fond ; partager, renommer, archiver (route d'archivage du
+/// nœud, comme Lanterne : la session est rangée et l'écran revient à la liste).
 private struct MenuSession: View {
     @Environment(ModeleRelais.self) private var modele
     @Environment(\.dismiss) private var fermer
@@ -126,27 +127,14 @@ private struct MenuSession: View {
                     Label("Partager", systemImage: "square.and.arrow.up")
                 }
                 Button("Renommer", systemImage: "pencil", action: renommer)
-                Button(session.epinglee == true ? "Désépingler" : "Épingler", systemImage: "pin") {
-                    agir(session.epinglee == true ? .desepingler : .epingler)
-                }
                 Button("Archiver", systemImage: "archivebox") { agir(.archiver); fermer() }
             }
-            Section { pilotage }
         } label: {
             Image(systemName: "ellipsis").font(.system(size: 11, weight: .bold)).foregroundStyle(Q.secondaire)
                 .frame(width: 22, height: 22).overlay(Circle().strokeBorder(Q.secondaire, lineWidth: 1.3))
                 .frame(width: 44, height: 44)
         }
         .accessibilityLabel("Plus")
-    }
-
-    @ViewBuilder private var pilotage: some View {
-        if session.statut == .fermee {
-            Button("Reprendre", systemImage: "play") { agir(.reprendre) }
-        } else {
-            Button("Compacter le contexte", systemImage: "arrow.down.right.and.arrow.up.left") { agir(.compacter) }
-            Button("Fermer la session", systemImage: "xmark.circle", role: .destructive) { agir(.fermer) }
-        }
     }
 
     private func agir(_ action: ActionSession) {

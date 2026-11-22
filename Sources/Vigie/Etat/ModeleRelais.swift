@@ -24,6 +24,8 @@ public final class ModeleRelais {
     /// Sessions dont le fil est connu jusqu'à son tout premier événement.
     public private(set) var debutAtteint: Set<String> = []
     /// Début de la première demande des sessions sans vrai titre (titre de repli, gardé sur l'iPhone).
+    /// Messages envoyés depuis l'iPhone pas encore revenus dans le fil (affichage optimiste), par fil lu.
+    public internal(set) var envois: [String: [String]] = [:]
     public internal(set) var premiersMessages: [String: String] = ModeleRelais.premiersMessagesGardes()
     @ObservationIgnored var titresDemandes: Set<String> = []
     /// Blocs d'affichage par fil, recalculés seulement quand le fil change (jamais à chaque delta ni à chaque rendu).
@@ -206,6 +208,7 @@ public final class ModeleRelais {
     private func recevoirEvenement(_ evenement: EvenementDate) {
         let id = evenement.sessionId
         if let fil = fils[id] { fils[id] = FusionFil.ajouter(evenement, au: fil) }
+        if case .message(let texte, _, _) = evenement.evt { retirerEnvoi(texte, de: id) }
         switch evenement.evt {
         case .texte(_, nil): viderTexte(id)
         case .reflexion(_, nil): viderReflexion(id)

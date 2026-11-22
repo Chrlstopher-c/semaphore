@@ -22,7 +22,7 @@ struct BlocVue: View, Equatable {
 }
 
 /// Bulle de Chris (étalon 023) : à droite, #1F1F1E, rayon 22, de x 61 à 359.
-private struct BulleChris: View {
+struct BulleChris: View {
     let texte: String
 
     var body: some View {

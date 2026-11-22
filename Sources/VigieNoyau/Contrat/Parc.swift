@@ -140,6 +140,8 @@ public struct DemandeOuverture: Encodable, Sendable {
     public let mode: String?
     public let effort: String?
     public let ultracode: Bool?
+    /// Pièces jointes au premier message (omises quand il n'y en a pas).
+    public var pieces: [PieceJointe]?
 
     public init(machine: String, projet: Projet, message: String, titre: String?, objectif: String?,
                 autonomie: Bool, modele: String?, mode: String? = nil, effort: String? = nil, ultracode: Bool? = nil) {
@@ -153,6 +155,7 @@ public struct DemandeOuverture: Encodable, Sendable {
         self.mode = mode
         self.effort = effort
         self.ultracode = ultracode
+        self.pieces = nil
     }
 }
 

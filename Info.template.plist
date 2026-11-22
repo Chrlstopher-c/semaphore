@@ -54,7 +54,7 @@
 	     est exigée dès qu'on INSTANCIE `SFSpeechRecognizer`, même en mode
 	     strictement local : son absence ne dégrade pas, elle tue le processus. -->
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Dicter un message à l'orchestrateur. La transcription se fait sur l'appareil : aucun son ni aucun texte n'est envoyé à Apple.</string>
+	<string>Dicter un message à Claude. La transcription se fait sur l'iPhone : aucun son ni aucun texte n'est envoyé ailleurs.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Transcrire la dictée en texte, strictement sur l'appareil. Aucun repli par les serveurs d'Apple : sans modèle local, la dictée refuse de démarrer.</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>

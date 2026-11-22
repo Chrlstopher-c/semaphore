@@ -16,7 +16,18 @@ extension ModeleRelais {
     public func envoyer(_ texte: String, pieces: [PieceJointe] = [], a session: String) async -> String? {
         let corps = CorpsMessage(texte: texte, pieces: pieces)
         let cible = cibleEcriture(session)
-        return await executer { try await $0.ecrire(Route.messages(cible), corps) }
+        let lu = sourceLecture(session)
+        envois[lu, default: []].append(texte)
+        let erreur = await executer { try await $0.ecrire(Route.messages(cible), corps) }
+        if erreur != nil { retirerEnvoi(texte, de: lu) }
+        return erreur
+    }
+
+    /// Le message est revenu dans le fil (ou l'envoi a échoué) : la bulle optimiste s'efface.
+    func retirerEnvoi(_ texte: String, de fil: String) {
+        guard var liste = envois[fil], let i = liste.firstIndex(of: texte) ?? liste.indices.first else { return }
+        liste.remove(at: i)
+        envois[fil] = liste.isEmpty ? nil : liste
     }
 
     /// Pilotage (interrompre, compacter, fermer, reprendre) : à la cible d'écriture. Rangement (archiver, épingler,

@@ -11,6 +11,8 @@ enum ChoixTiroir {
 
 struct Tiroir: View {
     @Environment(ModeleRelais.self) private var modele
+    /// Valeur en tête de pile : la session ouverte est marquée comme dans l'étalon (fond #404040 arrondi).
+    let courante: String?
     let choisir: (ChoixTiroir) -> Void
     @State private var toutesEpinglees = false
 
@@ -20,10 +22,11 @@ struct Tiroir: View {
                 .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 24).frame(height: 56)
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    EntreeTiroir(symbole: "chevron.left.forwardslash.chevron.right", titre: "Code", choisie: true) {
+                    EntreeTiroir(symbole: "chevron.left.forwardslash.chevron.right", titre: "Code",
+                                 choisie: courante == nil) {
                         choisir(.code)
                     }
-                    EntreeTiroir(symbole: "desktopcomputer", titre: "Machines") { choisir(.machines) }
+                    EntreeTiroir(symbole: "server.rack", titre: "Machines") { choisir(.machines) }
                     epinglees
                     recentes
                 }
@@ -44,7 +47,7 @@ struct Tiroir: View {
         if !liste.isEmpty {
             TitreTiroir(texte: "Épinglées")
             ForEach(toutesEpinglees ? liste : Array(liste.prefix(4))) { s in
-                EntreeSession(session: s, symbole: "pin") { choisir(.session(s.id)) }
+                EntreeSession(session: s, symbole: "pin", choisie: s.id == courante) { choisir(.session(s.id)) }
             }
             if liste.count > 4 {
                 Button { withAnimation(.smooth(duration: 0.3)) { toutesEpinglees.toggle() } } label: {
@@ -63,7 +66,8 @@ struct Tiroir: View {
         if !liste.isEmpty {
             TitreTiroir(texte: "Récentes")
             ForEach(Array(liste)) { s in
-                EntreeSession(session: s, symbole: "chevron.left.forwardslash.chevron.right") {
+                EntreeSession(session: s, symbole: "chevron.left.forwardslash.chevron.right",
+                              choisie: s.id == courante) {
                     choisir(.session(s.id))
                 }
             }
@@ -120,6 +124,7 @@ private struct EntreeSession: View {
     @Environment(ModeleRelais.self) private var modele
     let session: Session
     let symbole: String
+    var choisie = false
     let action: () -> Void
 
     var body: some View {
@@ -130,7 +135,9 @@ private struct EntreeSession: View {
                 Spacer(minLength: 8)
                 marque
             }
-            .foregroundStyle(Q.texte).padding(.horizontal, 24).frame(height: 50).contentShape(.rect)
+            .foregroundStyle(Q.texte).padding(.horizontal, 12).frame(height: 50)
+            .background(choisie ? Q.selection : .clear, in: .rect(cornerRadius: 12, style: .continuous))
+            .padding(.horizontal, 12).contentShape(.rect)
         }
         .buttonStyle(StyleAppui())
     }
