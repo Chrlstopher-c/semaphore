@@ -4,9 +4,12 @@ import AVFoundation
 import SwiftUI
 import VigieNoyau
 
-struct BlocVue: View {
+struct BlocVue: View, Equatable {
     let bloc: BlocFil
     let ouvrirActions: (GroupeActions) -> Void
+
+    /// Comparé sur le bloc seul (la fermeture ne change pas le rendu) : `.equatable()` évite de refaire un bloc intact.
+    nonisolated static func == (a: BlocVue, b: BlocVue) -> Bool { a.bloc == b.bloc }
 
     var body: some View {
         switch bloc {

@@ -10,9 +10,27 @@ struct MarkdownVue: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            ForEach(AnalyseurMarkdown.blocs(source)) { b in BlocMarkdownVue(bloc: b.bloc) }
+            ForEach(CacheMarkdown.blocs(source)) { b in BlocMarkdownVue(bloc: b.bloc) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// Analyse markdown mémorisée par texte : une réponse n'est analysée qu'une fois, pas à chaque rendu.
+@MainActor enum CacheMarkdown {
+    private final class Boite { let blocs: [BlocRange]; init(_ b: [BlocRange]) { blocs = b } }
+    private static let cache: NSCache<NSString, Boite> = {
+        let c = NSCache<NSString, Boite>()
+        c.countLimit = 400
+        return c
+    }()
+
+    static func blocs(_ source: String) -> [BlocRange] {
+        let cle = source as NSString
+        if let b = cache.object(forKey: cle) { return b.blocs }
+        let blocs = AnalyseurMarkdown.blocs(source)
+        cache.setObject(Boite(blocs), forKey: cle)
+        return blocs
     }
 }
 

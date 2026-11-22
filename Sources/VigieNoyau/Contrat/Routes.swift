@@ -31,6 +31,11 @@ public enum Route {
     public static let appairer = "/api/appareils/appairer"
     public static let environnements = "/api/environnements"
 
+    /// Le tout début d'un fil (titre de repli d'une session sans nom). Un relais ancien ignore `limite`.
+    public static func premiersEvenements(_ session: String, limite: Int) -> String {
+        "/api/sessions/\(session)/evenements?apres=0&limite=\(limite)"
+    }
+
     public static func evenementsAvant(_ session: String, avant: Int, limite: Int) -> String {
         "/api/sessions/\(session)/evenements?avant=\(avant)&limite=\(limite)"
     }

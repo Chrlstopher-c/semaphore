@@ -23,6 +23,15 @@ public final class ModeleRelais {
     public private(set) var reflexionEnCours: [String: String] = [:]
     /// Sessions dont le fil est connu jusqu'à son tout premier événement.
     public private(set) var debutAtteint: Set<String> = []
+    /// Début de la première demande des sessions sans vrai titre (titre de repli, gardé sur l'iPhone).
+    public internal(set) var premiersMessages: [String: String] = ModeleRelais.premiersMessagesGardes()
+    @ObservationIgnored var titresDemandes: Set<String> = []
+    /// Blocs d'affichage par fil, recalculés seulement quand le fil change (jamais à chaque delta ni à chaque rendu).
+    @ObservationIgnored private var cacheBlocs: [String: (cle: [Int], blocs: [BlocFil])] = [:]
+    /// Deltas reçus mais pas encore publiés : publiés ensemble toutes les 100 ms, pas un rendu par jeton.
+    @ObservationIgnored private var tamponTexte: [String: String] = [:]
+    @ObservationIgnored private var tamponReflexion: [String: String] = [:]
+    @ObservationIgnored private var publicationPrevue = false
     @ObservationIgnored private(set) var client: ClientRelais?
     @ObservationIgnored private var boucle: Task<Void, Never>?
     @ObservationIgnored private var version = -1
@@ -57,6 +66,17 @@ public final class ModeleRelais {
 
     public func machine(_ id: String) -> Machine? {
         machines.first { $0.id == id }
+    }
+
+    /// Les blocs du fil d'une session, ou nil s'il n'est pas chargé. Lit `fils` (donc observé), calcule une fois par
+    /// état du fil (nombre, premier et dernier `seq`).
+    public func blocs(_ id: String) -> [BlocFil]? {
+        guard let fil = fils[id] else { return nil }
+        let cle = [fil.count, fil.first?.seq ?? 0, fil.last?.seq ?? 0]
+        if let c = cacheBlocs[id], c.cle == cle { return c.blocs }
+        let blocs = BlocsFil.depuis(StructureFil.structurer(fil))
+        cacheBlocs[id] = (cle, blocs)
+        return blocs
     }
 
     // MARK: - Boucle de liaison
@@ -158,9 +178,14 @@ public final class ModeleRelais {
     /// Applique un message du flux au parc, au fil ou aux écritures en cours.
     private func appliquer(_ message: MessageClient) {
         switch message {
-        case .session(let session): sessions = MiseAJourParc.session(session, dans: sessions)
+        case .session(let session):
+            // Une affectation invalide tous les lecteurs même à valeur égale : on n'écrit que ce qui change.
+            let suite = MiseAJourParc.session(session, dans: sessions)
+            if suite != sessions { sessions = suite }
         case .supprimee(let id): retirer(id)
-        case .machine(let machine): machines = MiseAJourParc.machine(machine, dans: machines)
+        case .machine(let machine):
+            let suite = MiseAJourParc.machine(machine, dans: machines)
+            if suite != machines { machines = suite }
         case .notification(let notification): recevoirNotification(notification)
         case .evenement(let evenement): recevoirEvenement(evenement)
         case .flux(let id, _, let delta, let genre, nil): ajouterDelta(id, delta, genre: genre)
@@ -180,21 +205,45 @@ public final class ModeleRelais {
         let id = evenement.sessionId
         if let fil = fils[id] { fils[id] = FusionFil.ajouter(evenement, au: fil) }
         switch evenement.evt {
-        case .texte(_, nil): enEcriture[id] = nil
-        case .reflexion(_, nil): reflexionEnCours[id] = nil
+        case .texte(_, nil): viderTexte(id)
+        case .reflexion(_, nil): viderReflexion(id)
         case .tourFini:
-            enEcriture[id] = nil
-            reflexionEnCours[id] = nil
+            viderTexte(id)
+            viderReflexion(id)
         default: break
         }
     }
 
+    private func viderTexte(_ id: String) {
+        tamponTexte[id] = nil
+        if enEcriture[id] != nil { enEcriture[id] = nil }
+    }
+
+    private func viderReflexion(_ id: String) {
+        tamponReflexion[id] = nil
+        if reflexionEnCours[id] != nil { reflexionEnCours[id] = nil }
+    }
+
     private func ajouterDelta(_ id: String, _ delta: String, genre: String?) {
         if genre == "reflexion" {
-            reflexionEnCours[id, default: ""] += delta
+            tamponReflexion[id, default: reflexionEnCours[id] ?? ""] += delta
         } else {
-            enEcriture[id, default: ""] += delta
+            tamponTexte[id, default: enEcriture[id] ?? ""] += delta
         }
+        guard !publicationPrevue else { return }
+        publicationPrevue = true
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(100))
+            self?.publierDeltas()
+        }
+    }
+
+    private func publierDeltas() {
+        publicationPrevue = false
+        for (id, texte) in tamponTexte { enEcriture[id] = texte }
+        for (id, texte) in tamponReflexion { reflexionEnCours[id] = texte }
+        tamponTexte = [:]
+        tamponReflexion = [:]
     }
 
     private func retirer(_ id: String) {
@@ -209,6 +258,7 @@ public final class ModeleRelais {
         machines = []
         notifications = []
         fils = [:]
+        cacheBlocs = [:]
         enEcriture = [:]
         reflexionEnCours = [:]
         debutAtteint = []
@@ -219,7 +269,10 @@ public final class ModeleRelais {
     /// Fusionne une tranche du fil (début, page ancienne ou rattrapage) ; `atteint` : rien n'existe avant elle.
     func fusionnerFil(_ id: String, _ tranche: [EvenementDate], atteint: Bool) {
         fils[id] = FusionFil.fusionner(fils[id] ?? [], tranche)
-        if atteint { debutAtteint.insert(id) }
+        if atteint {
+            debutAtteint.insert(id)
+            if let m = fils[id].flatMap(TitreSession.premierMessage) { retenirPremierMessage(m, de: id) }
+        }
     }
 
     /// Remplace le fil par sa relecture complète, le relais ayant réécrit la fin.
@@ -230,6 +283,7 @@ public final class ModeleRelais {
 
     func retirerFil(_ id: String) {
         fils[id] = nil
+        cacheBlocs[id] = nil
         debutAtteint.remove(id)
     }
 }

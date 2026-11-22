@@ -71,7 +71,8 @@ struct SessionEcran: View {
         }
         ToolbarItem(placement: .principal) {
             VStack(spacing: 1) {
-                Text(s.titre).font(Q.titreNav).foregroundStyle(Q.titre).lineLimit(1)
+                Text(TitreSession.affiche(s, premierMessage: modele.premiersMessages[s.id]))
+                    .font(Q.titreNav).foregroundStyle(Q.titre).lineLimit(1)
                 Text("\(s.machine) · \(s.projet.nom)").font(Q.sousTitreNav).foregroundStyle(Q.secondaire).lineLimit(1)
             }
             .frame(maxWidth: 210)

@@ -34,7 +34,7 @@ struct BandeAppareils: View {
     }
 
     @ViewBuilder private func actions(_ m: Machine) -> some View {
-        Text(m.enLigne ? "En ligne" : "Hors ligne")
+        Text(EtatAppareil.texte(m, maintenant: .now))
         if !m.enLigne && modele.reveilPossible.contains(m.id) {
             Button("Réveiller", systemImage: "power") { lancer { await modele.reveiller(m.id) } }
         }
@@ -62,6 +62,16 @@ struct BandeAppareils: View {
         if nom.contains("portable") { return "laptopcomputer" }
         if m.id == "pi" || nom.contains(" pi") { return "cpu" }
         return "desktopcomputer"
+    }
+}
+/// Ce que le relais dit d'une machine : en ligne = son poste est relié à CE relais ; sinon depuis quand, et pourquoi
+/// (`acces.detail` du nœud Lanterne quand il le donne).
+enum EtatAppareil {
+    static func texte(_ m: Machine, maintenant: Date) -> String {
+        if m.enLigne { return "En ligne" }
+        let vue = DateRelative.texte(iso: m.derniereVue, maintenant: maintenant)
+        let pourquoi = m.acces?.detail ?? (m.acces?.etat == "connexion" ? "connexion en cours" : nil)
+        return ["Hors ligne", pourquoi, vue.isEmpty ? nil : "vue \(vue)"].compactMap { $0 }.joined(separator: " · ")
     }
 }
 #endif

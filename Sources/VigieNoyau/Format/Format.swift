@@ -32,9 +32,7 @@ public enum Format {
 
     /// Les dates du relais sont en ISO 8601 avec millisecondes (`toISOString()` de JavaScript).
     public static func dateISO(_ iso: String) -> Date? {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f.date(from: iso) ?? ISO8601DateFormatter().date(from: iso)
+        DateRelative.date(iso) // formateurs partagés : en créer un par appel coûte cher
     }
 
     private static func decimal(_ v: Double) -> String {

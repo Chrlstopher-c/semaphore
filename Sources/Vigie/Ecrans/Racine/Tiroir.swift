@@ -114,6 +114,7 @@ private struct EntreeTiroir: View {
 }
 
 private struct EntreeSession: View {
+    @Environment(ModeleRelais.self) private var modele
     let session: Session
     let symbole: String
     let action: () -> Void
@@ -122,7 +123,7 @@ private struct EntreeSession: View {
         Button(action: action) {
             HStack(spacing: 16) {
                 Image(systemName: symbole).font(.system(size: 15, weight: .light)).frame(width: 26)
-                Text(session.titre).font(Q.rangee).lineLimit(1)
+                Text(titre).font(Q.rangee).lineLimit(1)
                 Spacer(minLength: 8)
                 marque
             }
@@ -130,6 +131,8 @@ private struct EntreeSession: View {
         }
         .buttonStyle(StyleAppui())
     }
+
+    private var titre: String { TitreSession.affiche(session, premierMessage: modele.premiersMessages[session.id]) }
 
     @ViewBuilder private var marque: some View {
         if session.statut.enActivite {

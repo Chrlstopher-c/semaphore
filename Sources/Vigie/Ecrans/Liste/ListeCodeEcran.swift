@@ -42,7 +42,7 @@ struct ListeCodeEcran: View {
     private var lignes: [LigneSession] {
         let toutes = ListeSessions.lignes(
             modele.sessions, machines: modele.machines,
-            maintenant: .now, archivees: archivees)
+            maintenant: .now, archivees: archivees, premiersMessages: modele.premiersMessages)
         let cle = recherche.trimmingCharacters(in: .whitespaces)
         return cle.isEmpty ? toutes : toutes.filter { $0.titre.localizedCaseInsensitiveContains(cle) }
     }
@@ -58,6 +58,7 @@ struct ListeCodeEcran: View {
             NavigationLink(value: ligne.id) { LigneSessionVue(ligne: ligne) }
                 .buttonStyle(StyleAppui())
                 .contextMenu { menu(ligne.id) }
+                .task(id: ligne.titreDeRepli) { if ligne.titreDeRepli { await modele.chargerPremierMessage(ligne.id) } }
         }
     }
 

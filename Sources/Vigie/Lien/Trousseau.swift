@@ -7,7 +7,7 @@ import VigieNoyau
 
 enum Trousseau {
     private static let service = "com.echo.labs.vigie"
-    private static let compte = "jeton-relais"
+    private static let compte = "cle-noeud-quart" // l'ancien « jeton-relais » de Vigie n'est plus lu
 
     static func lire() -> String? {
         let requete: [String: Any] = [

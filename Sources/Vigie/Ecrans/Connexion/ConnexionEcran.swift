@@ -42,7 +42,7 @@ struct ConnexionEcran: View {
             }
         }
         .background(Q.fondFil.ignoresSafeArea())
-        .onAppear { if adresse.isEmpty { adresse = cablage.adresse.absoluteString } }
+        .onAppear { if adresse.isEmpty && cablage.adresseConnue { adresse = cablage.adresse.absoluteString } }
         .sensoryFeedback(.error, trigger: erreur) { _, e in e != nil }
     }
 

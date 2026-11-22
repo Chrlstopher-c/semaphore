@@ -10,13 +10,17 @@ struct FilQuart: View {
     let ouvrirActions: (GroupeActions) -> Void
     let ouvrirTaches: () -> Void
 
+    // `☠` Fluidité : ce corps ne lit que le fil (blocs mis en cache par le modèle) ; le texte en flux vit dans
+    // `DirectVue`, seule vue invalidée à chaque paquet de deltas. Les blocs sont `Equatable` : un bloc inchangé
+    // n'est jamais réévalué, même quand la session (statut, contexte) bouge.
     var body: some View {
-        let blocs = BlocsFil.depuis(StructureFil.structurer(modele.fils[session.id] ?? []))
+        let blocs = modele.blocs(session.id) ?? []
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 20) {
                 debut(vide: blocs.isEmpty)
-                ForEach(blocs) { bloc in BlocVue(bloc: bloc, ouvrirActions: ouvrirActions) }
-                direct(blocs)
+                ForEach(blocs) { bloc in BlocVue(bloc: bloc, ouvrirActions: ouvrirActions).equatable() }
+                DirectVue(id: session.id, statut: session.statut, taches: TachesFond.enCours(blocs),
+                          ouvrirTaches: ouvrirTaches)
             }
             .padding(.horizontal, Q.margeTexte).padding(.top, 12).padding(.bottom, 24)
         }
@@ -40,25 +44,33 @@ struct FilQuart: View {
                 .task { await modele.chargerPlusAncien(session.id) }
         }
     }
+}
 
-    /// Ce qui s'écrit maintenant : réflexion, texte en flux, roue de travail, tâches de fond.
-    @ViewBuilder private func direct(_ blocs: [BlocFil]) -> some View {
-        if let r = modele.reflexionEnCours[session.id], !r.isEmpty {
+/// Ce qui s'écrit maintenant : réflexion, texte en flux, roue de travail, tâches de fond.
+private struct DirectVue: View {
+    @Environment(ModeleRelais.self) private var modele
+    let id: String
+    let statut: StatutSession
+    let taches: Int
+    let ouvrirTaches: () -> Void
+
+    var body: some View {
+        if let r = modele.reflexionEnCours[id], !r.isEmpty {
             Text(r.suffix(280)).font(Q.detail).italic().foregroundStyle(Q.tertiaire).lineLimit(4)
         }
-        if let t = modele.enEcriture[session.id], !t.isEmpty {
+        if let t = modele.enEcriture[id], !t.isEmpty {
             MarkdownVue(source: t)
-        } else if session.statut.enActivite {
+        } else if statut.enActivite {
             HStack(spacing: 10) {
                 IndicateurTravail().frame(width: 16, height: 16)
-                Text(session.statut == .compaction ? "Compaction du contexte…" : "Claude travaille…")
+                Text(statut == .compaction ? "Compaction du contexte…" : "Claude travaille…")
                     .font(Q.detail).foregroundStyle(Q.tertiaire)
             }
         }
-        let n = TachesFond.enCours(blocs)
-        if n > 0 {
+        if taches > 0 {
             Button(action: ouvrirTaches) {
-                Text(n > 1 ? "\(n) tâches en cours" : "1 tâche en cours").font(Q.rangee).foregroundStyle(Q.lien)
+                Text(taches > 1 ? "\(taches) tâches en cours" : "1 tâche en cours")
+                    .font(Q.rangee).foregroundStyle(Q.lien)
             }
         }
     }

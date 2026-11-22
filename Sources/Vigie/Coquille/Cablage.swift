@@ -7,13 +7,12 @@ import VigieNoyau
 
 @MainActor @Observable
 public final class Cablage {
-    /// Adresse injectée par `build.sh` depuis `.env.local` (jamais dans le dépôt) ; l'exemple sinon.
-    public static let adresseParDefaut: URL = {
-        let brut = Bundle.main.object(forInfoDictionaryKey: "EchoAdresseCcremote") as? String
-        return URL(string: brut?.isEmpty == false ? brut! : "https://ccremote.example.com")!
-    }()
+    /// `☠` Quart v1 parle à un nœud Lanterne. Il ne reprend NI l'adresse NI le jeton de l'ancienne Vigie (relais
+    /// ccremote du Pi, `vigie.v2.adresse` + trousseau `jeton-relais`) : les reprendre l'avait branché en silence sur
+    /// l'ancien relais, dont les postes ne sont plus ceux du parc (la tour y apparaissait éteinte).
+    public static let adresseParDefaut = URL(string: "https://noeud.example.com")!
 
-    private static let cleAdresse = "vigie.v2.adresse"
+    private static let cleAdresse = "quart.v1.adresse"
     private static let nomAppareil = "iPhone (Quart)"
 
     public let modele = ModeleRelais()
@@ -24,7 +23,11 @@ public final class Cablage {
     public init() {
         let memorisee = UserDefaults.standard.string(forKey: Self.cleAdresse).flatMap(URL.init(string:))
         adresse = memorisee ?? Self.adresseParDefaut
+        adresseConnue = memorisee != nil
     }
+
+    /// Une adresse de nœud a déjà été retenue (sinon l'écran d'appairage part d'un champ vide).
+    public private(set) var adresseConnue: Bool
 
     /// Idempotent : le pupitre monte toutes les coquilles au lancement, et `.task` peut revenir.
     public func amorcer() async {
@@ -55,6 +58,7 @@ public final class Cablage {
 
     private func memoriser(adresse: URL, jeton: String) {
         self.adresse = adresse
+        adresseConnue = true
         UserDefaults.standard.set(adresse.absoluteString, forKey: Self.cleAdresse)
         Trousseau.ecrire(jeton)
         brancher(jeton: jeton)
