@@ -44,16 +44,22 @@ struct ChampSaisie<Plus: View, Pilule: View>: View {
     }
 
     private var champ: some View {
-        TextField("", text: $texte, prompt: Text(etendu ? "Tape / pour les commandes" : invite)
-            .foregroundStyle(Q.tertiaire), axis: .vertical)
-            .font(Q.rangee).foregroundStyle(Q.texte).tint(Q.coche)
-            .lineLimit(1...8)
-            .focused($focus)
-            .padding(.leading, etendu ? 9 : 7).padding(.top, etendu ? 16 : 0).padding(.bottom, etendu ? 18 : 0)
-            .frame(minHeight: 36)
-            .contentShape(.rect)
-            .simultaneousGesture(TapGesture().onEnded { focus = true }) // marges du champ comprises
+        ZStack(alignment: .topLeading) {
+            TextField("", text: $texte, prompt: Text(etendu ? "Tape / pour les commandes" : invite)
+                .foregroundStyle(Q.tertiaire), axis: .vertical)
+                .font(Q.rangee).foregroundStyle(Q.texte).tint(Q.coche)
+                .lineLimit(1...8)
+                .focused($focus)
+                .opacity(dictee.active ? 0 : 1)
+            if dictee.active { TexteDicte(cumul: dictee.cumul) { dictee.arreter(); focus = true } }
+        }
+        .padding(.leading, etendu ? 9 : 7).padding(.top, etendu ? 16 : 0).padding(.bottom, etendu ? 18 : 0)
+        .frame(minHeight: 36)
+        .contentShape(.rect)
+        .simultaneousGesture(TapGesture().onEnded { if !dictee.active { focus = true } }) // marges comprises
+        .onChange(of: texte) { _, nouveau in dictee.champModifie(nouveau) }
     }
+
 
     private var rangeeBas: some View {
         HStack(spacing: 8) {
@@ -178,6 +184,48 @@ struct Composeur: View {
                 erreur(e)
             }
         }
+    }
+}
+/// La dictée en direct DANS le champ : l'acquis en blanc, le segment en cours estompé ; chaque mot entre en fondu
+/// doux (interpolation de texte, aucune saccade) ; trois barres sobres respirent à droite. Toucher : arrêter et
+/// reprendre la main au clavier (le texte reste modifiable).
+private struct TexteDicte: View {
+    let cumul: CumulDictee
+    let reprendre: () -> Void
+
+    var body: some View {
+        HStack(alignment: .lastTextBaseline, spacing: 8) {
+            (Text(cumul.acquis).foregroundStyle(Q.texte)
+                + Text(cumul.partiel.isEmpty || cumul.acquis.isEmpty ? cumul.partiel : " " + cumul.partiel)
+                .foregroundStyle(Q.secondaire))
+                .font(Q.rangee)
+                .lineLimit(1...8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentTransition(.interpolate)
+                .animation(.easeOut(duration: 0.22), value: cumul)
+                .overlay(alignment: .leading) {
+                    if cumul.texte.isEmpty { Text("Je t’écoute…").font(Q.rangee).foregroundStyle(Q.tertiaire) }
+                }
+            Ecoute()
+        }
+        .contentShape(.rect)
+        .onTapGesture(perform: reprendre)
+        .accessibilityLabel("Dictée en cours : \(cumul.texte)")
+    }
+}
+
+/// Indicateur d'écoute : trois barres qui respirent en décalé (transform seulement, rien de recalculé au rendu).
+private struct Ecoute: View {
+    var body: some View {
+        HStack(spacing: 3) {
+            ForEach(0..<3, id: \.self) { i in
+                Capsule().fill(Q.coche).frame(width: 3, height: 14)
+                    .phaseAnimator([0.35, 1.0]) { vue, phase in vue.scaleEffect(y: phase, anchor: .center) }
+                        animation: { _ in .easeInOut(duration: 0.45).delay(Double(i) * 0.15) }
+            }
+        }
+        .frame(height: 18)
+        .accessibilityHidden(true)
     }
 }
 #endif

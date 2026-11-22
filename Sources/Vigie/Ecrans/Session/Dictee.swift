@@ -48,9 +48,10 @@ final class Dictee {
     @ObservationIgnored private var pont: PontAudio?
     /// Numéro de la requête courante : tout rappel d'une requête antérieure est ignoré.
     @ObservationIgnored private var ronde = 0
-    @ObservationIgnored private var texteInitial = ""
-    @ObservationIgnored private var consolide = ""
-    @ObservationIgnored private var partielle = ""
+    /// Le texte dicté (base + segments finalisés + segment en cours), observé par le champ pour l'animation.
+    private(set) var cumul = CumulDictee(base: "")
+    /// Le dernier texte écrit dans le champ : un champ qui en diffère a été retouché à la main.
+    @ObservationIgnored private(set) var dernierEmis = ""
     @ObservationIgnored private var echecs = 0
     @ObservationIgnored private var miseAJour: (@MainActor (String) -> Void)?
 
@@ -64,10 +65,9 @@ final class Dictee {
             return "Reconnaissance vocale non autorisée : autorise-la dans Réglages iOS."
         }
         if active { arreter() }
-        self.texteInitial = texteInitial
+        cumul = CumulDictee(base: texteInitial)
+        dernierEmis = texteInitial
         self.miseAJour = miseAJour
-        consolide = ""
-        partielle = ""
         echecs = 0
         if let erreur = lancerAudio() {
             arreter()
@@ -88,10 +88,9 @@ final class Dictee {
         tache = nil
         reconnaissance = nil
         ronde += 1
-        consolide = Self.joindre(consolide, partielle)
-        partielle = ""
+        cumul.figer()
         active = false
-        miseAJour?(texteComplet())
+        emettre()
         miseAJour = nil
         finirSession()
     }
@@ -173,19 +172,13 @@ final class Dictee {
 
     private func traiterResultat(_ texte: String, fin: Bool) {
         echecs = 0
-        if fin {
-            consolide = Self.joindre(consolide, texte)
-            partielle = ""
-            ouvrirRequete()
-        } else {
-            partielle = texte
-        }
-        miseAJour?(texteComplet())
+        cumul.resultat(texte, fin: fin)
+        if fin { ouvrirRequete() }
+        emettre()
     }
 
     private func traiterErreur(sansParole: Bool, detail: String) {
-        consolide = Self.joindre(consolide, partielle)
-        partielle = ""
+        cumul.figer() // la tâche repart (silence, limite d'une minute) : rien de dit n'est perdu
         if !sansParole { echecs += 1 }
         guard echecs < Self.echecsMax else {
             Trace.erreur("dictee", "reconnaissance abandonnée après \(echecs) échecs : \(detail)")
@@ -195,16 +188,16 @@ final class Dictee {
         ouvrirRequete()
     }
 
-    private func texteComplet() -> String {
-        Self.joindre(texteInitial, Self.joindre(consolide, partielle))
+    private func emettre() {
+        dernierEmis = cumul.texte
+        miseAJour?(dernierEmis)
     }
 
-    /// Accole `suite` à `avant`, avec une espace si besoin. Rend `avant` seul si `suite` est vide.
-    private nonisolated static func joindre(_ avant: String, _ suite: String) -> String {
-        let segment = suite.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !segment.isEmpty else { return avant }
-        guard let dernier = avant.last, !dernier.isWhitespace else { return avant + segment }
-        return avant + " " + segment
+    /// Le champ a été retouché à la main pendant la dictée : la retouche devient la base, la dictée continue après.
+    func champModifie(_ texte: String) {
+        guard active, texte != dernierEmis else { return }
+        cumul.champModifie(texte)
+        dernierEmis = texte
     }
 
     // MARK: - Autorisations et fabriques (nonisolated : les rappels ne doivent pas hériter du MainActor)
