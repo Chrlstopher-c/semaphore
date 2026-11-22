@@ -21,10 +21,10 @@ public struct LigneSession: Identifiable, Sendable, Equatable {
 }
 
 public enum ListeSessions {
-    /// Les sessions non archivées, les plus récentes d'abord (`majLe`).
+    /// Les sessions non archivées (ou seulement les archivées), les plus récentes d'abord (`majLe`).
     public static func lignes(_ sessions: [Session], machines: [Machine], maintenant: Date,
-                              fuseau: TimeZone = .current) -> [LigneSession] {
-        let vues = sessions.filter { $0.archivee != true }
+                              fuseau: TimeZone = .current, archivees: Bool = false) -> [LigneSession] {
+        let vues = sessions.filter { ($0.archivee == true) == archivees }
             .map { (session: $0, majLe: DateRelative.date($0.majLe) ?? .distantPast) }
             .sorted { $0.majLe > $1.majLe }
         return vues.map { ligne($0.session, machines: machines, maintenant: maintenant, fuseau: fuseau) }

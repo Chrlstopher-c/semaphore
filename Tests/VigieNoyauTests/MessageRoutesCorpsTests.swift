@@ -9,8 +9,11 @@ private func messages() throws -> [MessageClient] {
     return try JSONDecoder().decode([MessageClient].self, from: Data(contentsOf: url))
 }
 
+/// Clés triées : l'ordre de `JSONEncoder` n'est pas garanti sous Linux (test instable sans ça).
 private func json<T: Encodable>(_ valeur: T) throws -> String {
-    String(decoding: try JSONEncoder().encode(valeur), as: UTF8.self)
+    let encodeur = JSONEncoder()
+    encodeur.outputFormatting = .sortedKeys
+    return String(decoding: try encodeur.encode(valeur), as: UTF8.self)
 }
 
 @Test func chaqueGenreDeMessageDuFluxSeDecode() throws {
