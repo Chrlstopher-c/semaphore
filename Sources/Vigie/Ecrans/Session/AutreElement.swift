@@ -15,10 +15,12 @@ struct AutreElement: View {
         switch evt {
         case .reflexion(let texte, _): Reflexion(texte: texte)
         case .taches(let taches): ListeTachesVue(taches: taches)
-        case .etape(let resume, let suite): Jalon(symbole: "flag", titre: "Étape livrée", texte: "\(resume)\n→ \(suite)")
+        case .etape(let resume, let suite):
+            Jalon(symbole: "flag", titre: "Étape livrée", texte: "\(resume)\n→ \(suite)")
         case .objectifAtteint(let bilan): Jalon(symbole: "checkmark.circle", titre: "Objectif atteint", texte: bilan)
         case .question(let q): Jalon(symbole: "questionmark.circle", titre: "Question", texte: q)
-        case .erreur(let m): Jalon(symbole: "exclamationmark.triangle", titre: "Erreur", texte: m, couleur: Q.retraitTexte)
+        case .erreur(let m):
+            Jalon(symbole: "exclamationmark.triangle", titre: "Erreur", texte: m, couleur: Q.retraitTexte)
         case .compaction(let avant, let apres, _):
             Signal(texte: "Contexte compacté · \(Format.tokens(avant)) → \(Format.tokens(apres))")
         case .relance(let raison): Signal(texte: raison)
@@ -26,17 +28,20 @@ struct AutreElement: View {
         case .fichiersTour(_, let fichiers): Signal(texte: modifies(fichiers))
         case .tourAnnule: Signal(texte: "Modifications du tour annulées")
         case .image(_, let nom, _, _, _, _): Piece(symbole: "photo", nom: nom)
-        case .fichier(_, let nom, _, let taille, _): Piece(symbole: "doc", nom: "\(nom) · \(Format.octets(Double(taille)))")
+        case .fichier(_, let nom, _, let taille, _):
+            Piece(symbole: "doc", nom: "\(nom) · \(Format.octets(Double(taille)))")
         case .relais(let sens, _, let titre, let texte):
-            Jalon(symbole: "arrow.left.arrow.right", titre: sens == "sortant" ? "Envoyé à « \(titre) »" : "Reçu de « \(titre) »",
-                  texte: texte)
+            Jalon(symbole: "arrow.left.arrow.right",
+                titre: sens == "sortant" ? "Envoyé à « \(titre) »" : "Reçu de « \(titre) »",
+                texte: texte)
         default: EmptyView()
         }
     }
 
     private func resolu(_ d: Dialogue, _ reponses: [String]?, _ decision: String?) -> String {
         if let decision {
-            let mot = ["autoriser": "Autorisé", "toujours": "Toujours autorisé", "refuser": "Refusé"][decision] ?? decision
+            let libelles = ["autoriser": "Autorisé", "toujours": "Toujours autorisé", "refuser": "Refusé"]
+            let mot = libelles[decision] ?? decision
             return "\(mot) · \(d.permission?.outil ?? d.titre)"
         }
         return "\(d.titre) → \((reponses ?? []).joined(separator: ", "))"
@@ -44,7 +49,8 @@ struct AutreElement: View {
 
     private func modifies(_ fichiers: [FichierModifie]) -> String {
         let plus = fichiers.reduce(0) { $0 + $1.ajouts }, moins = fichiers.reduce(0) { $0 + $1.suppressions }
-        return "\(fichiers.count) fichier\(fichiers.count > 1 ? "s" : "") modifié\(fichiers.count > 1 ? "s" : "") · +\(plus) −\(moins)"
+        let pluriel = fichiers.count > 1 ? "s" : ""
+        return "\(fichiers.count) fichier\(pluriel) modifié\(pluriel) · +\(plus) −\(moins)"
     }
 }
 

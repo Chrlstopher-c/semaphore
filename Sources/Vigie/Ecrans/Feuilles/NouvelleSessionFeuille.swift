@@ -26,7 +26,13 @@ struct NouvelleSessionFeuille: View {
                     carteMachines
                     TitreSection(texte: "Dossier")
                     carteDossiers
-                    if let erreur { Text(erreur).font(Q.detail).foregroundStyle(Q.retraitTexte).padding(.horizontal, 32).padding(.top, 12) }
+                    if let erreur {
+                        Text(erreur)
+                            .font(Q.detail)
+                            .foregroundStyle(Q.retraitTexte)
+                            .padding(.horizontal, 32)
+                            .padding(.top, 12)
+                    }
                 }
                 .padding(.bottom, 24)
             }
@@ -62,8 +68,10 @@ struct NouvelleSessionFeuille: View {
     private var carteDossiers: some View {
         Carte {
             if dossiers.isEmpty {
-                RangeeReglage(titre: machine == nil ? "Choisis d’abord une machine" : "Aucun dossier connu", couleur: Q.tertiaire,
-                              chevron: false)
+                RangeeReglage(
+                    titre: machine == nil ? "Choisis d’abord une machine" : "Aucun dossier connu",
+                    couleur: Q.tertiaire,
+                    chevron: false)
             }
             ForEach(Array(dossiers.prefix(30).enumerated()), id: \.offset) { i, p in
                 if i > 0 { Filet() }
@@ -77,7 +85,13 @@ struct NouvelleSessionFeuille: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(titre).font(Q.rangee).foregroundStyle(Q.texte).lineLimit(1)
-                    if !detail.isEmpty { Text(detail).font(Q.detail).foregroundStyle(Q.secondaire).lineLimit(1).truncationMode(.head) }
+                    if !detail.isEmpty {
+                        Text(detail)
+                            .font(Q.detail)
+                            .foregroundStyle(Q.secondaire)
+                            .lineLimit(1)
+                            .truncationMode(.head)
+                    }
                 }
                 Spacer()
                 if coche { Image(systemName: "checkmark").font(.system(size: 20)).foregroundStyle(Q.coche) }

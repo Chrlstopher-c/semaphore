@@ -82,14 +82,19 @@ private struct CarteTache: View {
                 Text(tache.description).font(Q.rangee).foregroundStyle(Q.tertiaire).lineLimit(2)
                 HStack(spacing: 14) {
                     Text(tache.sousAgent != nil ? "Agent" : "Shell").font(Q.rangee).foregroundStyle(Q.texte)
-                    Text(Format.duree(secondes: tache.dureeMs / 1000)).font(Q.rangee).foregroundStyle(Q.tertiaire).monospacedDigit()
+                    Text(Format.duree(secondes: tache.dureeMs / 1000))
+                        .font(Q.rangee)
+                        .foregroundStyle(Q.tertiaire)
+                        .monospacedDigit()
                 }
                 NavigationLink(value: tache.id) { Text("Voir le détail").font(Q.rangee).foregroundStyle(Q.lienDoux) }
             }
             Spacer(minLength: 4)
             if tache.statut == "en_cours" || tache.statut == "en_attente" {
                 Button(action: arreter) {
-                    Image(systemName: "stop.circle").font(.system(size: 24, weight: .light)).foregroundStyle(Q.secondaire)
+                    Image(systemName: "stop.circle")
+                        .font(.system(size: 24, weight: .light))
+                        .foregroundStyle(Q.secondaire)
                         .frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("Arrêter")
@@ -107,23 +112,43 @@ private struct DetailTacheVue: View {
     var body: some View {
         ScrollView {
             if let t = tache {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(t.description).font(.system(size: 18)).foregroundStyle(Q.texte).padding(.horizontal, Q.margeTexte)
-                    TitreSection(texte: "Détail")
-                    Carte {
-                        RangeeReglage(titre: "État", valeur: t.statut.replacingOccurrences(of: "_", with: " "), chevron: false)
-                        Filet()
-                        RangeeReglage(titre: "Outils", valeur: "\(t.outils)", chevron: false)
-                        Filet()
-                        RangeeReglage(titre: "Jetons", valeur: Format.tokens(t.jetons), chevron: false)
-                        if let m = t.modele { Filet(); RangeeReglage(titre: "Modèle", valeur: CatalogueModeles.nom(id: m), chevron: false) }
-                    }
-                    if let a = t.activite { TitreSection(texte: "Activité"); BlocCode(titre: nil, texte: a).padding(.horizontal, Q.marge) }
-                }
-                .padding(.vertical, 12)
+                corps(t)
+                    .padding(.vertical, 12)
             }
         }
         .barreFeuille("Tâche")
+    }
+
+    private func corps(_ t: TacheSession) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(t.description)
+                .font(.system(size: 18))
+                .foregroundStyle(Q.texte)
+                .padding(.horizontal, Q.margeTexte)
+            TitreSection(texte: "Détail")
+            Carte {
+                RangeeReglage(
+                    titre: "État",
+                    valeur: t.statut.replacingOccurrences(of: "_", with: " "),
+                    chevron: false)
+                Filet()
+                RangeeReglage(titre: "Outils", valeur: "\(t.outils)", chevron: false)
+                Filet()
+                RangeeReglage(titre: "Jetons", valeur: Format.tokens(t.jetons), chevron: false)
+                if let m = t.modele {
+                    Filet()
+                    RangeeReglage(
+                        titre: "Modèle",
+                        valeur: CatalogueModeles.nom(id: m),
+                        chevron: false)
+                }
+            }
+            if let a = t.activite {
+                TitreSection(texte: "Activité")
+                BlocCode(titre: nil, texte: a)
+                    .padding(.horizontal, Q.marge)
+            }
+        }
     }
 }
 #endif

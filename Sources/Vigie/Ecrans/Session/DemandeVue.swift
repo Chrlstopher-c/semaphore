@@ -36,7 +36,12 @@ struct DemandeVue: View {
 
     @ViewBuilder private func permission(_ p: PermissionDialogue) -> some View {
         if !p.entree.isEmpty {
-            ScrollView { Text(p.entree).font(Q.monoPetit).foregroundStyle(Q.codeTexte).frame(maxWidth: .infinity, alignment: .leading) }
+            ScrollView {
+                Text(p.entree)
+                    .font(Q.monoPetit)
+                    .foregroundStyle(Q.codeTexte)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
                 .frame(maxHeight: 120).padding(12)
                 .background(Q.fondFil, in: .rect(cornerRadius: 12, style: .continuous))
         }
@@ -82,7 +87,8 @@ struct DemandeVue: View {
             TextField(o.libelle, text: $libre).font(Q.rangee).foregroundStyle(Q.texte).submitLabel(.send)
                 .onSubmit { envoyerLibre() }
             if !libre.isEmpty {
-                BoutonRond(symbole: "arrow.up", diametre: 30, fond: Q.texte, encre: Q.carte, poids: .semibold) { envoyerLibre() }
+                BoutonRond(symbole: "arrow.up", diametre: 30, fond: Q.texte,
+                    encre: Q.carte, poids: .semibold) { envoyerLibre() }
             }
         }
         .padding(.vertical, 6)

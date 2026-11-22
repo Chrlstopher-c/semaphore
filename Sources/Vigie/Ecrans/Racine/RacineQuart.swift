@@ -53,7 +53,8 @@ struct RacineQuart: View {
     }
 
     private func finGlisse(_ g: DragGesture.Value) {
-        let cible = tiroir ? g.predictedEndTranslation.width > -largeur / 3 : g.predictedEndTranslation.width > largeur / 3
+        let arrivee = g.predictedEndTranslation.width
+        let cible = tiroir ? arrivee > -largeur / 3 : arrivee > largeur / 3
         withAnimation(.smooth(duration: 0.35)) { tiroir = cible; glisse = 0 }
     }
 

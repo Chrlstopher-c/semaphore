@@ -124,7 +124,11 @@ struct RangeeReglage: View {
             Text(titre).font(Q.rangee).foregroundStyle(couleur)
             Spacer(minLength: 8)
             if let valeur { Text(valeur).font(Q.rangee).foregroundStyle(Q.secondaire).lineLimit(1) }
-            if chevron { Image(systemName: "chevron.right").font(.system(size: 14, weight: .medium)).foregroundStyle(Q.meta) }
+            if chevron {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Q.meta)
+            }
         }
         .padding(.horizontal, Q.marge).frame(minHeight: Q.rangeeHauteur)
         .contentShape(.rect)

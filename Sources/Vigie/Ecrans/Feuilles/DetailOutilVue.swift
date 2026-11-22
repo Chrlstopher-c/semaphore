@@ -17,7 +17,9 @@ struct DetailOutilVue: View {
                 } else {
                     Text(d.titre).font(.system(size: 18)).foregroundStyle(Q.texte).lineSpacing(4)
                         .textSelection(.enabled).padding(.horizontal, Q.margeTexte).padding(.bottom, 12)
-                    ForEach(Array(d.sections.enumerated()), id: \.offset) { _, s in SectionDetail(section: s, erreur: estErreur(s)) }
+                    ForEach(Array(d.sections.enumerated()), id: \.offset) { _, s in
+                        SectionDetail(section: s, erreur: estErreur(s))
+                    }
                 }
             }
             .padding(.vertical, 12)

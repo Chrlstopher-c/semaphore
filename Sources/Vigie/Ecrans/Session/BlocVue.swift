@@ -28,7 +28,11 @@ private struct BulleChris: View {
             Text(texte).font(Q.corpsFil).foregroundStyle(Q.texteBulle).lineSpacing(Q.interligneFil)
                 .padding(.horizontal, 16).padding(.vertical, 12)
                 .background(Q.bulle, in: .rect(cornerRadius: 22, style: .continuous))
-                .contextMenu { Button("Copier", systemImage: "square.on.square") { UIPasteboard.general.string = texte } }
+                .contextMenu {
+                    Button("Copier", systemImage: "square.on.square") {
+                        UIPasteboard.general.string = texte
+                    }
+                }
         }
         .padding(.trailing, -8) // étalon : la bulle s'arrête à 16 pt du bord, le texte des réponses à 24
     }
@@ -90,8 +94,9 @@ private struct LigneActions: View {
     }
 
     private var libelle: String {
-        guard groupe.enCours, case .outil(let o)? = groupe.elements.last(where: { if case .outil = $0 { true } else { false } }),
-              o.resultat == nil else { return groupe.resume }
+        guard groupe.enCours,
+            case .outil(let o)? = groupe.elements.last(where: { if case .outil = $0 { true } else { false } }),
+            o.resultat == nil else { return groupe.resume }
         return ResumeOutils.intituleEnCours(nom: o.nom, entree: o.detail)
     }
 }

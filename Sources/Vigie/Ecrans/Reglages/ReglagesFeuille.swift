@@ -66,16 +66,24 @@ struct ReglagesFeuille: View {
     private var deconnexion: some View {
         Button { confirmer = true } label: {
             HStack(spacing: 16) {
-                Image(systemName: "rectangle.portrait.and.arrow.right").font(.system(size: 19, weight: .light)).frame(width: 28)
+                Image(systemName: "rectangle.portrait.and.arrow.right")
+                    .font(.system(size: 19, weight: .light))
+                    .frame(width: 28)
                 Text("Se déconnecter").font(Q.rangee)
                 Spacer()
             }
-            .foregroundStyle(Q.deconnexion).padding(.horizontal, Q.marge).frame(height: Q.rangeeHauteur).contentShape(.rect)
+            .foregroundStyle(Q.deconnexion)
+            .padding(.horizontal, Q.marge)
+            .frame(height: Q.rangeeHauteur)
+            .contentShape(.rect)
         }
         .buttonStyle(.plain)
     }
 
-    private func lien<D: View>(_ symbole: String, _ titre: String, @ViewBuilder destination: @escaping () -> D) -> some View {
+    private func lien<D: View>(
+        _ symbole: String, _ titre: String,
+        @ViewBuilder destination: @escaping () -> D
+    ) -> some View {
         NavigationLink { destination() } label: { RangeeReglage(symbole: symbole, titre: titre) }.buttonStyle(.plain)
     }
 }
@@ -91,7 +99,8 @@ private struct ClaudeCodeReglages: View {
             VStack(spacing: 0) {
                 TitreSection(texte: "Nouvelles sessions")
                 Carte {
-                    selecteur("Modèle", $modeleId, (CatalogueModeles.principaux + CatalogueModeles.autres).map { ($0.id, $0.nom) })
+                    selecteur("Modèle", $modeleId,
+                        (CatalogueModeles.principaux + CatalogueModeles.autres).map { ($0.id, $0.nom) })
                     Filet()
                     selecteur("Effort", $effort, [("", "Par défaut")] + EffortSession.allCases.map {
                         ($0.rawValue, CatalogueModeles.libelleEffort($0) ?? $0.rawValue)

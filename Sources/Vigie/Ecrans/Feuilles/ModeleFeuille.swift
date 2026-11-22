@@ -29,7 +29,12 @@ struct ModeleFeuille: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    if let erreur { Text(erreur).font(Q.detail).foregroundStyle(Q.retraitTexte).padding(.horizontal, 32) }
+                    if let erreur {
+                        Text(erreur)
+                            .font(Q.detail)
+                            .foregroundStyle(Q.retraitTexte)
+                            .padding(.horizontal, 32)
+                    }
                 }
                 .padding(.top, 8)
             }
@@ -113,11 +118,15 @@ private struct EffortVue: View {
                 Text(CatalogueModeles.libelleEffort(e) ?? e.rawValue).font(Q.rangee).foregroundStyle(Q.texte)
                 if e == .medium { Pilule(texte: "Recommandé") }
                 if e == .max {
-                    Pilule(texte: "3,5× ou plus d’usage", symbole: "exclamationmark.triangle", fond: Q.avertissementFond,
-                           encre: Q.avertissement)
+                    Pilule(texte: "3,5× ou plus d’usage", symbole: "exclamationmark.triangle",
+                        fond: Q.avertissementFond, encre: Q.avertissement)
                 }
                 Spacer()
-                if session?.effortSession == e { Image(systemName: "checkmark").font(.system(size: 20)).foregroundStyle(Q.coche) }
+                if session?.effortSession == e {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 20))
+                        .foregroundStyle(Q.coche)
+                }
             }
             .padding(.horizontal, Q.marge).frame(height: Q.rangeeHauteur).contentShape(.rect)
         }

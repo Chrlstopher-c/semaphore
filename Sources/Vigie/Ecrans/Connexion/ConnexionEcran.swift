@@ -17,7 +17,9 @@ struct ConnexionEcran: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Quart").font(.system(size: 40, weight: .medium, design: .serif)).foregroundStyle(Q.texte)
                     .padding(.horizontal, 32).padding(.top, 72)
-                Text("Pilote les sessions Claude Code du parc depuis l’iPhone.").font(Q.rangee).foregroundStyle(Q.secondaire)
+                Text("Pilote les sessions Claude Code du parc depuis l’iPhone.")
+                    .font(Q.rangee)
+                    .foregroundStyle(Q.secondaire)
                     .padding(.horizontal, 32).padding(.top, 8)
                 TitreSection(texte: "Nœud").padding(.top, 24)
                 Carte {
@@ -25,9 +27,17 @@ struct ConnexionEcran: View {
                     Filet()
                     champ(parMotDePasse ? "Mot de passe" : "Code d’appairage", texte: $code, secret: parMotDePasse)
                 }
-                Text(parMotDePasse ? "Le mot de passe du relais." : "Le code s’affiche sur la machine (10 minutes, usage unique).")
+                Text(parMotDePasse
+                    ? "Le mot de passe du relais."
+                    : "Le code s’affiche sur la machine (10 minutes, usage unique).")
                     .font(Q.detail).foregroundStyle(Q.tertiaire).padding(.horizontal, 32).padding(.top, 8)
-                if let erreur { Text(erreur).font(Q.detail).foregroundStyle(Q.retraitTexte).padding(.horizontal, 32).padding(.top, 12) }
+                if let erreur {
+                    Text(erreur)
+                        .font(Q.detail)
+                        .foregroundStyle(Q.retraitTexte)
+                        .padding(.horizontal, 32)
+                        .padding(.top, 12)
+                }
                 actions.padding(.top, 32)
             }
         }
@@ -39,7 +49,13 @@ struct ConnexionEcran: View {
     private var actions: some View {
         VStack(spacing: 12) {
             Button { Task { await relier() } } label: {
-                Group { if envoi { IndicateurTravail().frame(width: 18, height: 18) } else { Text("Relier cet iPhone") } }
+                Group {
+                    if envoi {
+                        IndicateurTravail().frame(width: 18, height: 18)
+                    } else {
+                        Text("Relier cet iPhone")
+                    }
+                }
                     .font(.system(size: 17, weight: .medium)).foregroundStyle(Q.carte)
                     .frame(maxWidth: .infinity, minHeight: 50).background(Q.texte, in: .capsule)
             }

@@ -55,7 +55,9 @@ struct SessionEcran: View {
 
     private var introuvable: some View {
         VStack(spacing: 12) {
-            Image(systemName: "questionmark.bubble").font(.system(size: 30, weight: .light)).foregroundStyle(Q.tertiaire)
+            Image(systemName: "questionmark.bubble")
+                .font(.system(size: 30, weight: .light))
+                .foregroundStyle(Q.tertiaire)
             Text("Session introuvable").font(.system(size: 17, weight: .semibold)).foregroundStyle(Q.texte)
             Text("Elle a peut-être été supprimée, ou le nœud ne la connaît plus.").font(Q.detail)
                 .foregroundStyle(Q.tertiaire).multilineTextAlignment(.center)

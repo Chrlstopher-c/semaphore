@@ -40,7 +40,9 @@ struct ListeCodeEcran: View {
     }
 
     private var lignes: [LigneSession] {
-        let toutes = ListeSessions.lignes(modele.sessions, machines: modele.machines, maintenant: .now, archivees: archivees)
+        let toutes = ListeSessions.lignes(
+            modele.sessions, machines: modele.machines,
+            maintenant: .now, archivees: archivees)
         let cle = recherche.trimmingCharacters(in: .whitespaces)
         return cle.isEmpty ? toutes : toutes.filter { $0.titre.localizedCaseInsensitiveContains(cle) }
     }
@@ -48,7 +50,9 @@ struct ListeCodeEcran: View {
     @ViewBuilder private var sessions: some View {
         let liste = lignes
         if liste.isEmpty {
-            EtatVideListe(archivees: archivees, recherche: !recherche.isEmpty, lien: modele.lien, nouvelle: nouvelleSession)
+            EtatVideListe(
+                archivees: archivees, recherche: !recherche.isEmpty,
+                lien: modele.lien, nouvelle: nouvelleSession)
         }
         ForEach(liste) { ligne in
             NavigationLink(value: ligne.id) { LigneSessionVue(ligne: ligne) }
@@ -124,7 +128,12 @@ struct TitreListe: View {
     let texte: String
 
     var body: some View {
-        Text(texte).font(Q.detail).foregroundStyle(Q.meta).padding(.horizontal, 24).padding(.top, 20).padding(.bottom, 10)
+        Text(texte)
+            .font(Q.detail)
+            .foregroundStyle(Q.meta)
+            .padding(.horizontal, 24)
+            .padding(.top, 20)
+            .padding(.bottom, 10)
     }
 }
 

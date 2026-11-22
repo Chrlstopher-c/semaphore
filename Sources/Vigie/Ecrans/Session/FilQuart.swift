@@ -31,7 +31,10 @@ struct FilQuart: View {
             ChargementFil()
         } else if vide && !session.statut.enActivite {
             Text("Rien pour l’instant.\nLe fil s’affiche dès que Claude travaille.").font(Q.detail)
-                .foregroundStyle(Q.tertiaire).multilineTextAlignment(.center).frame(maxWidth: .infinity).padding(.top, 80)
+                .foregroundStyle(Q.tertiaire)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 80)
         } else if !modele.debutAtteint.contains(session.id) {
             IndicateurTravail().frame(width: 18, height: 18).frame(maxWidth: .infinity)
                 .task { await modele.chargerPlusAncien(session.id) }
@@ -66,7 +69,10 @@ enum TachesFond {
     static func enCours(_ blocs: [BlocFil]) -> Int {
         blocs.reduce(0) { total, bloc in
             guard case .actions(let g) = bloc else { return total }
-            return total + g.elements.filter { if case .sousAgent(let a) = $0 { return a.fin == nil } else { return false } }.count
+            let agents = g.elements.filter {
+                if case .sousAgent(let a) = $0 { return a.fin == nil } else { return false }
+            }
+            return total + agents.count
         }
     }
 }

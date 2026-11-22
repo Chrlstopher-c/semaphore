@@ -60,10 +60,20 @@ private struct RangeeAppel: View {
                 .foregroundStyle(appel.resultat?.erreur == true ? Q.retraitTexte : Q.secondaire).frame(width: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text(titre(d)).font(Q.rangee).foregroundStyle(Q.texte).lineLimit(1)
-                if let chemin = d.chemin { Text(nomFichier(chemin)).font(Q.detail).foregroundStyle(Q.tertiaire).lineLimit(1) }
+                if let chemin = d.chemin {
+                    Text(nomFichier(chemin))
+                        .font(Q.detail)
+                        .foregroundStyle(Q.tertiaire)
+                        .lineLimit(1)
+                }
             }
             Spacer(minLength: 8)
-            if let plus = d.ajouts, plus > 0 { Text("+\(plus)").font(Q.detail).foregroundStyle(Q.ajout).monospacedDigit() }
+            if let plus = d.ajouts, plus > 0 {
+                Text("+\(plus)")
+                    .font(Q.detail)
+                    .foregroundStyle(Q.ajout)
+                    .monospacedDigit()
+            }
             if let moins = d.suppressions, moins > 0 {
                 Text("−\(moins)").font(Q.detail).foregroundStyle(Q.retrait).monospacedDigit()
             }
@@ -90,7 +100,10 @@ private struct RangeeAgent: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            Image(systemName: "diamond").font(.system(size: 17, weight: .light)).foregroundStyle(Q.secondaire).frame(width: 28)
+            Image(systemName: "diamond")
+                .font(.system(size: 17, weight: .light))
+                .foregroundStyle(Q.secondaire)
+                .frame(width: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text(agent.description).font(Q.rangee).foregroundStyle(Q.texte).lineLimit(1)
                 Text("Agent · \(agent.nombreOutils) outil\(agent.nombreOutils > 1 ? "s" : "")").font(Q.detail)
@@ -111,7 +124,10 @@ private struct SousAgentVue: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text(agent.description).font(.system(size: 18)).foregroundStyle(Q.texte).padding(.horizontal, Q.margeTexte)
+                Text(agent.description)
+                    .font(.system(size: 18))
+                    .foregroundStyle(Q.texte)
+                    .padding(.horizontal, Q.margeTexte)
                 Frise(elements: agent.interieur.compactMap(element))
                 if let rapport = agent.rapport {
                     TitreSection(texte: "Rapport").padding(.horizontal, -8)

@@ -1,5 +1,6 @@
 // Le tiroir (étalon 015/016) : mot-symbole serif, entrée « Code » sélectionnée, épinglées, récentes, avatar et capsule
-// « Nouvelle session » en bas. Les entrées de l'étalon sans objet chez nous (projets, artefacts, planifiées) sont absentes.
+// « Nouvelle session » en bas. Les entrées de l'étalon sans objet chez nous
+// (projets, artefacts, planifiées) sont absentes.
 #if canImport(SwiftUI)
 import SwiftUI
 import VigieNoyau
@@ -59,7 +60,9 @@ struct Tiroir: View {
         if !liste.isEmpty {
             TitreTiroir(texte: "Récentes")
             ForEach(Array(liste)) { s in
-                EntreeSession(session: s, symbole: "chevron.left.forwardslash.chevron.right") { choisir(.session(s.id)) }
+                EntreeSession(session: s, symbole: "chevron.left.forwardslash.chevron.right") {
+                    choisir(.session(s.id))
+                }
             }
         }
     }

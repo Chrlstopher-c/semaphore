@@ -1,5 +1,6 @@
-// Le rendu markdown d'une réponse (étalon 001/022) : paragraphes pleine largeur, liens soulignés, code en ligne bleu sur
-// gris, listes à retrait suspendu, blocs de code en carte mono. Analyse par le moteur maison du noyau.
+// Le rendu markdown d'une réponse (étalon 001/022) : paragraphes pleine largeur, liens soulignés,
+// code en ligne bleu sur gris, listes à retrait suspendu, blocs de code en carte mono.
+// Analyse par le moteur maison du noyau.
 #if canImport(SwiftUI)
 import SwiftUI
 import VigieNoyau
@@ -21,7 +22,8 @@ private struct BlocMarkdownVue: View {
     var body: some View {
         switch bloc {
         case .titre(let niveau, let contenu):
-            Text(Inline.texte(contenu)).font(.system(size: niveau <= 1 ? 22 : (niveau == 2 ? 20 : 18), weight: .semibold))
+            Text(Inline.texte(contenu))
+                .font(.system(size: niveau <= 1 ? 22 : (niveau == 2 ? 20 : 18), weight: .semibold))
                 .foregroundStyle(Q.texte).padding(.top, 4)
         case .paragraphe(let contenu): Paragraphe(contenu: contenu)
         case .liste(let entrees): ListeVue(entrees: entrees)

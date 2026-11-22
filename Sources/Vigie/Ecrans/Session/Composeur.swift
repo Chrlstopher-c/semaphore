@@ -70,7 +70,9 @@ struct Composeur: View {
     /// Session fermée ou suivie en lecture seule : on le dit, et on propose de la reprendre quand c'est possible.
     private var lectureSeule: some View {
         HStack {
-            Text(session.statut == .fermee ? "Session fermée" : "Lecture seule").font(Q.rangee).foregroundStyle(Q.tertiaire)
+            Text(session.statut == .fermee ? "Session fermée" : "Lecture seule")
+                .font(Q.rangee)
+                .foregroundStyle(Q.tertiaire)
             Spacer()
             if session.statut == .fermee && session.moteur != "claude_ai" {
                 Button("Reprendre") {

@@ -72,7 +72,11 @@ struct GlypheAppareil: View {
 
     private var symbole: String {
         if appareil == .nuage { return "cloud" }
-        if !enLigne { return appareil == .portable ? "laptopcomputer.slash" : "desktopcomputer.trianglebadge.exclamationmark" }
+        if !enLigne {
+            return appareil == .portable
+                ? "laptopcomputer.slash"
+                : "desktopcomputer.trianglebadge.exclamationmark"
+        }
         switch appareil {
         case .portable: return "laptopcomputer"
         case .tour: return "desktopcomputer"
