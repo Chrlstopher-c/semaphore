@@ -26,10 +26,17 @@ public final class ClientRelais: Sendable {
     private let session: URLSession
     /// Les terminaux restent ouverts des heures, parfois muets : pas de délai d'inactivité de 40 s.
     public let sessionTerminal: URLSession
+    /// Transport « par l'aiguilleur » : chaque requête passe dans le canal chiffré vers le nœud (aucun WebSocket de
+    /// flux ni terminal par ce chemin : le modèle se rabat sur le long-poll). nil : transport direct (HTTP).
+    public let aiguilleur: ClientAiguilleur?
 
-    public init(adresse: URL, jeton: String) {
+    /// Le WebSocket `/api/flux` n'existe qu'en transport direct.
+    public var fluxDisponible: Bool { aiguilleur == nil }
+
+    public init(adresse: URL, jeton: String, aiguilleur: ClientAiguilleur? = nil) {
         self.adresse = adresse
         self.jeton = jeton
+        self.aiguilleur = aiguilleur
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 40 // un long-poll du relais dure au plus 30 s
         config.waitsForConnectivity = false
@@ -114,11 +121,32 @@ public final class ClientRelais: Sendable {
     }
 
     private func transferer(_ requete: URLRequest, envoi: Data? = nil) async throws -> (Data, URLResponse) {
+        if let aiguilleur { return try await Self.parCanal(aiguilleur, requete, envoi: envoi) }
         do {
             if let envoi { return try await session.upload(for: requete, from: envoi) }
             return try await session.data(for: requete)
         } catch {
             throw ErreurRelais.injoignable(error.localizedDescription)
+        }
+    }
+
+    /// La même requête, rejouée dans le canal chiffré : chemin + requête, corps texte ; la réponse redevient HTTP.
+    private static func parCanal(_ canal: ClientAiguilleur, _ requete: URLRequest,
+                                 envoi: Data?) async throws -> (Data, URLResponse) {
+        guard let url = requete.url else { throw ErreurRelais.illisible("adresse") }
+        let chemin = url.path + (url.query.map { "?\($0)" } ?? "")
+        let donnees = envoi ?? requete.httpBody
+        let corps = donnees.flatMap { String(data: $0, encoding: .utf8) }
+        do {
+            let r = try await canal.requete(methode: requete.httpMethod ?? "GET", chemin: chemin, corps: corps)
+            let entete = ["Content-Type": "application/json"]
+            guard let http = HTTPURLResponse(url: url, statusCode: r.statut, httpVersion: nil, headerFields: entete)
+            else { throw ErreurRelais.illisible("réponse du canal") }
+            return (Data(r.corps.utf8), http)
+        } catch let e as ErreurRelais {
+            throw e
+        } catch {
+            throw ErreurRelais.injoignable("aiguilleur : \(error.localizedDescription)")
         }
     }
 

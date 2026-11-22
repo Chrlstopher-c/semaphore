@@ -15,6 +15,14 @@ struct ReglagesFeuille: View {
             ScrollView {
                 VStack(spacing: 0) {
                     carteNoeud.padding(.top, 8)
+                    if cablage.etatAiguilleur != nil {
+                        TitreSection(texte: "Aiguilleur")
+                        Carte {
+                            EtatLienVue(lien: cablage.lienAiguilleur)
+                            Filet(retrait: 60)
+                            lien("touchid", "Empreinte de cet iPhone") { PageEmpreinte() }
+                        }
+                    }
                     TitreSection(texte: "Compte")
                     Carte {
                         lien("gauge.with.dots.needle.33percent", "Usage") { UsageContenu(sessionId: nil) }
@@ -44,14 +52,20 @@ struct ReglagesFeuille: View {
                 Text("Q").font(.system(size: 17, weight: .medium, design: .serif)).foregroundStyle(Q.texte)
                     .frame(width: 44, height: 44).background(Color.black, in: .circle)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Nœud Lanterne").font(Q.rangee).foregroundStyle(Q.texte)
-                    Text("\(cablage.adresse.host() ?? cablage.adresse.absoluteString) · \(etatLien)").font(Q.detail)
+                    Text(cablage.etatAiguilleur?.nomNoeud ?? "Nœud Lanterne").font(Q.rangee).foregroundStyle(Q.texte)
+                    Text("\(hote) · \(etatLien)").font(Q.detail)
                         .foregroundStyle(Q.secondaire).lineLimit(1)
                 }
                 Spacer()
             }
             .padding(.horizontal, Q.marge).frame(height: 68)
         }
+    }
+
+    /// Hôte affiché : celui de l'aiguilleur quand on passe par lui, sinon celui du nœud.
+    private var hote: String {
+        if let a = cablage.etatAiguilleur, let h = URL(string: a.adresse)?.host() { return "par \(h)" }
+        return cablage.adresse.host() ?? cablage.adresse.absoluteString
     }
 
     private var etatLien: String {
@@ -148,6 +162,21 @@ private struct NotificationsReglages: View {
             PreferencesAlerte.maintienEnVie = actif
             if actif { MaintienVie.partage.demarrer() } else { MaintienVie.partage.arreter() }
         }
+    }
+}
+/// L'empreinte de l'iPhone, à comparer avec celle que montre le nœud.
+private struct PageEmpreinte: View {
+    @Environment(Cablage.self) private var cablage
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 8) {
+                Carte { EmpreinteVue(texte: cablage.empreinteAppareil).padding(Q.marge) }.padding(.top, 8)
+                Text("Même empreinte dans Lanterne › Paramètres › Réseau : c’est bien cet iPhone.").font(Q.detail)
+                    .foregroundStyle(Q.secondaire).padding(.horizontal, 32)
+            }
+        }
+        .barreFeuille("Empreinte")
     }
 }
 #endif

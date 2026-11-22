@@ -19,6 +19,10 @@ public final class Cablage {
     public private(set) var adresse: URL
     public private(set) var connecte = false
     @ObservationIgnored private var amorce = false
+    /// Lien par l'aiguilleur (voir CablageAiguilleur.swift) : état affiché, état retenu, client vivant.
+    public internal(set) var lienAiguilleur: ClientAiguilleur.Lien = .deconnecte
+    public internal(set) var etatAiguilleur: ClientAiguilleur.Etat?
+    @ObservationIgnored var clientAiguilleur: ClientAiguilleur?
 
     public init() {
         let memorisee = UserDefaults.standard.string(forKey: Self.cleAdresse).flatMap(URL.init(string:))
@@ -35,7 +39,7 @@ public final class Cablage {
         amorce = true
         DelegueApplication.ecouteur = Aiguillage.partage
         Aiguillage.partage.modele = modele
-        brancher(jeton: Trousseau.lire())
+        if let etat = Self.etatAiguilleurGarde() { brancherAiguilleur(etat) } else { brancher(jeton: Trousseau.lire()) }
         await CentreAlerte.partage.demarrer()
         if PreferencesAlerte.maintienEnVie { MaintienVie.partage.demarrer() }
     }
@@ -53,6 +57,7 @@ public final class Cablage {
 
     public func deconnecter() {
         Trousseau.ecrire(nil)
+        oublierAiguilleur()
         brancher(jeton: nil)
     }
 
@@ -64,8 +69,12 @@ public final class Cablage {
         brancher(jeton: jeton)
     }
 
-    private func brancher(jeton: String?) {
+    func brancher(jeton: String?) {
         let client = jeton.map { ClientRelais(adresse: adresse, jeton: $0) }
+        brancher(client: client)
+    }
+
+    func brancher(client: ClientRelais?) {
         connecte = client != nil
         modele.brancher(client)
         CentreAlerte.partage.brancher(client: client)

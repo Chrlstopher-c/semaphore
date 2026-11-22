@@ -88,7 +88,8 @@ let package = Package(
             name: "Echo",
             dependencies: ["Vigie", "EchoHub", "Saily", "Duplex", "Tamis", "Iris", "Lueur", "VigieNoyau", "Systeme"]
         ),
-        .testTarget(name: "VigieNoyauTests", dependencies: ["VigieNoyau"], resources: [.copy("Echantillons")]),
+        .testTarget(name: "VigieNoyauTests", dependencies: ["VigieNoyau"], exclude: ["Aiguilleur/banc"],
+                    resources: [.copy("Echantillons")]),
         .testTarget(name: "EchoHubNoyauTests", dependencies: ["EchoHubNoyau"]),
         .testTarget(name: "SailyNoyauTests", dependencies: ["SailyNoyau"]),
         .testTarget(name: "DuplexNoyauTests", dependencies: ["DuplexNoyau"]),

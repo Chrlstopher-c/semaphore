@@ -7,9 +7,13 @@ import VigieNoyau
 
 enum Trousseau {
     private static let service = "com.echo.labs.vigie"
-    private static let compte = "cle-noeud-quart" // l'ancien « jeton-relais » de Vigie n'est plus lu
+    static let compteCle = "cle-noeud-quart" // l'ancien « jeton-relais » de Vigie n'est plus lu
 
-    static func lire() -> String? {
+    /// Identité de l'appareil (graines X25519/Ed25519, JSON) et état du lien par l'aiguilleur (JSON).
+    static let compteIdentite = "identite-appareil-quart"
+    static let compteAiguilleur = "aiguilleur-quart"
+
+    static func lire(compte: String = compteCle) -> String? {
         let requete: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
             kSecAttrAccount as String: compte, kSecReturnData as String: true, kSecMatchLimit as String: kSecMatchLimitOne,
@@ -20,7 +24,7 @@ enum Trousseau {
         return String(data: donnees, encoding: .utf8)
     }
 
-    static func ecrire(_ jeton: String?) {
+    static func ecrire(_ jeton: String?, compte: String = compteCle) {
         let cle: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: compte,
         ]

@@ -45,6 +45,7 @@ public final class ModeleRelais {
     func brancher(_ client: ClientRelais?) {
         arreter()
         self.client = client
+        version = -1
         lien = client == nil ? .nonConnecte : .attente
         if client == nil { vider() }
     }
@@ -100,6 +101,14 @@ public final class ModeleRelais {
 
     /// Un tour : état complet, puis flux tant qu'il tient. Après trois échecs du flux, un tour de long-poll.
     private func tour(_ client: ClientRelais) async throws {
+        // Par l'aiguilleur, pas de WebSocket de flux : long-poll seul (il rend dès qu'une session ou un fil change),
+        // puis rattrapage des fils affichés.
+        guard client.fluxDisponible else {
+            if version < 0 { try await charger(client) }
+            try await attendre(client)
+            await rattraperFils()
+            return
+        }
         try await charger(client)
         let tenu = await suivreFlux(client)
         if tenu {
