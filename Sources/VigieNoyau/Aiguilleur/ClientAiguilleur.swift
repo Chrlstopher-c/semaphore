@@ -131,6 +131,9 @@ public actor ClientAiguilleur {
     var boucle: Task<Void, Never>?
     var canaux: [String: Chiffrement.CanalAppareil] = [:]
     var canalCourant: String?
+    /// Le canal ouvert vers chaque nœud (identifiant du canal par nœud) ; le nœud qui tient chaque session connue.
+    var canalParNoeud: [String: String] = [:]
+    var sessionsNoeud: [String: String] = [:]
     /// Morceaux des corps reçus en route (réponses, événements du flux).
     var reassemblage = ReassemblageMorceaux()
     /// Le flux en direct du nœud, quand l'appli le suit (voir AiguilleurFlux.swift).
@@ -219,17 +222,21 @@ public actor ClientAiguilleur {
         for canal in Array(canaux.values) { await canal.surFermetureDistante() }
         canaux = [:]
         canalCourant = nil
+        canalParNoeud = [:]
         finirDiffusion("client arrêté")
         finirTerminaux("client arrêté")
         await echouerEnVol(ErreurAiguilleur("client arrêté"))
         await surLien(.deconnecte)
     }
 
-    /// Une requête de l'API clients dans le canal chiffré ; attend l'ouverture du lien (20 s au plus).
+    /// Une requête de l'API clients dans le canal chiffré ; attend l'ouverture du lien (20 s au plus). Une requête
+    /// sur une session part au nœud qui la tient ; la liste du parc est interrogée sur chaque nœud (ParcAiguilleur).
     public func requete(
         methode: String, chemin: String, corps: String?, delai: Duration? = nil
     ) async throws -> ReponseRequete {
-        try await requeteDansCanal(methode: methode, chemin: chemin, corps: corps, codage: nil, type: nil, delai: delai)
+        if methode == "GET", chemin == "/api/etat" { return try await etatDuParc(delai: delai) }
+        return try await requeteDansCanal(methode: methode, chemin: chemin, corps: corps, codage: nil, type: nil,
+                                          noeud: noeudDeChemin(chemin), delai: delai)
     }
 
     /// Une requête dont la réponse peut venir en flux (`?flux=1` dans le chemin) : rendue dès son en-tête, puis ses
@@ -237,7 +244,7 @@ public actor ClientAiguilleur {
     public func requeteFlux(
         methode: String, chemin: String, corps: String?, delai: Duration? = nil
     ) async throws -> ReponseFlux {
-        let canal = try await canalOuvert()
+        let canal = try await canalOuvert(noeud: noeudDeChemin(chemin))
         let ref = UUID().uuidString.lowercased()
         await fluxes.prevoir(ref)
         armerDelaiFlux(ref, delai ?? delais.reponse)
@@ -252,14 +259,16 @@ public actor ClientAiguilleur {
     /// Une requête dont le corps est binaire (fichier envoyé) : il part en base64, en morceaux s'il est grand.
     public func requeteOctets(methode: String, chemin: String, corps: Data, type: String) async throws -> ReponseRequete {
         try await requeteDansCanal(
-            methode: methode, chemin: chemin, corps: corps.base64EncodedString(), codage: "base64", type: type
+            methode: methode, chemin: chemin, corps: corps.base64EncodedString(), codage: "base64", type: type,
+            noeud: noeudDeChemin(chemin)
         )
     }
 
-    private func requeteDansCanal(
-        methode: String, chemin: String, corps: String?, codage: String?, type: String?, delai: Duration? = nil
+    func requeteDansCanal(
+        methode: String, chemin: String, corps: String?, codage: String?, type: String?, noeud: String? = nil,
+        delai: Duration? = nil
     ) async throws -> ReponseRequete {
-        let canal = try await canalOuvert()
+        let canal = try await canalOuvert(noeud: noeud)
         let ref = UUID().uuidString.lowercased()
         await requetes.prevoir(ref)
         armerDelaiReponse(ref, delai ?? delais.reponse)
@@ -288,10 +297,13 @@ public actor ClientAiguilleur {
                                         codage: codage, type: type, morceaux: morceaux.count))
     }
 
-    func canalOuvert() async throws -> Chiffrement.CanalAppareil {
+    /// Le canal ouvert vers `noeud`, ou vers la cible du lien si `noeud` est nil. Attend son ouverture (20 s au plus).
+    func canalOuvert(noeud: String? = nil) async throws -> Chiffrement.CanalAppareil {
+        // Nœud sans canal (hors ligne, non relié) : rien à attendre, la session reste affichée hors ligne.
+        if let noeud, canalParNoeud[noeud] == nil { throw ErreurAiguilleur("nœud hors ligne ou non relié") }
         let fin = ContinuousClock.now.advanced(by: delais.ouverture)
         while ContinuousClock.now < fin {
-            if let id = canalCourant, let canal = canaux[id], await canal.estOuvert { return canal }
+            if let canal = await canalAdresse(noeud: noeud) { return canal }
             try await Task.sleep(for: .milliseconds(50))
         }
         throw ErreurAiguilleur("lien vers le nœud non ouvert : réessaie dans un instant")
