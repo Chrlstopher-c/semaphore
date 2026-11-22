@@ -46,7 +46,6 @@ extension Cablage {
                                                        nom: propre.isEmpty ? Self.nomIPhone : propre,
                                                        graines: Self.graines())
         UserDefaults.standard.set(propre, forKey: Self.cleNom)
-        Trousseau.ecrire(nil)
         Self.garder(etat)
         brancherAiguilleur(etat)
     }
@@ -57,12 +56,17 @@ extension Cablage {
             etat: etat, graines: Self.graines(), nomAppareil: Self.nomRetenu,
             surEtat: { [weak self] nouveau in await self?.recevoirEtat(nouveau) },
             surLien: { [weak self] lien in await self?.recevoirLien(lien) })
-        Task { await clientAiguilleur?.arreter() }
+        let ancien = clientAiguilleur // capturé AVANT le remplacement : sinon c'est le nouveau qu'on arrêterait
+        Task { await ancien?.arreter() }
         clientAiguilleur = client
         etatAiguilleur = etat
         Task { await client.demarrer() }
-        let relais = URL(string: etat.adresse).map { ClientRelais(adresse: $0, jeton: "", aiguilleur: client) }
-        brancher(client: etat.identiteNoeud == nil ? nil : relais)
+        if etat.identiteNoeud != nil, let url = URL(string: etat.adresse) {
+            brancher(client: ClientRelais(adresse: url, jeton: "", aiguilleur: client))
+        } else if !connecte {
+            // En attente d'acceptation : la liaison directe reste en service si elle existe, rien n'est perdu.
+            brancher(jeton: Trousseau.lire())
+        }
     }
 
     private func recevoirEtat(_ etat: ClientAiguilleur.Etat) {
@@ -70,11 +74,19 @@ extension Cablage {
         etatAiguilleur = etat
         Self.garder(etat)
         guard accepte, let client = clientAiguilleur, let url = URL(string: etat.adresse) else { return }
+        Trousseau.ecrire(nil) // le nœud a accepté l'iPhone : la clé directe n'a plus lieu d'être
         brancher(client: ClientRelais(adresse: url, jeton: "", aiguilleur: client))
     }
 
     private func recevoirLien(_ lien: ClientAiguilleur.Lien) {
         if lienAiguilleur != lien { lienAiguilleur = lien }
+    }
+
+    /// Annule une demande vers le Pi pas encore acceptée : la liaison en service (directe) reste telle quelle.
+    public func annulerAiguilleur() {
+        guard etatAiguilleur?.identiteNoeud == nil else { return }
+        oublierAiguilleur()
+        if !connecte { brancher(jeton: Trousseau.lire()) }
     }
 
     /// Abandonne le lien par l'aiguilleur (déconnexion, retour au direct) : l'identité de l'iPhone reste.

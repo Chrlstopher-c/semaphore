@@ -66,6 +66,7 @@ public final class Cablage {
         adresseConnue = true
         UserDefaults.standard.set(adresse.absoluteString, forKey: Self.cleAdresse)
         Trousseau.ecrire(jeton)
+        oublierAiguilleur() // revenir en direct : le lien par l'aiguilleur s'arrête, l'identité de l'iPhone reste
         brancher(jeton: jeton)
     }
 

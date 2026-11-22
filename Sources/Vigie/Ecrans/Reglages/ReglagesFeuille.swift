@@ -15,14 +15,8 @@ struct ReglagesFeuille: View {
             ScrollView {
                 VStack(spacing: 0) {
                     carteNoeud.padding(.top, 8)
-                    if cablage.etatAiguilleur != nil {
-                        TitreSection(texte: "Aiguilleur")
-                        Carte {
-                            EtatLienVue(lien: cablage.lienAiguilleur)
-                            Filet(retrait: 60)
-                            lien("touchid", "Empreinte de cet iPhone") { PageEmpreinte() }
-                        }
-                    }
+                    TitreSection(texte: "Liaison")
+                    Carte { lien("antenna.radiowaves.left.and.right", "Connexion") { ConnexionReglages() } }
                     TitreSection(texte: "Compte")
                     Carte {
                         lien("gauge.with.dots.needle.33percent", "Usage") { UsageContenu(sessionId: nil) }
@@ -162,21 +156,6 @@ private struct NotificationsReglages: View {
             PreferencesAlerte.maintienEnVie = actif
             if actif { MaintienVie.partage.demarrer() } else { MaintienVie.partage.arreter() }
         }
-    }
-}
-/// L'empreinte de l'iPhone, à comparer avec celle que montre le nœud.
-private struct PageEmpreinte: View {
-    @Environment(Cablage.self) private var cablage
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 8) {
-                Carte { EmpreinteVue(texte: cablage.empreinteAppareil).padding(Q.marge) }.padding(.top, 8)
-                Text("Même empreinte dans Lanterne › Paramètres › Réseau : c’est bien cet iPhone.").font(Q.detail)
-                    .foregroundStyle(Q.secondaire).padding(.horizontal, 32)
-            }
-        }
-        .barreFeuille("Empreinte")
     }
 }
 #endif

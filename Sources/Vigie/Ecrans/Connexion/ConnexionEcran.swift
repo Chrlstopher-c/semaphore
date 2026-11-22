@@ -17,11 +17,15 @@ struct ConnexionEcran: View {
     }
 }
 
-private enum Voie: String, CaseIterable { case aiguilleur, direct, motDePasse }
+enum Voie: String, CaseIterable { case aiguilleur, direct, motDePasse }
 
-private struct FormulaireConnexion: View {
+/// Le formulaire de liaison : plein écran au premier lancement (`entete`), ou poussé depuis Réglages › Connexion
+/// pour se relier autrement à tout moment (`termine` rappelé quand la demande est partie).
+struct FormulaireConnexion: View {
     @Environment(Cablage.self) private var cablage
-    @State private var voie = Voie.aiguilleur
+    var entete = true
+    var termine: () -> Void = {}
+    @State var voie = Voie.aiguilleur
     @State private var adresse = ""
     @State private var code = ""
     @State private var nom = "iPhone de Chris"
@@ -31,11 +35,13 @@ private struct FormulaireConnexion: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Quart").font(.system(size: 40, weight: .medium, design: .serif)).foregroundStyle(Q.texte)
-                    .padding(.horizontal, 32).padding(.top, 72)
-                Text("Pilote les sessions Claude Code du parc depuis l’iPhone.").font(Q.rangee)
-                    .foregroundStyle(Q.secondaire).padding(.horizontal, 32).padding(.top, 8)
-                TitreSection(texte: "Liaison").padding(.top, 24)
+                if entete {
+                    Text("Quart").font(.system(size: 40, weight: .medium, design: .serif)).foregroundStyle(Q.texte)
+                        .padding(.horizontal, 32).padding(.top, 72)
+                    Text("Pilote les sessions Claude Code du parc depuis l’iPhone.").font(Q.rangee)
+                        .foregroundStyle(Q.secondaire).padding(.horizontal, 32).padding(.top, 8)
+                }
+                TitreSection(texte: "Liaison").padding(.top, entete ? 24 : 0)
                 Carte { choixVoie }
                 TitreSection(texte: voie == .aiguilleur ? "Aiguilleur" : "Nœud")
                 Carte { champs }
@@ -79,7 +85,7 @@ private struct FormulaireConnexion: View {
 
     private func libelle(_ v: Voie) -> String {
         switch v {
-        case .aiguilleur: return "Par l’aiguilleur"
+        case .aiguilleur: return "Par le Pi (aiguilleur)"
         case .direct: return "Directe, avec un code"
         case .motDePasse: return "Directe, avec un mot de passe"
         }
@@ -87,8 +93,8 @@ private struct FormulaireConnexion: View {
 
     private var aide: String {
         switch voie {
-        case .aiguilleur: return "Le code (XXXX-XXXX, 10 minutes, usage unique) s’obtient sur l’aiguilleur. Ton nœud "
-            + "devra ensuite accepter cet iPhone."
+        case .aiguilleur: return "Le code (XXXX-XXXX, 10 minutes, usage unique) : Lanterne sur le portable, "
+            + "Paramètres › Réseau › Ajouter un appareil. Le nœud devra ensuite accepter cet iPhone."
         case .direct: return "Le code s’affiche sur le nœud (10 minutes, usage unique)."
         case .motDePasse: return "Le mot de passe du relais."
         }
@@ -128,6 +134,7 @@ private struct FormulaireConnexion: View {
             case .direct: try await cablage.appairer(adresse: url, code: propre.uppercased())
             case .motDePasse: try await cablage.connecter(adresse: url, motDePasse: code)
             }
+            termine()
         } catch {
             erreur = (error as? ErreurRelais)?.description ?? "Appairage refusé : vérifie l’adresse et le code."
         }
