@@ -90,7 +90,7 @@ struct ConnexionEcran: View {
                 try await cablage.appairer(adresse: url, code: code.trimmingCharacters(in: .whitespaces).uppercased())
             }
         } catch {
-            erreur = (error as? ErreurRelais)?.description ?? "\(error)"
+            erreur = (error as? ErreurRelais)?.description ?? "Connexion impossible."
         }
     }
 }

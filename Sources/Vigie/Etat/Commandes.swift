@@ -58,11 +58,12 @@ extension ModeleRelais {
         } catch let erreur as ErreurRelais {
             return .failure(erreur)
         } catch {
-            return .failure(.injoignable("\(error)"))
+            return .failure(.injoignable(error.localizedDescription))
         }
     }
 
-    public func contexte(de session: String) async -> Result<ContexteSession, ErreurRelais> {
+    /// `nil` : le nœud n'a pas de détail pour cette session (non pilotée par le SDK, pas encore lu) — rien à montrer.
+    public func contexte(de session: String) async -> Result<ContexteSession?, ErreurRelais> {
         await lecture(Route.contexte(session))
     }
 
@@ -95,7 +96,7 @@ extension ModeleRelais {
         } catch let erreur as ErreurRelais {
             return .failure(erreur)
         } catch {
-            return .failure(.injoignable("\(error)"))
+            return .failure(.injoignable(error.localizedDescription))
         }
     }
 
@@ -106,7 +107,7 @@ extension ModeleRelais {
             return nil
         } catch {
             Trace.erreur("relais", "commande refusée", error)
-            return "\(error)"
+            return (error as? ErreurRelais)?.description ?? "Commande refusée par le nœud."
         }
     }
 }

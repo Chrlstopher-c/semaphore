@@ -11,10 +11,11 @@ public enum ErreurRelais: Error, CustomStringConvertible {
 
     public var description: String {
         switch self {
-        case .injoignable(let raison): return "Relais injoignable (\(raison))"
+        case .injoignable(let raison): return "Nœud injoignable : \(raison)"
         case .nonConnecte: return "Connexion expirée : reconnecte-toi dans les réglages."
         case .refus(_, let message): return message
-        case .illisible(let raison): return "Réponse illisible (\(raison))"
+        // Le détail technique part au journal (Trace), jamais à l'écran.
+        case .illisible: return "Réponse inattendue du nœud."
         }
     }
 }
@@ -146,6 +147,7 @@ public final class ClientRelais: Sendable {
         do {
             return try JSONDecoder().decode(T.self, from: donnees)
         } catch {
+            Trace.erreur("lien", "réponse indécodable (\(T.self))", error)
             throw ErreurRelais.illisible("\(error)")
         }
     }

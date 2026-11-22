@@ -90,7 +90,7 @@ public final class ModeleRelais {
                 return
             } catch {
                 if Task.isCancelled { return }
-                poser(.coupe("\(error)"))
+                poser(.coupe((error as? ErreurRelais)?.description ?? "Liaison coupée, nouvel essai."))
                 await dormirReprise()
             }
         }
@@ -133,7 +133,9 @@ public final class ModeleRelais {
                 tenu = true
                 poser(.connecte)
             case .message(let message): appliquer(message)
-            case .ferme(let raison): poser(.coupe(raison))
+            case .ferme(let raison):
+                Trace.info("flux", "fermé : \(raison)")
+                poser(.coupe("Liaison coupée, nouvel essai."))
             }
         }
         return tenu

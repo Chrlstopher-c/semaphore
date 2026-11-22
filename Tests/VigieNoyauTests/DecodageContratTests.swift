@@ -37,17 +37,6 @@ private func sessionJSON(moteur: String?, tmux: String?, statut: String, extra: 
     #expect(distante.rapide == nil)
     #expect(distante.moteur == "claude_ai")
     #expect(distante.distant?.idDistant == "dist-1")
-    #expect(distante.pilotable == false)
-}
-
-@Test func sessionPilotableSelonMoteurEtTmux() throws {
-    let sdk = try decode(Session.self, sessionJSON(moteur: "sdk", tmux: nil, statut: "attente"))
-    let tmux = try decode(Session.self, sessionJSON(moteur: "tmux", tmux: "cc-1", statut: "travail"))
-    let claudeAi = try decode(Session.self, sessionJSON(moteur: "claude_ai", tmux: "cc-1", statut: "travail"))
-    let fermee = try decode(Session.self, sessionJSON(moteur: "sdk", tmux: nil, statut: "fermee"))
-    #expect(sdk.pilotable && tmux.pilotable)
-    #expect(!claudeAi.pilotable)
-    #expect(!fermee.pilotable)
 }
 
 @Test func modeEtEffortLisiblesOuAbsents() throws {
@@ -81,4 +70,13 @@ private func sessionJSON(moteur: String?, tmux: String?, statut: String, extra: 
     let beta = try #require(etat.machines.last)
     #expect(beta.etatComptes.isEmpty, "une liste mal formée donne une liste vide")
     #expect(beta.etat == nil && beta.acces?.etat == "injoignable")
+}
+
+@Test func contexteNullVeutDireAbsent() throws {
+    let rien = try JSONDecoder().decode(ContexteSession?.self, from: Data("null".utf8))
+    #expect(rien == nil)
+    let json = #"{"modele":"m","fenetre":1000,"utilises":10,"pourcentage":1,"categories":[],"#
+        + #""categoriesDifferees":[],"outilsMcp":[],"fichiersMemoire":[]}"#
+    let plein = try JSONDecoder().decode(ContexteSession?.self, from: Data(json.utf8))
+    #expect(plein?.fenetre == 1000)
 }

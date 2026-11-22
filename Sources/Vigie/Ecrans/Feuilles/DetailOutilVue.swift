@@ -52,7 +52,7 @@ private struct SectionDetail: View {
             .padding(.leading, Q.margeTexte).padding(.trailing, 12)
             if section.code {
                 BlocCode(titre: nil, texte: section.contenu.isEmpty ? "(vide)" : section.contenu,
-                         couleur: erreur ? Q.retraitTexte : Q.titre)
+                         couleur: erreur ? Q.retraitTexte : Q.titre, copiable: false)
                     .padding(.horizontal, Q.marge)
             } else {
                 Text(section.contenu).font(Q.corps).foregroundStyle(Q.texte).textSelection(.enabled)

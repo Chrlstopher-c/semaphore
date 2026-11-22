@@ -17,7 +17,9 @@ struct Composeur: View {
 
     var body: some View {
         Group {
-            if !session.pilotable { lectureSeule } else if focus || !texte.isEmpty { etendu } else { repos }
+            // Comme Lanterne : la saisie est toujours offerte (session fermée : l'envoi la reprend ; claude.ai,
+            // Desktop, terminal : le relais aiguille ou refuse). Un refus du relais s'affiche en bandeau.
+            if focus || !texte.isEmpty { etendu } else { repos }
         }
         .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 8)
         .background(Q.entete.ignoresSafeArea(edges: .bottom))
@@ -67,26 +69,9 @@ struct Composeur: View {
         .accessibilityLabel("Interrompre")
     }
 
-    /// Session fermée ou suivie en lecture seule : on le dit, et on propose de la reprendre quand c'est possible.
-    private var lectureSeule: some View {
-        HStack {
-            Text(session.statut == .fermee ? "Session fermée" : "Lecture seule")
-                .font(Q.rangee)
-                .foregroundStyle(Q.tertiaire)
-            Spacer()
-            if session.statut == .fermee && session.moteur != "claude_ai" {
-                Button("Reprendre") {
-                    Task { if let e = await modele.agir(.reprendre, sur: session.id) { erreur(e) } }
-                }
-                .font(.system(size: 17, weight: .medium)).foregroundStyle(Q.lien)
-            }
-        }
-        .padding(.horizontal, 20).frame(height: 52)
-        .background(Q.carte, in: .capsule)
-    }
-
     private var invite: String {
-        session.statut.enActivite ? "Ajoute un message, il attendra la fin du tour" : "Réponds à Claude"
+        if session.statut.enActivite { return "Ajoute un message, il attendra la fin du tour" }
+        return session.statut == .fermee ? "Réponds pour reprendre la session" : "Réponds à Claude"
     }
 
     private func envoyer() {

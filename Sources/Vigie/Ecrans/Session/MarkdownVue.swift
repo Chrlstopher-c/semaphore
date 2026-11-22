@@ -120,22 +120,28 @@ private struct ListeVue: View {
     }
 }
 
-/// Bloc de code (étalon 021) : carte #20201F, liseré, texte mono défilant à l'horizontale, bouton copier.
+/// Bloc de code (étalon 021) : carte #20201F, liseré, texte mono défilant à l'horizontale. `copiable` : bouton copier
+/// dans sa propre colonne à droite, HORS de la zone qui défile (le texte ne passe jamais dessous). Les cartes du détail
+/// d'un outil portent leur bouton sur la ligne de titre de section, comme l'étalon : `copiable: false`.
 struct BlocCode: View {
     let titre: String?
     let texte: String
     var couleur: Color = Q.codeTexte
+    var copiable = true
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            Text(texte).font(Q.mono).foregroundStyle(couleur).lineSpacing(4).textSelection(.enabled)
-                .fixedSize(horizontal: true, vertical: false)
-                .padding(16)
+        HStack(alignment: .top, spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                Text(texte).font(Q.mono).foregroundStyle(couleur).lineSpacing(4).textSelection(.enabled)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .padding(16)
+            }
+            if copiable { BoutonCopier(texte: texte).padding(.top, 4).padding(.trailing, 4) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Q.carte, in: .rect(cornerRadius: 16, style: .continuous))
+        .clipShape(.rect(cornerRadius: 16, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Q.pilule))
-        .overlay(alignment: .topTrailing) { BoutonCopier(texte: texte).padding(4) }
     }
 }
 

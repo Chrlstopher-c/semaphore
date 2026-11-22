@@ -209,11 +209,6 @@ public struct Session: Codable, Sendable, Identifiable, Equatable {
         majLe = try c.decode(String.self, forKey: .majLe)
     }
 
-    /// Pilotable à distance : pas une session claude.ai, et un moyen de la piloter (tmux ou SDK du poste).
-    public var pilotable: Bool {
-        moteur != "claude_ai" && (tmux != nil || moteur == "sdk") && statut != .fermee
-    }
-
     /// Pilotable à distance : elle a un tmux. Une session de terminal est vivante mais se lit seulement.
     public var ouverte: Bool { tmux != nil }
     public var vivante: Bool { tmux != nil || terminal == true }
