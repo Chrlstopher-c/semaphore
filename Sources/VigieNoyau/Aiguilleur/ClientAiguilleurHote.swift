@@ -28,10 +28,14 @@ extension ClientAiguilleur: Chiffrement.HoteAppareil {
     }
 
     func liaisonOuverte(canal: String) async {
-        delaiReprise = delais.repriseInitiale
-        await surLien(.ouvert)
-        await publierNoeuds()
-        demanderNoeuds()
+        // Seul le canal de la cible porte l'état du lien ; un autre nœud s'abonne seulement au flux en cours.
+        if canal == canalCourant {
+            delaiReprise = delais.repriseInitiale
+            await surLien(.ouvert)
+            await publierNoeuds()
+            demanderNoeuds()
+        }
+        if let ouvert = canaux[canal] { await abonnerCanalAuFlux(ouvert) }
     }
 
     func liaisonRefusee(canal: String, raison: String) async {
@@ -64,7 +68,7 @@ extension ClientAiguilleur: Chiffrement.HoteAppareil {
             diffusion?.yield(.ouverte)
         case let .diffusion(ref, corps, morceaux):
             guard let complet = corpsComplet(ref, corps, morceaux) else { return }
-            recevoirDiffusion(complet)
+            recevoirDiffusion(complet, noeud: noeudDeCanal(canal))
         case let .reponse(ref, ok, raison):
             await requetes.resoudre(ref, ReponseRequete(statut: ok ? 200 : 409, corps: raison ?? ""))
         case let .terminalSortie(terminal, base64):

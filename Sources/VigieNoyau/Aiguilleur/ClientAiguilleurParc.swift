@@ -14,6 +14,9 @@ extension ClientAiguilleur {
         return sessionsNoeud[String(morceaux[2])]
     }
 
+    /// Le nœud qui tient cette session (appris de la liste), ou nil si elle est inconnue.
+    public func noeudDeSession(_ session: String) -> String? { sessionsNoeud[session] }
+
     /// Le canal ouvert vers ce nœud ; sans nœud, la cible du lien. Un nœud sans canal ouvert donne nil.
     func canalAdresse(noeud: String?) async -> Chiffrement.CanalAppareil? {
         let id: String?

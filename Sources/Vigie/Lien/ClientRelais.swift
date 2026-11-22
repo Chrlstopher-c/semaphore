@@ -41,10 +41,12 @@ public final class ClientRelais: Sendable {
     /// nœud, avec les mêmes messages que le WebSocket direct. nil : transport direct (HTTP et WebSocket).
     public let aiguilleur: ClientAiguilleur?
 
-    /// La source qui numérote les fils (`seq`) reçus par ce client : le lien direct, ou le nœud visé par l'aiguilleur.
-    public func origineNumerotation() async -> String {
+    /// La source qui numérote le fil (`seq`) d'une session : le lien direct, ou le nœud qui tient la session (par
+    /// l'aiguilleur ; le nœud visé si la session est inconnue). Chaque nœud numérote ses fils à sa façon.
+    public func origineNumerotation(session: String) async -> String {
         guard let aiguilleur else { return CurseurFil.origine(noeud: nil) }
-        let noeud = await aiguilleur.noeudVise()
+        var noeud = await aiguilleur.noeudDeSession(session)
+        if noeud == nil { noeud = await aiguilleur.noeudVise() }
         return CurseurFil.origine(noeud: noeud)
     }
 

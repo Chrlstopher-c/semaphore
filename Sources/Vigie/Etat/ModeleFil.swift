@@ -40,16 +40,16 @@ extension ModeleRelais {
     }
 
     /// Après une coupure ou un changement de nœud : relit la suite de chaque fil chargé, depuis son dernier `seq`.
-    /// Un autre nœud numérote ses fils autrement : si la source a changé, chaque fil est relu en entier.
+    /// Un autre nœud numérote ses fils autrement : si la source d'un fil a changé, ce fil est relu en entier.
     func rattraperFils() async {
         guard let client else { return }
-        let origine = await client.origineNumerotation()
-        if origine != origineFils {
-            guard await relireTousLesFils() else { return }
-            origineFils = origine
-            return
-        }
         for (id, fil) in fils {
+            let origine = await client.origineNumerotation(session: id)
+            if origine != origineDesFils[id] {
+                guard await relireFil(id) else { continue }
+                origineDesFils[id] = origine
+                continue
+            }
             guard let dernier = fil.last else { continue }
             await rattraperFil(client, id, depuis: dernier)
         }
@@ -88,15 +88,6 @@ extension ModeleRelais {
         }
     }
 
-    /// Relit en entier chaque fil chargé ; rend vrai si toutes les relectures ont réussi.
-    private func relireTousLesFils() async -> Bool {
-        var tous = true
-        for id in Array(fils.keys) {
-            let ok = await relireFil(id)
-            if !ok { tous = false }
-        }
-        return tous
-    }
 
     /// Le relais a réécrit ce fil : on le relit en entier, s'il est encore chargé. Rend vrai si le fil est à jour.
     @discardableResult
