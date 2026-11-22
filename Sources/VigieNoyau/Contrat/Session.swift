@@ -127,12 +127,32 @@ public struct ModeUltracode: Codable, Sendable, Equatable {
     public let disponible: Bool?
 }
 
-/// Session suivie depuis un compte (Remote Control, moteur `claude_ai`) : compte, id claude.ai, connexion.
+/// Session suivie depuis un compte (Remote Control, moteur `claude_ai`) : compte, id claude.ai, connexion, et de
+/// quoi la rattacher à sa jumelle de poste (conversation, dossier réel) ; machine et dossier réels pour l'affichage.
 public struct SessionDistante: Codable, Sendable, Equatable {
     public let compte: String
     public let idDistant: String
     public let connexion: String
     public let probleme: String?
+    /// Dossier annoncé par la session (system/init) : sert au rapprochement en repli.
+    public let cwd: String?
+    /// Conversation Claude Code (session_id du fil) : rattache la session à sa jumelle de poste.
+    public let conversation: String?
+    public let machineReelle: String?
+    public let cwdReel: String?
+
+    /// Champs facultatifs tolérants : un champ mal formé devient absent sans faire perdre la session.
+    public init(from decodeur: Decoder) throws {
+        let c = try decodeur.container(keyedBy: CodingKeys.self)
+        compte = try c.decode(String.self, forKey: .compte)
+        idDistant = try c.decode(String.self, forKey: .idDistant)
+        connexion = try c.decode(String.self, forKey: .connexion)
+        probleme = try c.decodeIfPresent(String.self, forKey: .probleme)
+        cwd = c.facultatif(String.self, .cwd)
+        conversation = c.facultatif(String.self, .conversation)
+        machineReelle = c.facultatif(String.self, .machineReelle)
+        cwdReel = c.facultatif(String.self, .cwdReel)
+    }
 }
 
 public struct Session: Codable, Sendable, Identifiable, Equatable {
