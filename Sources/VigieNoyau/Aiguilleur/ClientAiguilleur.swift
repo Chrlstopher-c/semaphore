@@ -192,6 +192,9 @@ public actor ClientAiguilleur {
         await cibler()
     }
 
+    /// Le nœud que le lien vise en ce moment : celui qui numérote les fils que l'appli reçoit.
+    public func noeudVise() -> String? { etat.noeud }
+
     /// Lance la boucle du lien : connexion, présence, canal vers le nœud ; reprise automatique après coupure.
     public func demarrer() {
         guard boucle == nil else { return }

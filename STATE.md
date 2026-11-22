@@ -378,3 +378,7 @@ mondes montrés côte à côte dans la barre du pupitre.
 - **Reste** : identité d'appareil dans le trousseau, hôte de l'appli (transport au choix du réglage), écran du réglage,
   essai réel Swift ↔ nœud Quart sur la tour.
 - **CI** : `.github/workflows/ci.yml` (tests du noyau sur Linux, `swift test`).
+- **Curseur par nœud (22/11)** : les `seq` sont propres à chaque nœud ; le fil gardait le curseur de l'ancien nœud et
+  rien ne passait après une bascule. Corrigé : `Etat/CurseurFil.swift` (règles pures, testées dans `CurseurFilTests`),
+  relecture complète des fils quand la source (`origine`) change, contrôle du curseur quand la suite est vide et que la
+  session a bougé depuis (`verifierCurseur` dans `Vigie/Etat/ModeleFil.swift`). Non compilé sous Linux (cible SwiftUI).

@@ -39,33 +39,76 @@ extension ModeleRelais {
         }
     }
 
-    /// Après une coupure : relit la suite de chaque fil chargé, depuis son dernier `seq`.
+    /// Après une coupure ou un changement de nœud : relit la suite de chaque fil chargé, depuis son dernier `seq`.
+    /// Un autre nœud numérote ses fils autrement : si la source a changé, chaque fil est relu en entier.
     func rattraperFils() async {
         guard let client else { return }
+        let origine = await client.origineNumerotation()
+        if origine != origineFils {
+            guard await relireTousLesFils() else { return }
+            origineFils = origine
+            return
+        }
         for (id, fil) in fils {
-            guard let apres = fil.last?.seq else { continue }
-            do {
-                let suite: [EvenementDate] = try await client.lire(Route.evenements(id, apres: apres, attendre: 0))
-                if !suite.isEmpty, fils[id] != nil { fusionnerFil(id, suite, atteint: false) }
-                // Le tour est fini (vu par la relecture avant le flux) : plus rien ne s'écrit en direct.
-                if case .tourFini = suite.last?.evt {
-                    viderTexte(id)
-                    viderReflexion(id)
-                }
-            } catch {
-                Trace.erreur("relais", "rattrapage du fil \(id) impossible", error)
-            }
+            guard let dernier = fil.last else { continue }
+            await rattraperFil(client, id, depuis: dernier)
         }
     }
 
-    /// Le relais a réécrit ce fil : on le relit en entier, s'il est encore chargé.
-    func relireFil(_ id: String) async {
-        guard let client, fils[id] != nil else { return }
+    private func rattraperFil(_ client: ClientRelais, _ id: String, depuis dernier: EvenementDate) async {
+        do {
+            let suite: [EvenementDate] = try await client.lire(Route.evenements(id, apres: dernier.seq, attendre: 0))
+            if suite.isEmpty {
+                await verifierCurseur(client, id, dernier)
+            } else if fils[id] != nil {
+                fusionnerFil(id, suite, atteint: false)
+            }
+            // Le tour est fini (vu par la relecture avant le flux) : plus rien ne s'écrit en direct.
+            if case .tourFini = suite.last?.evt {
+                viderTexte(id)
+                viderReflexion(id)
+            }
+        } catch {
+            Trace.erreur("relais", "rattrapage du fil \(id) impossible", error)
+        }
+    }
+
+    /// Suite vide alors que la session a bougé depuis le dernier événement connu : le relais est peut-être derrière
+    /// le curseur (fil renuméroté). On le vérifie sur le fil complet ; sans ce même événement, on relit tout.
+    private func verifierCurseur(_ client: ClientRelais, _ id: String, _ dernier: EvenementDate) async {
+        guard let majLe = session(id)?.majLe,
+              CurseurFil.sessionPlusRecente(majLe: majLe, que: dernier.ts) else { return }
+        do {
+            let complet: [EvenementDate] = try await client.lire(Route.evenements(id))
+            guard fils[id] != nil, !CurseurFil.coherent(dernier, avec: complet) else { return }
+            Trace.info("relais", "fil \(id) : le relais n'a plus le dernier événement connu, relecture complète")
+            remplacerFil(id, complet, atteint: complet.count < Self.tailleDebutFil)
+        } catch {
+            Trace.erreur("relais", "contrôle du curseur du fil \(id) impossible", error)
+        }
+    }
+
+    /// Relit en entier chaque fil chargé ; rend vrai si toutes les relectures ont réussi.
+    private func relireTousLesFils() async -> Bool {
+        var tous = true
+        for id in Array(fils.keys) {
+            let ok = await relireFil(id)
+            if !ok { tous = false }
+        }
+        return tous
+    }
+
+    /// Le relais a réécrit ce fil : on le relit en entier, s'il est encore chargé. Rend vrai si le fil est à jour.
+    @discardableResult
+    func relireFil(_ id: String) async -> Bool {
+        guard let client, fils[id] != nil else { return true }
         do {
             let evenements: [EvenementDate] = try await client.lire(Route.evenements(id))
             remplacerFil(id, evenements, atteint: evenements.count < Self.tailleDebutFil)
+            return true
         } catch {
             Trace.erreur("relais", "relecture du fil \(id) impossible", error)
+            return false
         }
     }
 }

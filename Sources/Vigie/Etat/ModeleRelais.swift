@@ -45,6 +45,8 @@ public final class ModeleRelais {
     @ObservationIgnored private(set) var client: ClientRelais?
     @ObservationIgnored private var boucle: Task<Void, Never>?
     @ObservationIgnored private var version = -1
+    /// Source qui a numéroté les fils chargés (voir CurseurFil) : un changement de nœud relit tout, sans curseur.
+    @ObservationIgnored var origineFils: String?
     @ObservationIgnored private var echecsFlux = 0
     @ObservationIgnored private var attenteReprise = LiaisonRelais.attenteMinimale
 
@@ -57,6 +59,7 @@ public final class ModeleRelais {
         arreter()
         self.client = client
         version = -1
+        origineFils = nil
         lien = client == nil ? .nonConnecte : .attente
         if client == nil { vider() }
     }
