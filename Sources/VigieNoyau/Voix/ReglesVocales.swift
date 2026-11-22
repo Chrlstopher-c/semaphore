@@ -15,19 +15,27 @@ public enum ReglesVocales {
         premier ? "\(annonceEntree)\n\n\(texte)" : texte
     }
 
+    /// Le message qui suit une coupure dit à l'agent où sa réponse a été interrompue, pour qu'il puisse la reprendre.
+    public static func apresCoupure(_ texte: String, dit: String) -> String {
+        let fin = dit.count > 300 ? "…" + String(dit.suffix(300)) : dit
+        let entendu = fin.isEmpty ? "rien de ta réponse n'avait encore été lu" : "j'ai entendu jusqu'à : « \(fin) »"
+        return "[Je t'ai coupé la parole pendant que ta réponse était lue à voix haute ; \(entendu). "
+            + "Si je te demande de reprendre ou de répéter, redis la suite de cette réponse.]\n\n\(texte)"
+    }
+
     /// Le premier message tapé après la sortie du mode porte l'annonce de sortie.
     public static func apresSortie(_ texte: String) -> String {
         "\(annonceSortie)\n\n\(texte)"
     }
 
-    /// Couper la lecture : au moins deux vrais mots entendus, qui ne sont pas l'écho de la phrase lue.
+    /// Couper la lecture dès UN vrai mot (3 lettres ou plus) qui n'est pas l'écho de la phrase lue (Chris, 22/11 :
+    /// à deux mots la coupure ne tombait qu'à la fin de sa phrase).
     public static func couperLecture(entendu: String, phraseLue: String?) -> Bool {
-        let mots = Self.mots(entendu)
-        guard mots.count >= 2, mots.joined().count >= 5 else { return false }
+        let mots = Self.mots(entendu).filter { $0.count >= 3 }
+        guard !mots.isEmpty else { return false }
         guard let phraseLue else { return true }
         let lus = Set(Self.mots(phraseLue))
-        let etrangers = mots.filter { !lus.contains($0) }
-        return etrangers.count >= 2
+        return mots.contains { !lus.contains($0) }
     }
 
     public static func mots(_ texte: String) -> [String] {

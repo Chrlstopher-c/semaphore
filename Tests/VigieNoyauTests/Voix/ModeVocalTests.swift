@@ -56,4 +56,7 @@ private func dire(_ deltas: [String], bloc: String = "b1") -> (DecoupePhrases, [
     #expect(!ReglesVocales.couperLecture(entendu: "euh", phraseLue: nil))
     #expect(!ReglesVocales.couperLecture(entendu: "le build est", phraseLue: "Le build est vert."))
     #expect(!ReglesVocales.couperLecture(entendu: "hum ok", phraseLue: nil))
+    #expect(ReglesVocales.couperLecture(entendu: "attends", phraseLue: "Le build est vert."))
+    let rappel = ReglesVocales.apresCoupure("redis-moi", dit: "Le build est vert.")
+    #expect(rappel.contains("« Le build est vert. »") && rappel.hasSuffix("redis-moi"))
 }

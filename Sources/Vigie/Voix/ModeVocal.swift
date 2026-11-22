@@ -34,6 +34,10 @@ final class ModeVocal {
     @ObservationIgnored private var minuterie: Task<Void, Never>?
     /// Sessions dont le prochain message tapé porte l'annonce de sortie.
     @ObservationIgnored private var sortiesAAnnoncer: Set<String> = []
+    /// Phrases de la réponse en cours effectivement commencées à voix haute (pour dire où la coupure est tombée).
+    @ObservationIgnored private var phrasesDites: [String] = []
+    /// Texte lu au moment d'une coupure : le prochain message envoyé le rappelle à l'agent.
+    @ObservationIgnored private var coupure: String?
 
     private init() {}
 
@@ -65,7 +69,7 @@ final class ModeVocal {
     private func brancher(_ lecteur: LecteurVoix, _ moteur: MoteurVocal, _ modele: ModeleRelais, session id: String) {
         lecteur.surPhrase = { [weak self] phrase, tour in
             self?.phraseLue = phrase
-            if phrase != nil { self?.voixTour = tour; self?.etat = .parle }
+            if let phrase { self?.phrasesDites.append(phrase); self?.voixTour = tour; self?.etat = .parle }
         }
         lecteur.surSilence = { [weak self] in self?.apresLecture() }
         moteur.surReconstruit = { [weak lecteur] in lecteur?.reprendre() }
@@ -118,6 +122,7 @@ final class ModeVocal {
         if lecteur?.parle == true {
             guard ReglesVocales.couperLecture(entendu: texte, phraseLue: phraseLue) else { return }
             Trace.info("vocal", "coupure : Chris parle")
+            coupure = phrasesDites.joined(separator: " ")
             passer()
         }
         entendu = texte
@@ -146,7 +151,8 @@ final class ModeVocal {
         entendu = ""
         reco.recommencer()
         etat = .envoi
-        let message = ReglesVocales.message(texte, premier: premier)
+        var message = ReglesVocales.message(texte, premier: premier)
+        if let dit = coupure { message = ReglesVocales.apresCoupure(message, dit: dit) }
         if let erreur = await modele.envoyer(message, a: id) {
             Trace.erreur("vocal", "envoi : \(erreur)")
             entendu = texte
@@ -154,6 +160,8 @@ final class ModeVocal {
             return
         }
         premier = false
+        coupure = nil
+        phrasesDites = []
         decoupe = DecoupePhrases()
         lireReponse = true
         if etat == .envoi { etat = .attente }
