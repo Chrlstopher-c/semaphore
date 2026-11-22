@@ -309,3 +309,11 @@ mondes montrés côte à côte dans la barre du pupitre.
   (`genre` dans la présentation et les pairs, routes en canal, `GET /api/etat` testé) ; réglage « Passer par
   l'aiguilleur » ; transport qui reprend l'interface du client HTTP/WS actuel.
 - **CI** : le dépôt n'a pas de `.github/workflows/ci.yml` : à créer avant la première poussée sur `main`.
+- **Canal d'appareil (22/11, suite)** : `Aiguilleur/CanalAppareil.swift` (appairage, poignée, trames, ordre des envois),
+  `Aiguilleur/Protocole.swift` (messages miroirs de Quart, décodés depuis les exemples de vecteurs), `Aiguilleur/
+  LienAiguilleur.swift` (appairage par code, WebSocket `/aiguilleur`, compilé sous Linux, pas encore essayé contre un
+  aiguilleur réel), `Aiguilleur/ReglagesAiguilleur.swift` (réglage « Passer par l'aiguilleur », actif seulement si complet).
+  Côté Quart : appareil accepté au nœud → API clients dans le canal (`relais/federation/appareils.ts`), testé de bout en bout.
+- **Reste** : identité d'appareil dans le trousseau, hôte de l'appli (transport au choix du réglage), écran du réglage,
+  essai réel Swift ↔ nœud Quart sur la tour.
+- **CI** : `.github/workflows/ci.yml` (tests du noyau sur Linux, `swift test`).
