@@ -46,6 +46,15 @@ struct FilQuart: View {
         .onChange(of: blocs.count + envois.count) { _, _ in suivreLeBas() }
         .scrollDismissesKeyboard(.interactively)
         .background(Q.fondFil)
+        .overlay(alignment: .bottom) {
+            if !auBas { FlecheVersLeBas(action: allerEnBas).transition(.opacity.combined(with: .scale(scale: 0.85))) }
+        }
+        .animation(.smooth(duration: 0.2), value: auBas)
+    }
+
+    /// Flèche « ↓ » : retour au bas du fil (là où Claude écrit), comme sur l'appli de bureau.
+    private func allerEnBas() {
+        withAnimation(.smooth(duration: 0.35)) { position.scrollTo(edge: .bottom) }
     }
 
     /// Un message ou un bloc arrive : si Chris lisait le bas du fil, on l'y garde (sinon on ne bouge pas sa lecture).
@@ -109,4 +118,24 @@ private struct ChargementFil: View {
         .padding(.top, 24)
     }
 }
+/// Bouton rond flottant au-dessus du champ de saisie, visible seulement quand Chris est remonté dans le fil.
+private struct FlecheVersLeBas: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "arrow.down")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.primary)
+                .frame(width: 36, height: 36)
+                .background(.regularMaterial, in: Circle())
+                .overlay(Circle().strokeBorder(.white.opacity(0.08)))
+                .shadow(color: .black.opacity(0.25), radius: 8, y: 2)
+        }
+        .buttonStyle(.plain)
+        .padding(.bottom, 12)
+        .accessibilityLabel("Revenir en bas du fil")
+    }
+}
+
 #endif
