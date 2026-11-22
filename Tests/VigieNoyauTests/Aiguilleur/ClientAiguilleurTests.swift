@@ -60,6 +60,20 @@ actor TransportFaux: TransportAiguilleur {
             return false
         }
     }
+
+    func canalVers(_ noeud: String) -> String? {
+        for message in envoyes {
+            if case let .ouvrir(canal, vers) = message, vers == noeud { return canal }
+        }
+        return nil
+    }
+
+    func chargesDe(_ canal: String) -> [String] {
+        envoyes.compactMap { message in
+            if case let .donnees(id, charge) = message, id == canal { return charge }
+            return nil
+        }
+    }
 }
 
 /// Attend qu'une condition devienne vraie ; échoue au bout de `secondes`.
@@ -193,3 +207,100 @@ struct ClientAiguilleurTests {
         #expect(relu == etat)
     }
 }
+
+private func cleDeTest() throws -> String {
+    Chiffrement.Identites.exporter(try GrainesIdentite.generer().identite().publique)
+}
+
+private func listeNoeudsJSON(_ entrees: [(id: String, identite: String)]) -> String {
+    let objets = entrees.map { #"{"id":"\#($0.id)","nom":"Nœud","identite":"\#($0.identite)"}"# }
+    return #"{"noeuds":["# + objets.joined(separator: ",") + "]}"
+}
+
+struct ApprentissageNoeudsTests {
+    @Test func listeValideEtEntreesMalFormeesIgnorees() throws {
+        let cle = try cleDeTest()
+        let corps = """
+        {"noeuds":[
+          {"id":"cccccccccccc","nom":"Tour","identite":"\(cle)"},
+          {"id":"DDDDDDDDDDDD","nom":"Majuscules","identite":"\(cle)"},
+          {"id":"eeeeeeeeeee","nom":"Court","identite":"\(cle)"},
+          {"id":"ffffffffffff","nom":"Sans clé"},
+          {"id":"111111111111","identite":"\(cle)"},
+          null,
+          "texte"
+        ]}
+        """
+        let entrees = try #require(ApprentissageNoeuds.lire(corps))
+        #expect(entrees.map(\.id) == ["cccccccccccc", "111111111111"])
+        #expect(entrees.last?.nom == nil)
+    }
+
+    @Test func corpsIllisibleOuMalFormeDonneAucuneListe() {
+        #expect(ApprentissageNoeuds.lire("{") == nil)
+        #expect(ApprentissageNoeuds.lire("[]") == nil)
+        #expect(ApprentissageNoeuds.lire(#"{"noeuds":"x"}"#) == nil)
+        #expect(ApprentissageNoeuds.lire(#"{"autre":[]}"#) == nil)
+    }
+
+    @Test func premierApprentissageGagneEtSoiMemeEstExclu() throws {
+        let connue = try cleDeTest()
+        let apprise = try cleDeTest()
+        let troisieme = try cleDeTest()
+        let moiIdentite = try cleDeTest()
+        var noeuds = ["cccccccccccc": NoeudConnu(identite: connue, nom: "Tour")]
+        let corps = listeNoeudsJSON([
+            ("cccccccccccc", apprise),
+            ("bbbbbbbbbbbb", apprise),
+            ("aaaaaaaaaaaa", apprise),
+            ("dddddddddddd", moiIdentite),
+            ("eeeeeeeeeeee", "pas-une-cle"),
+        ])
+        let entrees = try #require(ApprentissageNoeuds.lire(corps))
+        let appris = ApprentissageNoeuds.fusionner(
+            entrees, dans: &noeuds, moi: "aaaaaaaaaaaa", identiteMoi: moiIdentite
+        )
+        #expect(appris == ["bbbbbbbbbbbb"])
+        #expect(noeuds["cccccccccccc"] == NoeudConnu(identite: connue, nom: "Tour"))
+        #expect(noeuds["bbbbbbbbbbbb"] == NoeudConnu(identite: apprise, nom: "Nœud"))
+        #expect(noeuds["aaaaaaaaaaaa"] == nil)
+        #expect(noeuds["dddddddddddd"] == nil)
+        #expect(noeuds["eeeeeeeeeeee"] == nil)
+
+        let rel = try #require(ApprentissageNoeuds.lire(listeNoeudsJSON([("bbbbbbbbbbbb", troisieme)])))
+        #expect(ApprentissageNoeuds.fusionner(rel, dans: &noeuds, moi: "aaaaaaaaaaaa", identiteMoi: moiIdentite) == [])
+        #expect(noeuds["bbbbbbbbbbbb"]?.identite == apprise)
+    }
+}
+
+struct ApprentissageClientTests {
+    @Test func tourApprise_labasculeSeFaitEnIntentionLienSansPresentation() async throws {
+        let faux = TransportFaux()
+        let rec = Enregistreur()
+        let tour = "cccccccccccc"
+        let cleTour = try cleDeTest()
+        var etat = etatInitial()
+        etat.noeuds[noeud] = NoeudConnu(identite: try cleDeTest(), nom: "Portable")
+        let client = clientTest(faux, rec, etat: etat, graines: .generer())
+        await client.demarrer()
+        await faux.pousser(.presence([
+            .init(id: noeud, enLigne: true, genre: "noeud"),
+            .init(id: tour, enLigne: true, genre: "noeud", sansEcran: true),
+        ]))
+        try await attendreVrai { await faux.canalVers(noeud) != nil }
+
+        await client.apprendreNoeuds(listeNoeudsJSON([(tour, cleTour)]))
+        try await attendreVrai { await faux.canalVers(tour) != nil }
+        try await attendreVrai { await rec.dernierEtat?.noeud == tour }
+        #expect(await rec.dernierEtat?.estAppaire(tour) == true)
+
+        let canal = try #require(await faux.canalVers(tour))
+        await faux.pousser(.accepter(canal: canal))
+        try await attendreVrai { await faux.chargesDe(canal).count == 1 }
+        let messages = try await faux.chargesDe(canal).map { try ProtocoleAiguilleur.decoderEnClair($0) }
+        let premier = try #require(messages.first)
+        guard case .poignee = premier else { throw ErreurAiguilleur("poignée attendue, reçu \(premier)") }
+        await client.arreter()
+    }
+}
+

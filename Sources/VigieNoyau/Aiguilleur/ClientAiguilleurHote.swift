@@ -31,6 +31,7 @@ extension ClientAiguilleur: Chiffrement.HoteAppareil {
         delaiReprise = delais.repriseInitiale
         await surLien(.ouvert)
         await publierNoeuds()
+        demanderNoeuds()
     }
 
     func liaisonRefusee(canal: String, raison: String) async {
