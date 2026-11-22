@@ -58,6 +58,9 @@ enum ProtocoleAiguilleur {
                  codage: String? = nil, type: String? = nil, morceaux: Int? = nil)
         case apiReponse(ref: String, statut: Int, corps: String,
                         codage: String? = nil, type: String? = nil, morceaux: Int? = nil)
+        /// Réponse en flux (requête `?flux=1`) : en-tête ; ses morceaux suivent, puis `apiFin` les annonce.
+        case apiFlux(ref: String, statut: Int, type: String?)
+        case apiFin(ref: String, morceaux: Int, ok: Bool)
         case revocation
         case morceau(ref: String, rang: Int, corps: String)
         case diffusionOuvrir, diffusionFermer, diffusionOuverte
@@ -147,6 +150,9 @@ enum ProtocoleAiguilleur {
         case let .apiReponse(ref, statut, corps, codage, type, morceaux):
             let objet: [String: Any] = ["t": "api_reponse", "ref": ref, "statut": statut, "corps": corps]
             return ajouter(objet, codage: codage, type: type, morceaux: morceaux)
+        case let .apiFlux(ref, statut, type):
+            return ajouter(["t": "api_flux", "ref": ref, "statut": statut], codage: nil, type: type, morceaux: nil)
+        case let .apiFin(ref, morceaux, ok): return ["t": "api_fin", "ref": ref, "morceaux": morceaux, "ok": ok]
         case .revocation: return ["t": "revocation"]
         case let .morceau(ref, rang, corps): return ["t": "morceau", "ref": ref, "rang": rang, "corps": corps]
         case .diffusionOuvrir: return ["t": "diffusion_ouvrir"]
@@ -205,6 +211,11 @@ enum ProtocoleAiguilleur {
             guard let statut = objet["statut"] as? Int else { throw ErreurChiffrement("statut absent") }
             return .apiReponse(ref: try chaine(objet, "ref"), statut: statut, corps: try chaine(objet, "corps"),
                                codage: codage, type: type, morceaux: morceaux)
+        case "api_flux":
+            return .apiFlux(ref: try chaine(objet, "ref"), statut: try entier(objet, "statut"), type: type)
+        case "api_fin":
+            guard let ok = objet["ok"] as? Bool else { throw ErreurChiffrement("champ « ok » absent") }
+            return .apiFin(ref: try chaine(objet, "ref"), morceaux: try entier(objet, "morceaux"), ok: ok)
         case "revocation": return .revocation
         case "morceau":
             return .morceau(ref: try chaine(objet, "ref"), rang: try entier(objet, "rang"),

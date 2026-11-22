@@ -38,7 +38,7 @@ extension ClientAiguilleur {
         for canal in Array(canaux.values) { await canal.surFermetureDistante() }
         finirDiffusion("lien avec l'aiguilleur coupé")
         finirTerminaux("lien avec l'aiguilleur coupé")
-        await requetes.echouerTout(ErreurAiguilleur("lien avec l'aiguilleur coupé"))
+        await echouerEnVol(ErreurAiguilleur("lien avec l'aiguilleur coupé"))
         if !bloque { await surLien(.deconnecte) }
     }
 
@@ -54,7 +54,7 @@ extension ClientAiguilleur {
         canalCourant = nil
         finirDiffusion("appareil révoqué")
         finirTerminaux("appareil révoqué")
-        await requetes.echouerTout(ErreurAiguilleur("appareil révoqué"))
+        await echouerEnVol(ErreurAiguilleur("appareil révoqué"))
     }
 
     func traiterAiguilleur(_ message: ProtocoleAiguilleur.DeAiguilleur) async {
@@ -138,7 +138,7 @@ extension ClientAiguilleur {
     func surErreur(_ canal: String?, _ motif: String) async {
         Trace.info("aiguilleur", "erreur de l'aiguilleur (\(canal ?? "lien")) : \(motif)")
         guard let canal else {
-            return await requetes.echouerTout(ErreurAiguilleur("aiguilleur : \(motif)"))
+            return await echouerEnVol(ErreurAiguilleur("aiguilleur : \(motif)"))
         }
         await canaux[canal]?.surFermetureDistante()
     }

@@ -115,6 +115,8 @@ public actor ClientAiguilleur {
     let delais: DelaisClient
     let moi: Chiffrement.Identite?
     let requetes = TableRequetes()
+    /// Les réponses en flux en vol (requêtes `?flux=1`), voir TableFlux.swift.
+    let fluxes = TableFlux()
     var delaiReprise: Duration
     var transport: (any TransportAiguilleur)?
     var boucle: Task<Void, Never>?
@@ -207,7 +209,7 @@ public actor ClientAiguilleur {
         canalCourant = nil
         finirDiffusion("client arrêté")
         finirTerminaux("client arrêté")
-        await requetes.echouerTout(ErreurAiguilleur("client arrêté"))
+        await echouerEnVol(ErreurAiguilleur("client arrêté"))
         await surLien(.deconnecte)
     }
 
@@ -216,6 +218,23 @@ public actor ClientAiguilleur {
         methode: String, chemin: String, corps: String?, delai: Duration? = nil
     ) async throws -> ReponseRequete {
         try await requeteDansCanal(methode: methode, chemin: chemin, corps: corps, codage: nil, type: nil, delai: delai)
+    }
+
+    /// Une requête dont la réponse peut venir en flux (`?flux=1` dans le chemin) : rendue dès son en-tête, puis ses
+    /// octets au fil de leur arrivée. Un nœud qui répond d'un bloc rend un flux d'un seul bloc.
+    public func requeteFlux(
+        methode: String, chemin: String, corps: String?, delai: Duration? = nil
+    ) async throws -> ReponseFlux {
+        let canal = try await canalOuvert()
+        let ref = UUID().uuidString.lowercased()
+        await fluxes.prevoir(ref)
+        armerDelaiFlux(ref, delai ?? delais.reponse)
+        guard await envoyerApi(canal, ref: ref, methode: methode, chemin: chemin, corps: corps, codage: nil, type: nil)
+        else {
+            await fluxes.annuler(ref)
+            throw ErreurAiguilleur("requête non envoyée : lien fermé ou message trop grand")
+        }
+        return try await fluxes.attendre(ref)
     }
 
     /// Une requête dont le corps est binaire (fichier envoyé) : il part en base64, en morceaux s'il est grand.
@@ -271,5 +290,18 @@ public actor ClientAiguilleur {
             try? await Task.sleep(for: delai)
             await self.requetes.echouer(ref, ErreurAiguilleur("pas de réponse du nœud"))
         }
+    }
+
+    func armerDelaiFlux(_ ref: String, _ delai: Duration) {
+        Task {
+            try? await Task.sleep(for: delai)
+            await self.fluxes.echouer(ref, ErreurAiguilleur("pas de réponse du nœud"))
+        }
+    }
+
+    /// Lien coupé ou client arrêté : toutes les requêtes en vol échouent, réponses entières comme flux.
+    func echouerEnVol(_ erreur: Error) async {
+        await requetes.echouerTout(erreur)
+        await fluxes.echouerTout(erreur)
     }
 }

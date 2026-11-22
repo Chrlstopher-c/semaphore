@@ -200,17 +200,15 @@ public final class ClientRelais: Sendable {
         return donnees
     }
 
-    /// Mode vocal en flux : la tour livre la phrase au fil de sa génération (transport direct : PCM 24 kHz mono,
-    /// audio/L16). Par le canal chiffré, ou relayée à un pair, c'est le MP3 entier, comme avant.
+    /// Mode vocal en flux : la tour livre la phrase au fil de sa génération (PCM 24 kHz mono, audio/L16), en direct ou
+    /// par le canal chiffré (morceaux au fil de l'eau). Relayée à un pair, c'est le MP3 entier, comme avant.
     public func syntheseFlux(_ texte: String) async throws -> AsyncThrowingStream<MorceauSynthese, Error> {
-        guard aiguilleur == nil else {
-            let mp3 = try await synthese(texte)
-            return AsyncThrowingStream { suite in
-                suite.yield(.mp3(mp3))
-                suite.finish()
-            }
-        }
         struct Corps: Encodable { let texte: String }
+        if let aiguilleur {
+            let corps = String(decoding: try JSONEncoder().encode(Corps(texte: texte)), as: UTF8.self)
+            let reponse = try await aiguilleur.requeteFlux(methode: "POST", chemin: "/api/voix?flux=1", corps: corps)
+            return try Self.morceauxDuCanal(reponse)
+        }
         var requete = try requete("POST", "/api/voix?flux=1")
         requete.setValue("application/json", forHTTPHeaderField: "Content-Type")
         requete.httpBody = try JSONEncoder().encode(Corps(texte: texte))
@@ -236,6 +234,28 @@ public final class ClientRelais: Sendable {
             suite.onTermination = { _ in tache.cancel() }
         }
         return flux
+    }
+
+    /// Le canal rend l'en-tête, puis les morceaux au fil de leur arrivée : PCM livré tel quel, MP3 réuni à la fin.
+    private static func morceauxDuCanal(_ reponse: ReponseFlux) throws -> AsyncThrowingStream<MorceauSynthese, Error> {
+        let statut = reponse.statut
+        guard (200..<300).contains(statut) else { throw ErreurRelais.refus(statut, "erreur \(statut)") }
+        let pcm = reponse.type?.hasPrefix("audio/L16") ?? false
+        return AsyncThrowingStream { suite in
+            let tache = Task {
+                do {
+                    var mp3 = Data()
+                    for try await bloc in reponse.octets {
+                        if pcm { suite.yield(.pcm(bloc)) } else { mp3.append(bloc) }
+                    }
+                    if !pcm, !mp3.isEmpty { suite.yield(.mp3(mp3)) }
+                    suite.finish()
+                } catch {
+                    suite.finish(throwing: ErreurRelais.injoignable(error.localizedDescription))
+                }
+            }
+            suite.onTermination = { _ in tache.cancel() }
+        }
     }
 
     /// Le transport direct rend la réponse dès ses en-têtes ; ses octets sont lus ensuite, morceau par morceau.

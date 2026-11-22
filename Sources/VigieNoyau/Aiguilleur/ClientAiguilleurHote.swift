@@ -44,10 +44,18 @@ extension ClientAiguilleur: Chiffrement.HoteAppareil {
         switch message {
         case let .apiReponse(ref, statut, corps, codage, type, morceaux):
             guard let complet = corpsComplet(ref, corps, morceaux) else {
+                await fluxes.echouer(ref, ErreurAiguilleur("transfert de la réponse interrompu"))
                 return await requetes.echouer(ref, ErreurAiguilleur("transfert de la réponse interrompu"))
             }
+            let octets = codage == "base64" ? Data(base64Encoded: complet) : Data(complet.utf8)
+            if let octets, await fluxes.entier(ref, statut: statut, type: type, octets: octets) { return }
             await requetes.resoudre(ref, ReponseRequete(statut: statut, corps: complet, codage: codage, type: type))
+        case let .apiFlux(ref, statut, type):
+            _ = await fluxes.ouvrir(ref, statut: statut, type: type)
+        case let .apiFin(ref, morceaux, ok):
+            await fluxes.fin(ref, morceaux: morceaux, ok: ok)
         case let .morceau(ref, rang, corps):
+            if await fluxes.morceau(ref, rang: rang, base64: corps) { return }
             _ = reassemblage.recevoir(ref: ref, rang: rang, corps: corps)
         case .revocation:
             // Révocation par un nœud : seul ce nœud est oublié ; le lien vers les autres reste ouvert.
@@ -79,7 +87,7 @@ extension ClientAiguilleur: Chiffrement.HoteAppareil {
         Trace.info("aiguilleur", "canal \(canal) terminé (courant : \(canal == canalCourant))")
         canaux.removeValue(forKey: canal)
         reassemblage.vider()
-        await requetes.echouerTout(ErreurAiguilleur("le lien vers le nœud est fermé"))
+        await echouerEnVol(ErreurAiguilleur("le lien vers le nœud est fermé"))
         finirDiffusion("le lien vers le nœud est fermé")
         finirTerminaux("le lien vers le nœud est fermé")
         guard canal == canalCourant else { return }

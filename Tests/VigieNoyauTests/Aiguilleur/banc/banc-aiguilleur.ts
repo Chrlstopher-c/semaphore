@@ -109,6 +109,7 @@ writeFileSync(sortie, JSON.stringify({
   codeIntrus: requis('BANC_CODE_INTRUS'),
   codeAppareil2: requis('BANC_CODE_APPAREIL2'),
   codeAppareil3: requis('BANC_CODE_APPAREIL3'),
+  codeAppareil4: requis('BANC_CODE_APPAREIL4'),
   noeud: reponse.valeur.id,
   image: join(dirname(sortie), 'image.png'),
 }));

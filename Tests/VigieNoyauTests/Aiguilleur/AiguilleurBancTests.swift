@@ -11,6 +11,7 @@ private struct DescriptionBanc: Decodable {
     let codeIntrus: String
     let codeAppareil2: String
     let codeAppareil3: String
+    let codeAppareil4: String
     let noeud: String
     let image: String
 }
@@ -107,6 +108,47 @@ struct AiguilleurBancTests {
         await client.envoyerTerminal(terminal, octets: Data("ping\n".utf8))
         #expect(String(decoding: await echo.value, as: UTF8.self).contains("ping"))
         await client.fermerTerminal(terminal)
+        await client.arreter()
+    }
+
+    /// La voix en flux par le canal : le premier morceau de PCM arrive avant la fin de la phrase ; sans flux, la même
+    /// route rend le MP3 entier d'un bloc. Mesure imprimée (BANC-VOIX). Le service de voix est factice (BANC_VOIX_URL).
+    @Test(.enabled(if: bancActif), .timeLimit(.minutes(2)))
+    func voixEnFluxArriveParMorceauxSurLeCanal() async throws {
+        let banc = try await preparerBanc()
+        let graines = GrainesIdentite.generer()
+        let etat = try await ClientAiguilleur.appairer(
+            adresse: try urlBanc(banc), code: banc.codeAppareil4, nom: "appareil-banc-4", graines: graines
+        )
+        let rec = Enregistreur()
+        let client = ClientAiguilleur(
+            etat: etat, graines: graines, nomAppareil: "appareil-banc-4",
+            surEtat: { await rec.noterEtat($0) }, surLien: { await rec.noterLien($0) }
+        )
+        await client.demarrer()
+        try await rec.attendreLien(secondes: 30) { $0 == .ouvert }
+        let corps = #"{"texte":"Bonjour, je regarde ça."}"#
+
+        let debut = Date()
+        let flux = try await client.requeteFlux(methode: "POST", chemin: "/api/voix?flux=1", corps: corps)
+        #expect(flux.statut == 200)
+        #expect(flux.type?.hasPrefix("audio/L16") == true)
+        var premier: Double?
+        var total = 0
+        for try await bloc in flux.octets {
+            if premier == nil { premier = Date().timeIntervalSince(debut) * 1000 }
+            total += bloc.count
+        }
+        let fin = Date().timeIntervalSince(debut) * 1000
+        print("BANC-VOIX flux : premier morceau à \(Int(premier ?? -1)) ms, fin à \(Int(fin)) ms, \(total) octets")
+        #expect(total > 0)
+        #expect((premier ?? .infinity) < fin)
+
+        let debutEntier = Date()
+        let entier = try await client.requete(methode: "POST", chemin: "/api/voix", corps: corps)
+        print("BANC-VOIX entier : réponse complète à \(Int(Date().timeIntervalSince(debutEntier) * 1000)) ms, \(entier.corps.count) car.")
+        #expect(entier.statut == 200)
+        #expect(entier.type == "audio/mpeg")
         await client.arreter()
     }
 
