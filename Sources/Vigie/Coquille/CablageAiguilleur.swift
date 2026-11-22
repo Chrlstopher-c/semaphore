@@ -88,7 +88,7 @@ extension Cablage {
         if lienAiguilleur != lien { lienAiguilleur = lien }
     }
 
-    private func recevoirNoeuds(_ noeuds: [ClientAiguilleur.NoeudVu]) {
+    private func recevoirNoeuds(_ noeuds: [NoeudVu]) {
         if noeudsAiguilleur != noeuds { noeudsAiguilleur = noeuds }
     }
 

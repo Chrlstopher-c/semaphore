@@ -74,7 +74,7 @@ struct ConnexionReglages: View {
         }
     }
 
-    private func libelleNoeud(_ noeud: ClientAiguilleur.NoeudVu) -> String {
+    private func libelleNoeud(_ noeud: NoeudVu) -> String {
         var morceaux = [noeud.enLigne ? "en ligne" : "hors ligne"]
         if !noeud.appaire { morceaux.append("à appairer") }
         if noeud.prefere { morceaux.append("préféré") }
