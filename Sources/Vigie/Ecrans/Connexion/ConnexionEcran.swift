@@ -93,8 +93,8 @@ struct FormulaireConnexion: View {
 
     private var aide: String {
         switch voie {
-        case .aiguilleur: return "Le code (XXXX-XXXX, 10 minutes, usage unique) : Lanterne sur le portable, "
-            + "Paramètres › Réseau › Ajouter un appareil. Le nœud devra ensuite accepter cet iPhone."
+        case .aiguilleur: return "Le code (XXXX-XXXX, 10 minutes, usage unique) : Paramètres › Réseau › Ajouter… "
+            + "› Téléphone, dans Lanterne ou sur un iPhone chef. Un chef acceptera ensuite cet iPhone."
         case .direct: return "Le code s’affiche sur le nœud (10 minutes, usage unique)."
         case .motDePasse: return "Le mot de passe du relais."
         }

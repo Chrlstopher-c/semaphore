@@ -3,6 +3,7 @@
 # un nœud de banc (banc-aiguilleur.ts) sur 127.0.0.1, puis lance le test Swift AiguilleurBancTests contre eux.
 # Usage : lancer-banc.sh <racine du worktree Quart> <dossier de données jetable> [filtre des tests]
 # BANC_VOIX_URL (facultatif) : service de voix de la tour, pour le banc du mode vocal (filtre VoixBancTests).
+# BANC_SCRIPT (facultatif) : script des nœuds (défaut banc-aiguilleur.ts ; banc-chef.ts pour ChefBancTests).
 # Le script ne tue rien : il écrit les PID de ses processus dans <dossier>/pids ; c'est à l'appelant de les arrêter.
 set -euo pipefail
 
@@ -47,7 +48,7 @@ rm -f "$SORTIE"
 (cd "$QUART" && env -i PATH="$PATH" HOME="$HOME" TMPDIR="$DOSSIER" QUART_RACINE="$QUART" BANC_URL="$URL" \
   BANC_CODE_NOEUD="$CODE_NOEUD" BANC_CODE_APPAREIL="$CODE_APPAREIL" BANC_CODE_INTRUS="$CODE_INTRUS" \
   BANC_CODE_APPAREIL2="$CODE_APPAREIL2" BANC_CODE_APPAREIL3="$CODE_APPAREIL3" BANC_CODE_APPAREIL4="$CODE_APPAREIL4" \
-  BANC_VOIX_URL="${BANC_VOIX_URL:-}" BANC_SORTIE="$SORTIE" timeout 900 "$BUN" run "$BANC/banc-aiguilleur.ts" \
+  BANC_VOIX_URL="${BANC_VOIX_URL:-}" BANC_SORTIE="$SORTIE" timeout 900 "$BUN" run "$BANC/${BANC_SCRIPT:-banc-aiguilleur.ts}" \
   >"$DOSSIER/noeud.out" 2>"$DOSSIER/noeud.err") &
 echo "noeud $!" >> "$DOSSIER/pids"
 

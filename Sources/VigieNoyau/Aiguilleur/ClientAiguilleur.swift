@@ -58,7 +58,7 @@ public struct NoeudVu: Sendable, Equatable {
     }
 }
 
-public actor ClientAiguilleur {
+public actor ClientAiguilleur: Signataire {
     public struct Etat: Codable, Sendable, Equatable {
         public var adresse: String        // https://… ou http://… de l'aiguilleur
         public var membre: String         // id de l'iPhone chez l'aiguilleur

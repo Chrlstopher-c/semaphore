@@ -1,5 +1,6 @@
-// Les réglages (étalon 017/019) : carte du nœud relié, « Compte » (usage, notifications), « Claude Code » (défauts des
-// nouvelles sessions), veille, puis « Se déconnecter » rosé dans sa carte. Ce qui n'a pas d'objet chez nous est absent.
+// Les réglages (étalon 017/019) : carte du nœud relié, « Liaison » (réseau, connexion, synchro), « Compte » (usage,
+// notifications), « Claude Code » (défauts des nouvelles sessions), veille, puis « Se déconnecter » rosé dans sa
+// carte. Ce qui n'a pas d'objet chez nous est absent.
 #if canImport(SwiftUI)
 import SwiftUI
 import VigieNoyau
@@ -17,6 +18,8 @@ struct ReglagesFeuille: View {
                     carteNoeud.padding(.top, 8)
                     TitreSection(texte: "Liaison")
                     Carte {
+                        lien("point.3.connected.trianglepath.dotted", "Réseau") { ReseauReglages() }
+                        Filet(retrait: 60)
                         lien("antenna.radiowaves.left.and.right", "Connexion") { ConnexionReglages() }
                         Filet(retrait: 60)
                         lien("arrow.triangle.2.circlepath", "Synchronisation") { SynchroReglages() }
