@@ -45,9 +45,13 @@ public struct NoeudVu: Sendable, Equatable {
     public let sansEcran: Bool
     public let appaire: Bool
     public let prefere: Bool
-    public let actif: Bool
+    public let actif: Bool            // canal ouvert vers ce nœud : ses sessions répondent
+    public let cible: Bool            // le lien vise ce nœud : les nouvelles sessions y sont créées
 
-    public init(id: String, nom: String, enLigne: Bool, sansEcran: Bool, appaire: Bool, prefere: Bool, actif: Bool) {
+    public init(
+        id: String, nom: String, enLigne: Bool, sansEcran: Bool, appaire: Bool, prefere: Bool, actif: Bool,
+        cible: Bool = false
+    ) {
         self.id = id
         self.nom = nom
         self.enLigne = enLigne
@@ -55,6 +59,7 @@ public struct NoeudVu: Sendable, Equatable {
         self.appaire = appaire
         self.prefere = prefere
         self.actif = actif
+        self.cible = cible
     }
 }
 

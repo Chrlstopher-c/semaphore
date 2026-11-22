@@ -146,14 +146,15 @@ extension ClientAiguilleur {
         await canal.fermer()
     }
 
-    /// Les nœuds vus, tels que les réglages les montrent (en ligne, appairé, sans écran, préféré, relié).
+    /// Les nœuds vus, tels que les réglages les montrent (en ligne, appairé, sans écran, préféré, relié, cible).
     func publierNoeuds() async {
-        let vus = presence.filter { $0.genre == "noeud" && $0.id != etat.membre }.map { m in
-            NoeudVu(
+        var vus: [NoeudVu] = []
+        for m in presence where m.genre == "noeud" && m.id != etat.membre {
+            vus.append(NoeudVu(
                 id: m.id, nom: m.nom ?? etat.noeuds[m.id]?.nom ?? "Nœud", enLigne: m.enLigne,
                 sansEcran: m.sansEcran == true, appaire: etat.estAppaire(m.id), prefere: etat.prefere == m.id,
-                actif: canalCourant != nil && etat.noeud == m.id
-            )
+                actif: await canalAdresse(noeud: m.id) != nil, cible: etat.noeud == m.id
+            ))
         }
         await surNoeuds(vus)
     }

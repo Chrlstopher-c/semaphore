@@ -1,6 +1,6 @@
 // Réglages › Connexion (grammaire des réglages de l'étalon) : l'état RÉEL de la liaison — voie (directe ou par le Pi),
-// état (relié, en attente d'acceptation, injoignable, refusé), adresse, nœud, empreinte de l'iPhone — et, à tout
-// moment, se relier autrement sans réinstaller : la liaison en service reste active tant que la nouvelle n'est pas
+// état (relié, en attente d'acceptation, injoignable, refusé), adresse, empreinte de l'iPhone —, l'état de liaison de
+// chaque machine, la machine où naissent les nouvelles sessions et, à tout moment, se relier autrement sans réinstaller : la liaison en service reste active tant que la nouvelle n'est pas
 // acceptée, la pile ouverte et les réglages ne bougent pas.
 #if canImport(SwiftUI)
 import SwiftUI
@@ -24,10 +24,10 @@ struct ConnexionReglages: View {
                 Carte { actuelle }
                 if enAttente { attente }
                 if parPi, !cablage.noeudsAiguilleur.isEmpty {
-                    TitreSection(texte: "Nœuds du réseau")
-                    Carte { noeuds }
-                    Text("Le lien passe par le nœud préféré quand il est en ligne, sinon par un autre nœud appairé. "
-                         + "Toucher un nœud le choisit ; toucher le nœud préféré le retire.")
+                    TitreSection(texte: "Machines")
+                    Carte { machines }
+                    Text("Cet iPhone se relie à chaque machine par le Pi ; une machine éteinte ne coupe que ses "
+                         + "propres sessions.")
                         .font(Q.detail).foregroundStyle(Q.secondaire).padding(.horizontal, 32).padding(.top, 8)
                 }
                 TitreSection(texte: "Se relier autrement")
@@ -49,10 +49,6 @@ struct ConnexionReglages: View {
         RangeeReglage(symbole: symboleEtat, titre: "État", valeur: libelleEtat, couleur: Q.texte, chevron: false)
         Filet(retrait: 60)
         RangeeReglage(symbole: "link", titre: "Adresse", valeur: adresse, chevron: false)
-        if parPi, let nom = cablage.nomNoeudActif {
-            Filet(retrait: 60)
-            RangeeReglage(symbole: "desktopcomputer", titre: "Nœud", valeur: nom, chevron: false)
-        }
         Filet(retrait: 60)
         NavigationLink { PageEmpreinte() } label: {
             RangeeReglage(symbole: "touchid", titre: "Empreinte de cet iPhone")
@@ -60,26 +56,44 @@ struct ConnexionReglages: View {
         .buttonStyle(.plain)
     }
 
-    /// Un nœud par ligne : en ligne ou hors ligne, appairé, préféré ; toucher pour le choisir.
-    @ViewBuilder private var noeuds: some View {
+    /// Une machine par ligne avec son état de liaison réel, puis la machine où sont créées les nouvelles sessions.
+    @ViewBuilder private var machines: some View {
         ForEach(Array(cablage.noeudsAiguilleur.enumerated()), id: \.element.id) { rang, noeud in
             if rang > 0 { Filet(retrait: 60) }
-            Button { cablage.prefererNoeud(noeud.prefere ? nil : noeud.id) } label: {
-                RangeeReglage(symbole: noeud.sansEcran ? "server.rack" : "desktopcomputer", titre: noeud.nom,
-                              valeur: libelleNoeud(noeud), couleur: noeud.enLigne ? Q.texte : Q.secondaire,
-                              chevron: false)
-            }
-            .buttonStyle(.plain)
-            .disabled(!noeud.appaire && !noeud.enLigne)
+            RangeeReglage(symbole: noeud.sansEcran ? "server.rack" : "desktopcomputer", titre: noeud.nom,
+                          valeur: libelleLiaison(noeud), couleur: noeud.enLigne ? Q.texte : Q.secondaire,
+                          chevron: false)
         }
+        Filet(retrait: 60)
+        creation
     }
 
-    private func libelleNoeud(_ noeud: NoeudVu) -> String {
-        var morceaux = [noeud.enLigne ? "en ligne" : "hors ligne"]
-        if !noeud.appaire { morceaux.append("à appairer") }
-        if noeud.prefere { morceaux.append("préféré") }
-        if noeud.actif { morceaux.append("relié") }
-        return morceaux.joined(separator: " · ")
+    private func libelleLiaison(_ noeud: NoeudVu) -> String {
+        if !noeud.enLigne { return "Hors ligne" }
+        if !noeud.appaire { return "À appairer" }
+        return noeud.actif ? "Reliée" : "Connexion…"
+    }
+
+    /// Le seul choix utile : la machine où naissent les nouvelles sessions (nil = choix automatique du lien).
+    private var creation: some View {
+        let possibles = cablage.noeudsAiguilleur.filter { $0.enLigne && $0.appaire }
+        let auto = cablage.noeudsAiguilleur.first { $0.cible }?.nom
+        return HStack(spacing: 16) {
+            Image(systemName: "plus").font(.system(size: 19, weight: .light))
+                .foregroundStyle(Q.secondaire).frame(width: 28)
+            Text("Nouvelles sessions sur").font(Q.rangee).foregroundStyle(Q.texte)
+            Spacer()
+            Picker("Nouvelles sessions sur", selection: Binding(
+                get: { cablage.noeudsAiguilleur.first { $0.prefere }?.id ?? "" },
+                set: { cablage.prefererNoeud($0.isEmpty ? nil : $0) }
+            )) {
+                Text(auto.map { "Automatique (\($0))" } ?? "Automatique").tag("")
+                ForEach(possibles, id: \.id) { Text($0.nom).tag($0.id) }
+            }
+            .pickerStyle(.menu).tint(Q.secondaire)
+        }
+        .padding(.leading, Q.marge).padding(.trailing, 4).frame(height: Q.rangeeHauteur)
+        .disabled(possibles.isEmpty)
     }
 
     /// Demande en cours vers le Pi : empreinte à comparer, état du lien, annulation.

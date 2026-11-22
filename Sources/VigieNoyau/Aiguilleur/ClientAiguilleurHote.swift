@@ -32,9 +32,9 @@ extension ClientAiguilleur: Chiffrement.HoteAppareil {
         if canal == canalCourant {
             delaiReprise = delais.repriseInitiale
             await surLien(.ouvert)
-            await publierNoeuds()
             demanderNoeuds()
         }
+        await publierNoeuds()
         if let ouvert = canaux[canal] { await abonnerCanalAuFlux(ouvert) }
     }
 
@@ -93,7 +93,7 @@ extension ClientAiguilleur: Chiffrement.HoteAppareil {
         canaux.removeValue(forKey: canal)
         canalParNoeud = canalParNoeud.filter { $0.value != canal }
         // Un canal d'un autre nœud ne coupe ni le lien ni les requêtes des autres nœuds : ses requêtes expirent seules.
-        guard courant else { return }
+        guard courant else { await publierNoeuds(); return }
         reassemblage.vider()
         await echouerEnVol(ErreurAiguilleur("le lien vers le nœud est fermé"))
         finirDiffusion("le lien vers le nœud est fermé")
