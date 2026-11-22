@@ -53,4 +53,13 @@ public enum Route {
     public static func renommerSession(_ session: String) -> String { "/api/sessions/\(session)/renommer" }
     public static func ultracode(_ session: String) -> String { "/api/sessions/\(session)/ultracode" }
     public static func projets(_ machine: String) -> String { "/api/machines/\(machine)/projets" }
+
+    /// La parité d'une session : tâches de fond, transcript lisible ou non.
+    public static func parite(_ session: String) -> String { "/api/sessions/\(session)/parite" }
+    public static func tacheParite(_ session: String, _ tache: String) -> String {
+        "/api/sessions/\(session)/parite/taches/\(tache)"
+    }
+    public static func fichierSession(_ session: String, _ fichier: String) -> String {
+        "/api/sessions/\(session)/fichiers/\(fichier)"
+    }
 }
