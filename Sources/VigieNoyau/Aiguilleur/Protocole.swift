@@ -9,6 +9,10 @@ enum ProtocoleAiguilleur {
         let enLigne: Bool
         /// « noeud » ou « appareil » ; absent chez un aiguilleur qui ne le transmet pas.
         var genre: String? = nil
+        /// Nom annoncé par l'aiguilleur (nœuds et appareils), absent chez un aiguilleur ancien.
+        var nom: String? = nil
+        /// Vrai pour un nœud sans écran (la tour) : l'aiguilleur le transmet à la présence ; absent sinon.
+        var sansEcran: Bool? = nil
     }
 
     /// Messages d'un membre vers l'aiguilleur.
@@ -269,7 +273,8 @@ enum ProtocoleAiguilleur {
     private static func membres(_ objet: [String: Any]) throws -> [Membre] {
         guard let liste = objet["membres"] as? [[String: Any]] else { throw ErreurChiffrement("membres absents") }
         return try liste.map {
-            Membre(id: try chaine($0, "id"), enLigne: ($0["enLigne"] as? Bool) ?? false, genre: $0["genre"] as? String)
+            Membre(id: try chaine($0, "id"), enLigne: ($0["enLigne"] as? Bool) ?? false, genre: $0["genre"] as? String,
+                   nom: $0["nom"] as? String, sansEcran: $0["sansEcran"] as? Bool)
         }
     }
 

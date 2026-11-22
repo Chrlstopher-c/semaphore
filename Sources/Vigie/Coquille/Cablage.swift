@@ -22,6 +22,13 @@ public final class Cablage {
     /// Lien par l'aiguilleur (voir CablageAiguilleur.swift) : état affiché, état retenu, client vivant.
     public internal(set) var lienAiguilleur: ClientAiguilleur.Lien = .deconnecte
     public internal(set) var etatAiguilleur: ClientAiguilleur.Etat?
+    /// Les nœuds du réseau vus par le client (en ligne, appairés, préféré, relié) : réglages › Connexion.
+    public internal(set) var noeudsAiguilleur: [ClientAiguilleur.NoeudVu] = []
+    /// Nom du nœud relié (ou visé) par l'aiguilleur, quand il y en a un.
+    public var nomNoeudActif: String? {
+        guard let etat = etatAiguilleur, let id = etat.noeud else { return nil }
+        return etat.noeuds[id]?.nom
+    }
     @ObservationIgnored var clientAiguilleur: ClientAiguilleur?
 
     public init() {

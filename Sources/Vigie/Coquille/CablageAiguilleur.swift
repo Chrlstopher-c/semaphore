@@ -39,6 +39,11 @@ extension Cablage {
         Trousseau.ecrire(json, compte: Trousseau.compteAiguilleur)
     }
 
+    /// Choisit le nœud préféré (ou aucun) : le lien passe à ce nœud dès qu'il est en ligne.
+    public func prefererNoeud(_ id: String?) {
+        Task { await clientAiguilleur?.prefererNoeud(id) }
+    }
+
     /// Appairage à l'aiguilleur par code (10 min, usage unique) ; la demande part ensuite vers le nœud.
     public func appairerAiguilleur(adresse: URL, code: String, nom: String) async throws {
         let propre = nom.trimmingCharacters(in: .whitespaces)
@@ -55,13 +60,14 @@ extension Cablage {
         let client = ClientAiguilleur(
             etat: etat, graines: Self.graines(), nomAppareil: Self.nomRetenu,
             surEtat: { [weak self] nouveau in await self?.recevoirEtat(nouveau) },
-            surLien: { [weak self] lien in await self?.recevoirLien(lien) })
+            surLien: { [weak self] lien in await self?.recevoirLien(lien) },
+            surNoeuds: { [weak self] noeuds in await self?.recevoirNoeuds(noeuds) })
         let ancien = clientAiguilleur // capturé AVANT le remplacement : sinon c'est le nouveau qu'on arrêterait
         Task { await ancien?.arreter() }
         clientAiguilleur = client
         etatAiguilleur = etat
         Task { await client.demarrer() }
-        if etat.identiteNoeud != nil, let url = URL(string: etat.adresse) {
+        if !etat.appaires.isEmpty, let url = URL(string: etat.adresse) {
             brancher(client: ClientRelais(adresse: url, jeton: "", aiguilleur: client))
         } else if !connecte {
             // En attente d'acceptation : la liaison directe reste en service si elle existe, rien n'est perdu.
@@ -70,7 +76,7 @@ extension Cablage {
     }
 
     private func recevoirEtat(_ etat: ClientAiguilleur.Etat) {
-        let accepte = etatAiguilleur?.identiteNoeud == nil && etat.identiteNoeud != nil
+        let accepte = etat.appaires.count > (etatAiguilleur?.appaires.count ?? 0)
         etatAiguilleur = etat
         Self.garder(etat)
         guard accepte, let client = clientAiguilleur, let url = URL(string: etat.adresse) else { return }
@@ -82,9 +88,13 @@ extension Cablage {
         if lienAiguilleur != lien { lienAiguilleur = lien }
     }
 
+    private func recevoirNoeuds(_ noeuds: [ClientAiguilleur.NoeudVu]) {
+        if noeudsAiguilleur != noeuds { noeudsAiguilleur = noeuds }
+    }
+
     /// Annule une demande vers le Pi pas encore acceptée : la liaison en service (directe) reste telle quelle.
     public func annulerAiguilleur() {
-        guard etatAiguilleur?.identiteNoeud == nil else { return }
+        guard etatAiguilleur?.appaires.isEmpty ?? true else { return }
         oublierAiguilleur()
         if !connecte { brancher(jeton: Trousseau.lire()) }
     }

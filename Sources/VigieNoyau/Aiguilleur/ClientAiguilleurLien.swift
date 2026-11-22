@@ -75,22 +75,51 @@ extension ClientAiguilleur {
     func surPresence(_ membres: [ProtocoleAiguilleur.Membre]) async {
         delaiReprise = delais.repriseInitiale
         presence = membres
-        if etat.noeud == nil {
-            guard let choisi = SelectionNoeud.choisir(membres, moi: etat.membre) else {
-                return await surLien(.rechercheNoeud)
-            }
+        await cibler()
+    }
+
+    /// Recalcule le nœud visé (préféré, appairé en ligne, sans écran d'abord) ; change de nœud si besoin, puis ouvre.
+    func cibler() async {
+        let choisi = SelectionNoeud.choisir(presence, moi: etat.membre, appaires: etat.appaires,
+                                            prefere: etat.prefere, refuses: refuses)
+        if choisi != etat.noeud {
+            await fermerCanalCourant()
             etat.noeud = choisi
             await surEtat(etat)
         }
+        await publierNoeuds()
         await ouvrirVersNoeud()
+    }
+
+    /// Ferme le canal en cours sans relancer la boucle : la cible change, le suivant est ouvert par `cibler`.
+    func fermerCanalCourant() async {
+        guard let id = canalCourant else { return }
+        canalCourant = nil
+        guard let canal = canaux[id] else { return }
+        await canal.fermer()
+    }
+
+    /// Les nœuds vus, tels que les réglages les montrent (en ligne, appairé, sans écran, préféré, relié).
+    func publierNoeuds() async {
+        let vus = presence.filter { $0.genre == "noeud" && $0.id != etat.membre }.map { m in
+            NoeudVu(
+                id: m.id, nom: m.nom ?? etat.noeuds[m.id]?.nom ?? "Nœud", enLigne: m.enLigne,
+                sansEcran: m.sansEcran == true, appaire: etat.estAppaire(m.id), prefere: etat.prefere == m.id,
+                actif: canalCourant != nil && etat.noeud == m.id
+            )
+        }
+        await surNoeuds(vus)
     }
 
     /// Ouvre le canal vers le nœud choisi, s'il est en ligne et qu'aucun canal n'est déjà ouvert ou en cours.
     func ouvrirVersNoeud() async {
         guard let noeud = etat.noeud, transport != nil, canalCourant == nil, !bloque else { return }
-        guard presence.contains(where: { $0.id == noeud && $0.enLigne }) else { return await surLien(.rechercheNoeud) }
+        guard presence.contains(where: { $0.id == noeud && $0.enLigne }) else {
+            await surLien(.rechercheNoeud)
+            return
+        }
         guard let moi else { return await refuserLien("identité locale illisible") }
-        let intention: Chiffrement.CanalAppareil.Intention = etat.identiteNoeud == nil ? .appairage : .lien
+        let intention: Chiffrement.CanalAppareil.Intention = etat.estAppaire(noeud) ? .lien : .appairage
         let id = UUID().uuidString.lowercased()
         let canal = Chiffrement.CanalAppareil(
             id: id, membre: noeud, intention: intention, moi: moi, nomLocal: nomAppareil, hote: self
@@ -114,15 +143,26 @@ extension ClientAiguilleur {
         await canaux[canal]?.surFermetureDistante()
     }
 
-    /// Réouvre le canal après un délai ; sans effet si le lien est coupé ou bloqué entre-temps.
+    /// Réouvre le canal après un délai (la cible est recalculée) ; sans effet si le lien est coupé ou bloqué.
     func planifierReprise() {
         guard !bloque, transport != nil else { return }
         let delai = delaiReprise
         delaiReprise = min(delaiReprise * 2, delais.repriseMax)
         Task {
             try? await Task.sleep(for: delai)
-            await self.ouvrirVersNoeud()
+            await self.cibler()
         }
+    }
+
+    /// Un nœud refuse le lien ou l'a révoqué : il est exclu de la sélection, les autres restent disponibles.
+    func ecarterNoeud(_ id: String, oublier: Bool) async {
+        refuses.insert(id)
+        if oublier {
+            etat.noeuds[id] = nil
+            await surEtat(etat)
+        }
+        await fermerCanalCourant()
+        planifierReprise()
     }
 
     func refuserLien(_ raison: String) async {

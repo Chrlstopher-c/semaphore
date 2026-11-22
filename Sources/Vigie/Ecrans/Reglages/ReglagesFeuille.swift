@@ -46,7 +46,7 @@ struct ReglagesFeuille: View {
                 Text("Q").font(.system(size: 17, weight: .medium, design: .serif)).foregroundStyle(Q.texte)
                     .frame(width: 44, height: 44).background(Color.black, in: .circle)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(cablage.etatAiguilleur?.nomNoeud ?? "Nœud Lanterne").font(Q.rangee).foregroundStyle(Q.texte)
+                    Text(cablage.nomNoeudActif ?? "Nœud Lanterne").font(Q.rangee).foregroundStyle(Q.texte)
                     Text("\(hote) · \(etatLien)").font(Q.detail)
                         .foregroundStyle(Q.secondaire).lineLimit(1)
                 }

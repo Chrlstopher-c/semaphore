@@ -16,25 +16,28 @@ extension ClientAiguilleur: Chiffrement.HoteAppareil {
     }
 
     func identitePairee(_ membre: String) async -> Chiffrement.IdentitePublique? {
-        guard membre == etat.noeud, let texte = etat.identiteNoeud else { return nil }
+        guard let texte = etat.noeuds[membre]?.identite else { return nil }
         return try? Chiffrement.Identites.importer(texte)
     }
 
     func appairageAccepte(membre: String, nom: String, identite: Chiffrement.IdentitePublique) async {
-        etat.identiteNoeud = Chiffrement.Identites.exporter(identite)
-        etat.nomNoeud = nom
+        etat.noeuds[membre] = NoeudConnu(identite: Chiffrement.Identites.exporter(identite), nom: nom)
+        refuses.remove(membre)
         await surEtat(etat)
+        await publierNoeuds()
     }
 
     func liaisonOuverte(canal: String) async {
         delaiReprise = delais.repriseInitiale
         await surLien(.ouvert)
+        await publierNoeuds()
+        demanderNoeuds()
     }
 
     func liaisonRefusee(canal: String, raison: String) async {
-        // « révoqué » : le nœud ne reconnaît plus cet appareil (révocation passée) — même sens qu'une révocation.
-        if raison == MotifsRevocation.noeud { return await revoquerLien() }
-        await refuserLien(raison)
+        // « révoqué » : ce nœud ne reconnaît plus cet appareil. Les autres nœuds restent utilisables.
+        guard let visé = etat.noeud else { return }
+        await ecarterNoeud(visé, oublier: raison == MotifsRevocation.noeud)
     }
 
     func recevoir(canal: String, message: ProtocoleAiguilleur.DuLien) async {
@@ -47,7 +50,8 @@ extension ClientAiguilleur: Chiffrement.HoteAppareil {
         case let .morceau(ref, rang, corps):
             _ = reassemblage.recevoir(ref: ref, rang: rang, corps: corps)
         case .revocation:
-            await revoquerLien()
+            // Révocation par un nœud : seul ce nœud est oublié ; le lien vers les autres reste ouvert.
+            if let visé = etat.noeud { await ecarterNoeud(visé, oublier: true) }
         case .diffusionOuverte:
             diffusion?.yield(.ouverte)
         case let .diffusion(ref, corps, morceaux):
@@ -81,6 +85,7 @@ extension ClientAiguilleur: Chiffrement.HoteAppareil {
         guard canal == canalCourant else { return }
         canalCourant = nil
         if !bloque { await surLien(.rechercheNoeud) }
+        await publierNoeuds()
         planifierReprise()
     }
 }
