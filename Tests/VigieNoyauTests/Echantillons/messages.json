@@ -1,0 +1,20 @@
+[
+  {"type": "evenement", "evenement": {"seq": 7, "sessionId": "s-1", "ts": "2026-11-01T10:00:00.000Z",
+    "evt": {"type": "texte", "texte": "Bonjour."}}},
+  {"type": "flux", "sessionId": "s-1", "bloc": "b-3", "delta": "Bon", "genre": "texte"},
+  {"type": "flux", "sessionId": "s-1", "bloc": "b-4", "delta": "Hum", "genre": "reflexion", "agent": "a-1"},
+  {"type": "session", "session": {"id": "s-1", "machine": "alpha",
+    "projet": {"machine": "alpha", "chemin": "/srv/projets/exemple", "nom": "exemple"},
+    "cwd": "/srv/projets/exemple", "titre": "Exemple", "objectif": null, "modele": "claude-exemple-1",
+    "compte": "principal", "autonomie": false, "statut": "attente", "contexte": {"tokens": 10, "max": 100},
+    "etapes": 0, "compactions": 0, "claudeSessionId": null, "tmux": "cc-1", "attachee": false, "pilotee": true,
+    "creeLe": "2026-11-01T08:00:00.000Z", "majLe": "2026-11-01T08:10:00.000Z"}},
+  {"type": "supprimee", "id": "s-0"},
+  {"type": "machine", "machine": {"id": "alpha", "description": "Poste principal", "racines": [], "projets": [],
+    "comptes": [], "version": "2.1.0", "etat": null, "derniereVue": "2026-11-01T10:00:00.000Z", "enLigne": true,
+    "etatComptes": [], "acces": null}},
+  {"type": "notification", "notification": {"seq": 3, "sessionId": "s-1", "niveau": "important",
+    "titre": "Objectif atteint", "texte": "", "ts": "2026-11-01T10:01:00.000Z", "lue": false}},
+  {"type": "fil_modifie", "sessionId": "s-1"},
+  {"type": "contrat-futur", "x": 1}
+]

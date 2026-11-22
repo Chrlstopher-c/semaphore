@@ -26,4 +26,26 @@ public enum Route {
 
     public static func reveiller(_ machine: String) -> String { "/api/machines/\(machine)/reveiller" }
     public static func eteindre(_ machine: String) -> String { "/api/machines/\(machine)/eteindre" }
+
+    public static let flux = "/api/flux"
+    public static let appairer = "/api/appareils/appairer"
+    public static let environnements = "/api/environnements"
+
+    public static func evenementsAvant(_ session: String, avant: Int, limite: Int) -> String {
+        "/api/sessions/\(session)/evenements?avant=\(avant)&limite=\(limite)"
+    }
+
+    public static func contexte(_ session: String) -> String { "/api/sessions/\(session)/contexte" }
+    public static func taches(_ session: String) -> String { "/api/sessions/\(session)/taches" }
+    public static func arreterTache(_ session: String, _ tache: String) -> String {
+        "/api/sessions/\(session)/taches/\(tache)/arreter"
+    }
+
+    public static func modele(_ session: String) -> String { "/api/sessions/\(session)/modele" }
+    public static func effort(_ session: String) -> String { "/api/sessions/\(session)/effort" }
+    public static func mode(_ session: String) -> String { "/api/sessions/\(session)/mode" }
+    /// Renommer une session (et non un fichier : `renommer(_:)` désigne déjà le renommage de fichier d'une machine).
+    public static func renommerSession(_ session: String) -> String { "/api/sessions/\(session)/renommer" }
+    public static func ultracode(_ session: String) -> String { "/api/sessions/\(session)/ultracode" }
+    public static func projets(_ machine: String) -> String { "/api/machines/\(machine)/projets" }
 }
