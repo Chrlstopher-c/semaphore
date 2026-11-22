@@ -15,15 +15,12 @@ struct TamponAudio: @unchecked Sendable {
 
 @MainActor
 final class LecteurVoix {
-    private struct Morceau {
-        let texte: String
-        let audio: Task<TamponAudio?, Never>
-    }
+    /// Deux synthèses vers la tour à la fois : la suivante est prête quand la précédente finit d'être dite.
+    private static let synthesesEnVol = 2
 
     private let moteur: MoteurVocal
     private let synthese: @Sendable (String) async throws -> Data
-    private var file: [Morceau] = []
-    private var dernier: Task<TamponAudio?, Never>?
+    private let file = FileVocale<TamponAudio>(enVol: LecteurVoix.synthesesEnVol)
     private var lecture: Task<Void, Never>?
     private var generation = 0
     private var tourEnPanneJusqua: ContinuousClock.Instant?
@@ -39,24 +36,19 @@ final class LecteurVoix {
     }
 
     func ajouter(_ texte: String) {
-        if !parle && file.isEmpty { debutTour = .now }
-        let precedent = dernier
+        if !parle && file.vide { debutTour = .now }
         let panne = tourEnPanne
-        let audio = Task { [synthese] () -> TamponAudio? in
-            _ = await precedent?.value // une phrase à la fois vers la tour, dans l'ordre
-            return await Self.preparer(texte, tour: panne ? nil : synthese)
+        let synthese = self.synthese
+        file.ajouter(texte) { phrase in
+            await LecteurVoix.preparer(phrase, tour: panne ? nil : synthese)
         }
-        dernier = audio
-        file.append(Morceau(texte: texte, audio: audio))
         if lecture == nil { lireSuivant() }
     }
 
     /// Coupe la voix et jette tout ce qui attendait (passer un message, ou Chris qui parle).
     func taire() {
         generation += 1
-        for morceau in file { morceau.audio.cancel() }
-        file = []
-        dernier = nil
+        file.annuler()
         lecture?.cancel()
         lecture = nil
         moteur.taire()
@@ -78,12 +70,11 @@ final class LecteurVoix {
     }
 
     private func lireSuivant() {
-        guard !file.isEmpty else {
+        guard let morceau = file.prochain() else {
             lecture = nil
             if parle { parle = false; surPhrase?(nil, true); surSilence?() }
             return
         }
-        let morceau = file.removeFirst()
         let numero = generation
         lecture = Task { [weak self] in
             let audio = await morceau.audio.value

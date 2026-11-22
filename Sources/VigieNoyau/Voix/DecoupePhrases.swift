@@ -8,6 +8,9 @@ public struct DecoupePhrases: Sendable, Equatable {
     static let minimum = 18
     static let maximum = 220
     static let premierMinimum = 12
+    /// Première phrase plus longue que ça : on la coupe à la première ponctuation faible après `premierCoupure`.
+    static let premierMaximum = 80
+    static let premierCoupure = 25
     static let abreviations = ["M.", "Mme.", "etc.", "cf.", "p.", "ex.", "St.", "Dr."]
 
     /// Bloc de texte en cours (un autre bloc = la suite de la réponse après un outil).
@@ -60,6 +63,7 @@ public struct DecoupePhrases: Sendable, Equatable {
     }
 
     private mutating func extraire() -> String? {
+        if let coupure = premiereTropLongue() { return couper(a: coupure) }
         if let fin = finDePhrase() { return couper(a: fin) }
         if !premierFait, let virgule = virgule(apres: Self.premierMinimum) { return couper(a: virgule) }
         if tampon.count > Self.maximum, let virgule = virgule(apres: Self.minimum) { return couper(a: virgule) }
@@ -82,6 +86,26 @@ public struct DecoupePhrases: Sendable, Equatable {
                !finitParAbreviation(tampon[..<suivant]) {
                 return suivant
             }
+            i = suivant
+        }
+        return nil
+    }
+
+    /// Première phrase trop longue pour attendre sa fin : coupure après une ponctuation faible, dans cette phrase.
+    private func premiereTropLongue() -> String.Index? {
+        guard !premierFait else { return nil }
+        let fin = finDePhrase() ?? tampon.endIndex
+        guard tampon[..<fin].count > Self.premierMaximum else { return nil }
+        return ponctuation(apres: Self.premierCoupure, avant: fin)
+    }
+
+    /// Première `,` `;` ou `:` suivie d'un espace, entre `minimum` caractères et `limite`.
+    private func ponctuation(apres minimum: Int, avant limite: String.Index) -> String.Index? {
+        guard let debut = tampon.index(tampon.startIndex, offsetBy: minimum, limitedBy: limite) else { return nil }
+        var i = debut
+        while i < limite {
+            let suivant = tampon.index(after: i)
+            if ",;:".contains(tampon[i]), suivant < tampon.endIndex, tampon[suivant].isWhitespace { return suivant }
             i = suivant
         }
         return nil
