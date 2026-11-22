@@ -59,3 +59,6 @@ DerivedData/
 .env.local
 .build/
 Info.plist
+
+# Captures de l’étalon (personnelles, jamais versionnées)
+etalon/
