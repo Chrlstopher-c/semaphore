@@ -16,6 +16,8 @@ struct ChampSaisie<Plus: View, Pilule: View>: View {
     let envoyer: () -> Void
     var arreter: () -> Void = {}
     let erreur: (String) -> Void
+    /// Ouvre le mode vocal (bouton rond à droite du champ) ; nil : pas de mode vocal ici.
+    var vocal: (() -> Void)? = nil
     @ViewBuilder let plus: () -> Plus
     @ViewBuilder let pilule: () -> Pilule
     @FocusState private var focus: Bool
@@ -25,6 +27,17 @@ struct ChampSaisie<Plus: View, Pilule: View>: View {
     private var pret: Bool { !texte.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pieces.isEmpty }
 
     var body: some View {
+        HStack(alignment: .bottom, spacing: 8) {
+            capsule
+            if let vocal, !etendu { BoutonVocal(action: vocal).transition(.scale.combined(with: .opacity)) }
+        }
+        .padding(.horizontal, etendu ? 8 : 16).padding(.top, 8).padding(.bottom, etendu ? 8 : 0)
+        .background(Color(hex: 0x232323).ignoresSafeArea(edges: .bottom))
+        .animation(.spring(duration: 0.35, bounce: 0), value: etendu)
+        .onDisappear { if dictee.active { dictee.arreter() } }
+    }
+
+    private var capsule: some View {
         VStack(alignment: .leading, spacing: 0) {
             if !pieces.isEmpty { BandePieces(pieces: $pieces).padding(.top, 12) }
             HStack(spacing: 8) {
@@ -37,10 +50,6 @@ struct ChampSaisie<Plus: View, Pilule: View>: View {
         .padding(.horizontal, 8)
         .padding(.vertical, etendu ? 0 : 8)
         .background(Q.carte, in: .rect(cornerRadius: etendu ? 24 : 26, style: .continuous))
-        .padding(.horizontal, etendu ? 8 : 16).padding(.top, 8).padding(.bottom, etendu ? 8 : 0)
-        .background(Color(hex: 0x232323).ignoresSafeArea(edges: .bottom))
-        .animation(.spring(duration: 0.35, bounce: 0), value: etendu)
-        .onDisappear { if dictee.active { dictee.arreter() } }
     }
 
     private var champ: some View {
@@ -148,7 +157,7 @@ struct Composeur: View {
 
     var body: some View {
         ChampSaisie(texte: $texte, pieces: $pieces, invite: invite, travail: session.statut.enActivite,
-                    envoyer: envoyer, arreter: interrompre, erreur: erreur) {
+                    envoyer: envoyer, arreter: interrompre, erreur: erreur, vocal: ouvrirVocal) {
             MenuPlus(session: session, pieces: $pieces, ouvrirUsage: ouvrirUsage, ouvrirTaches: ouvrirTaches,
                      erreur: erreur)
         } pilule: {
@@ -162,6 +171,8 @@ struct Composeur: View {
         if session.statut.enActivite { return "Ajoute un message, il attendra la fin du tour" }
         return session.statut == .fermee ? "Réponds pour reprendre la session" : "Réponds à Claude"
     }
+
+    let ouvrirVocal: () -> Void
 
     private func interrompre() {
         Task { if let e = await modele.interrompre(session.id) { erreur(e) } }
@@ -177,7 +188,7 @@ struct Composeur: View {
         pieces = []
         envoi += 1
         Task {
-            let corps = message.isEmpty ? "Pièce jointe" : message
+            let corps = ModeVocal.partage.prefixer(message.isEmpty ? "Pièce jointe" : message, session: session.id)
             if let e = await modele.envoyer(corps, pieces: jointes.map(\.piece), a: session.id) {
                 texte = message
                 pieces = jointes

@@ -36,6 +36,8 @@ public final class ModeleRelais {
     @ObservationIgnored private var aPublier: Set<String> = []
     /// Dernier texte en direct remplacé par son bloc final : ce bloc prend sa place sans animation d'arrivée.
     @ObservationIgnored var texteDirectFini: [String: String] = [:]
+    /// Mode vocal : chaque delta du fil principal, chaque texte final et chaque fin de tour (lecture à voix haute).
+    @ObservationIgnored var observateurVocal: ((ObservationVocale) -> Void)?
     @ObservationIgnored private var publicationPrevue = false
     @ObservationIgnored private(set) var client: ClientRelais?
     @ObservationIgnored private var boucle: Task<Void, Never>?
@@ -243,9 +245,12 @@ public final class ModeleRelais {
         if let fil = fils[id] { fils[id] = FusionFil.ajouter(evenement, au: fil) }
         if case .message(let texte, _, _) = evenement.evt { retirerEnvoi(texte, de: id) }
         switch evenement.evt {
-        case .texte(_, nil): viderTexte(id)
+        case .texte(let texte, nil):
+            observateurVocal?(.final(session: id, texte: texte))
+            viderTexte(id)
         case .reflexion(_, nil): viderReflexion(id)
         case .tourFini:
+            observateurVocal?(.tourFini(session: id))
             viderTexte(id)
             viderReflexion(id)
         default: break
@@ -269,6 +274,7 @@ public final class ModeleRelais {
             directsReflexion[id, default: CumulDirect(bloc: bloc)].ajouter(delta, bloc: bloc)
         } else {
             directs[id, default: CumulDirect(bloc: bloc)].ajouter(delta, bloc: bloc)
+            observateurVocal?(.delta(session: id, bloc: bloc, texte: delta))
         }
         aPublier.insert(id)
         guard !publicationPrevue else { return }

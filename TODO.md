@@ -19,6 +19,15 @@
 - [ ] Écarts ouverts de `QUART-V1-ECRANS.md` (coloration syntaxique, phrase de rythme de l'usage, aperçu d'appui long).
 - [ ] Pièces jointes du composeur (`pieces` de l'API), images du fil (route `/api/sessions/:id/fichiers/:fichier`).
 
+## Mode vocal Quart — à constater / à faire (22/11)
+
+- [ ] **Constater sur l'iPhone** : bouton rond « waveform » à droite du champ → parler, envoi après 1,3 s de silence,
+      voix de la tour phrase par phrase, « Passer », couper en parlant, repli voix de l'iPhone (tour éteinte).
+- [ ] Moteur : la route `/api/voix` doit tourner sur le nœud de l'iPhone (portable) ET de la tour (Quart
+      `lanterne/v6-livraison`, commit « Mode vocal ») ; le service `lanterne-voix` tourne sur la tour.
+- [ ] Surlignage dans le fil du passage lu (aujourd'hui la phrase lue s'affiche dans le panneau vocal).
+- [ ] Premier son ~1,5-2 s après le premier mot écrit : flux de la synthèse par morceaux (comme Reflet) si ça gêne.
+
 ## À constater sur l'appareil — Chris
 
 - [ ] **Vigie v2 sur l'iPhone** : poser l'IPA, se connecter, vérifier clair/sombre, polices, fil, et « Répondre »

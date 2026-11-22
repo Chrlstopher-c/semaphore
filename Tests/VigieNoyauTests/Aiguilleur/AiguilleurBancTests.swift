@@ -156,6 +156,59 @@ struct AiguilleurBancTests {
         await client.arreter()
     }
 
+    /// Mode vocal de bout en bout : la réponse s'écrit mot à mot chez le nœud, l'appareil la découpe en morceaux
+    /// (DecoupePhrases) et demande chaque morceau à `/api/voix` (vraie voix de la tour), l'un après l'autre.
+    /// Mesure imprimée : délai entre le premier mot écrit et le premier son reçu. Codes : seul (filtre leModeVocal).
+    @Test(.enabled(if: bancActif && ProcessInfo.processInfo.environment["BANC_VOIX"] != nil), .timeLimit(.minutes(2)))
+    func leModeVocalRecoitLaVoixPhraseParPhrase() async throws {
+        let banc = try await preparerBanc()
+        let graines = GrainesIdentite.generer()
+        let etat = try await ClientAiguilleur.appairer(
+            adresse: try urlBanc(banc), code: banc.codeAppareil, nom: "appareil-vocal", graines: graines
+        )
+        let rec = Enregistreur()
+        let client = ClientAiguilleur(
+            etat: etat, graines: graines, nomAppareil: "appareil-vocal",
+            surEtat: { await rec.noterEtat($0) }, surLien: { await rec.noterLien($0) }
+        )
+        await client.demarrer()
+        try await rec.attendreLien(secondes: 30) { $0 == .ouvert }
+        let flux = await client.ouvrirDiffusion()
+        let (morceaux, envoi) = AsyncStream<String>.makeStream()
+        let ecoute = Task {
+            // Le flux reste lu jusqu'au bout du test : le quitter ferme l'abonnement, et le lien avec lui.
+            var decoupe = DecoupePhrases()
+            for await evenement in flux {
+                guard case let .message(.flux(_, "v", delta, _, _)) = evenement else { continue }
+                for morceau in decoupe.ajouter(delta, bloc: "v") { envoi.yield(morceau) }
+                guard delta.hasSuffix("relance.") else { continue }
+                for morceau in decoupe.finir(texteFinal: nil) { envoi.yield(morceau) }
+                envoi.finish()
+            }
+        }
+        let voix = Task { () throws -> [(texte: String, recu: Double, octets: Int)] in
+            var recus: [(texte: String, recu: Double, octets: Int)] = []
+            for await morceau in morceaux {
+                let corps = String(data: try JSONEncoder().encode(["texte": morceau]), encoding: .utf8)
+                let r = try await client.requete(methode: "POST", chemin: "/api/voix", corps: corps)
+                #expect(r.statut == 200 && r.type == "audio/mpeg")
+                let octets = Data(base64Encoded: r.corps)?.count ?? 0
+                recus.append((morceau, Date().timeIntervalSince1970 * 1000, octets))
+            }
+            return recus
+        }
+        let depart = try await client.requete(methode: "POST", chemin: "/api/banc/parler", corps: "{}")
+        struct Debut: Decodable { let debut: Double }
+        let debut = try JSONDecoder().decode(Debut.self, from: Data(depart.corps.utf8)).debut
+        let recus = try await voix.value
+        for r in recus { print("BANC-VOIX +\(Int(r.recu - debut)) ms \(r.octets) o « \(r.texte) »") }
+        print("BANC-VOIX premier son reçu \(Int((recus.first?.recu ?? 0) - debut)) ms après le premier mot écrit")
+        #expect(recus.count >= 3)
+        #expect(recus.allSatisfy { $0.octets > 1000 })
+        await client.arreter()
+        ecoute.cancel()
+    }
+
     @Test(.enabled(if: bancActif), .timeLimit(.minutes(2)))
     func identiteNonApparieeEstRefuseeParLeNoeud() async throws {
         let banc = try await preparerBanc()

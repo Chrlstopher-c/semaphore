@@ -24,6 +24,7 @@ struct SessionEcran: View {
     @State private var feuille: FeuilleSession?
     @State private var bandeau: String?
     @State private var aRenommer: Session?
+    @State private var vocal = ModeVocal.partage
 
     var body: some View {
         Group {
@@ -39,6 +40,12 @@ struct SessionEcran: View {
         .overlay(alignment: .top) { if let bandeau { Bandeau(texte: bandeau).padding(.top, 4) } }
         .sheet(item: $feuille) { f in feuilleVue(f) }
         .renommage(session: $aRenommer, bandeau: $bandeau)
+        .animation(.spring(duration: 0.35, bounce: 0), value: vocal.session)
+        .onDisappear { if vocal.session == id { vocal.sortir() } }
+    }
+
+    private func ouvrirVocal(_ session: String) {
+        Task { if let e = await vocal.entrer(session: session, modele: modele) { montrer(e) } }
     }
 
     private func contenu(_ s: Session) -> some View {
@@ -46,8 +53,13 @@ struct SessionEcran: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 VStack(spacing: 0) {
                     if let d = s.dialogue { DemandeVue(session: s, dialogue: d, erreur: montrer) }
-                    Composeur(session: s, ouvrirModele: { feuille = .modele }, ouvrirUsage: { feuille = .usage },
-                              ouvrirTaches: { feuille = .taches }, erreur: montrer)
+                    if vocal.session == s.id {
+                        PanneauVocal().transition(.move(edge: .bottom).combined(with: .opacity))
+                    } else {
+                        Composeur(session: s, ouvrirModele: { feuille = .modele }, ouvrirUsage: { feuille = .usage },
+                                  ouvrirTaches: { feuille = .taches }, erreur: montrer,
+                                  ouvrirVocal: { ouvrirVocal(s.id) })
+                    }
                 }
             }
             .toolbar { entete(s) }

@@ -177,6 +177,18 @@ public final class ClientRelais: Sendable {
         return try decoder(donnees, reponse)
     }
 
+    /// Mode vocal : une phrase → son audio (MP3) synthétisé par la machine du réseau qui a une voix.
+    public func synthese(_ texte: String) async throws -> Data {
+        struct Corps: Encodable { let texte: String }
+        var requete = try requete("POST", "/api/voix")
+        requete.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        requete.httpBody = try JSONEncoder().encode(Corps(texte: texte))
+        requete.timeoutInterval = 15
+        let (donnees, reponse) = try await transferer(requete)
+        try verifier(donnees, reponse)
+        return donnees
+    }
+
     private func verifier(_ donnees: Data, _ reponse: URLResponse) throws {
         let statut = (reponse as? HTTPURLResponse)?.statusCode ?? 0
         if statut == 401 && !jeton.isEmpty { throw ErreurRelais.nonConnecte }

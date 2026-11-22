@@ -1,7 +1,8 @@
 #!/bin/bash
 # Responsabilité : banc réel du client de l'aiguilleur. Lance un aiguilleur Quart (relais/bin.ts, mode aiguilleur) et
 # un nœud de banc (banc-aiguilleur.ts) sur 127.0.0.1, puis lance le test Swift AiguilleurBancTests contre eux.
-# Usage : lancer-banc.sh <racine du worktree Quart> <dossier de données jetable>
+# Usage : lancer-banc.sh <racine du worktree Quart> <dossier de données jetable> [filtre des tests]
+# BANC_VOIX_URL (facultatif) : service de voix de la tour, pour le banc du mode vocal (filtre VoixBancTests).
 # Le script ne tue rien : il écrit les PID de ses processus dans <dossier>/pids ; c'est à l'appelant de les arrêter.
 set -euo pipefail
 
@@ -45,7 +46,7 @@ rm -f "$SORTIE"
 (cd "$QUART" && env -i PATH="$PATH" HOME="$HOME" TMPDIR="$DOSSIER" QUART_RACINE="$QUART" BANC_URL="$URL" \
   BANC_CODE_NOEUD="$CODE_NOEUD" BANC_CODE_APPAREIL="$CODE_APPAREIL" BANC_CODE_INTRUS="$CODE_INTRUS" \
   BANC_CODE_APPAREIL2="$CODE_APPAREIL2" BANC_CODE_APPAREIL3="$CODE_APPAREIL3" \
-  BANC_SORTIE="$SORTIE" timeout 900 "$BUN" run "$BANC/banc-aiguilleur.ts" \
+  BANC_VOIX_URL="${BANC_VOIX_URL:-}" BANC_SORTIE="$SORTIE" timeout 900 "$BUN" run "$BANC/banc-aiguilleur.ts" \
   >"$DOSSIER/noeud.out" 2>"$DOSSIER/noeud.err") &
 echo "noeud $!" >> "$DOSSIER/pids"
 
@@ -59,5 +60,5 @@ cd "$RACINE_SWIFT"
 . ~/.local/share/swiftly/env.sh
 export LD_LIBRARY_PATH="$HOME/.local/lib:${LD_LIBRARY_PATH:-}"
 QUART_AIGUILLEUR_BANC="$SORTIE" systemd-run --user --scope -p MemoryMax=8G -p MemorySwapMax=0 \
-  swift test --scratch-path ~/Downloads/quart-build-aig --filter AiguilleurBancTests
+  swift test --scratch-path ~/Downloads/quart-build-aig --filter "${3:-AiguilleurBancTests}"
 echo "test banc terminé ; PID à arrêter : $DOSSIER/pids"

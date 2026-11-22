@@ -9,6 +9,20 @@ ci-dessous) ; monde Quart v1 refait à l'identique de la partie Code de l'appli 
 
 ---
 
+## 22/11/2026 — Quart : mode vocal (branche `dev`)
+
+- Bouton rond « waveform » à droite du champ de la session → panneau vocal à la place du composeur. Écoute continue
+  (dictée française sur l'iPhone), envoi automatique après 1,3 s de silence, réponse lue pendant qu'elle s'écrit
+  (premier morceau à la première virgule, puis phrase par phrase), « Passer », coupure de la voix quand Chris dit au
+  moins deux vrais mots (l'écho de la phrase lue ne compte pas), annonces « [Mode vocal activé : …] » devant le premier
+  message et « [Mode vocal terminé] » devant le premier message tapé après.
+- Voix : route `/api/voix` du nœud (Quart) → service `lanterne-voix` de la tour (synthèse de Reflet, voix clonée
+  « baddie ») ; un nœud sans voix relaie à ses pairs. Repli : voix française de l'iPhone (30 s avant de réessayer).
+  Micro et voix sur UN moteur avec le traitement de la voix d'iOS (annulation d'écho), reconstruit s'il s'arrête.
+- **Prouvé sur banc réel** (aiguilleur + nœud + client Swift Linux + vraie voix, `leModeVocalRecoitLaVoixPhraseParPhrase`) :
+  premier son reçu 1,5 s après le premier mot écrit ; puis ~1 s de blanc entre deux phrases (synthèse d'une phrase
+  ≈ 2,6 s pour 5 s d'audio, demandée après la précédente). **Seulement codé** : tout l'audio iPhone (à constater).
+
 ## 22/11/2026 — Quart : direct, étincelle, dictée (branche `dev`)
 
 - **Direct — cause trouvée** : le nœud envoyait ses messages de FÉDÉRATION (instantané des sessions, confirmations)

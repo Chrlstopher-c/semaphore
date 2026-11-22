@@ -22,6 +22,11 @@ const pino = requireQuart('pino');
 const { servirAppareil } = await import(join(racine, 'relais/federation/appareils.ts'));
 const { creerNoeud, ficheDe } = await import(join(racine, 'relais/federation/banc-federation.ts'));
 const { pngDeBruit } = await import(join(racine, 'relais/federation/banc-png.ts'));
+// Mode vocal : la vraie route `/api/voix` du nœud, branchée sur le service de voix de la tour (BANC_VOIX_URL).
+const { ApiVoix } = await import(join(racine, 'relais/voix/api-voix.ts'));
+const voix = new ApiVoix(process.env['BANC_VOIX_URL'] || null, { voixDesPairs: async () => null }, pino({ enabled: false }));
+const REPONSE_ORALE = "D'accord, je regarde ça. Le build est passé sans erreur, mais deux tests échouent dans le module "
+  + 'de synthèse. Je pense que c\'est le découpage des phrases, je le corrige et je relance.';
 const sortie = requis('BANC_SORTIE');
 const png = pngDeBruit(400);
 writeFileSync(join(dirname(sortie), 'image.png'), png);
@@ -42,6 +47,18 @@ const TABLE = {
         if (++i >= n) clearInterval(minuterie);
       }, ms);
       return Response.json({ ok: true });
+    },
+  },
+  '/api/voix': { POST: (req: Request) => voix.synthese(req) },
+  // Parler : la réponse orale écrite mot à mot (un mot toutes les 40 ms, comme Claude) ; rend l'heure du 1er mot.
+  '/api/banc/parler': {
+    POST: () => {
+      const mots = REPONSE_ORALE.split(/(?<= )/);
+      const debut = Date.now();
+      mots.forEach((mot, i) => setTimeout(() => {
+        noeud.diffusion.diffuser({ type: 'flux', sessionId: 's1', bloc: 'v', delta: mot });
+      }, i * 40));
+      return Response.json({ debut });
     },
   },
   '/api/banc/diffuser': {
