@@ -19,6 +19,8 @@ public final class FluxRelais: @unchecked Sendable {
     public let evenements: AsyncStream<EvenementFlux>
     private let tache: URLSessionWebSocketTask
     private let entree: AsyncStream<EvenementFlux>.Continuation
+    private let vivacite = VivaciteLiaison()
+    private var veille: Task<Void, Never>?
 
     public init(client: ClientRelais) throws {
         let requete = try client.requeteFlux()
@@ -30,14 +32,21 @@ public final class FluxRelais: @unchecked Sendable {
         entree.onTermination = { @Sendable [weak self] _ in self?.tache.cancel(with: .goingAway, reason: nil) }
     }
 
-    /// Ouvre le socket, lit les trames et envoie les pings (un tout de suite, puis toutes les 25 s).
+    /// Ouvre le socket, lit les trames et veille la liaison (un ping tout de suite, puis à chaque échéance).
     public func ouvrir() {
         tache.resume()
         Task { await lire() }
-        Task { await pinguer() }
+        relancerVeille()
+    }
+
+    /// Premier plan : un ping tout de suite ; sans pong dans le délai, le flux se termine (ModeleRelais le refait).
+    public func verifier() async {
+        await vivacite.forcerPing()
+        relancerVeille()
     }
 
     public func fermer() {
+        veille?.cancel()
         tache.cancel(with: .goingAway, reason: nil)
         entree.finish()
     }
@@ -46,6 +55,7 @@ public final class FluxRelais: @unchecked Sendable {
         while true {
             do {
                 let trame = try await tache.receive()
+                await vivacite.recu()
                 if let message = Self.decoder(trame) { entree.yield(.message(message)) }
             } catch {
                 Trace.info("flux", "liaison coupée (\(error.localizedDescription))")
@@ -56,21 +66,39 @@ public final class FluxRelais: @unchecked Sendable {
         }
     }
 
-    /// Un ping par intervalle tant que la tâche tourne. Le pong sans erreur signale que la liaison vit.
-    private func pinguer() async {
-        while tache.state == .running {
-            sonder()
-            try? await Task.sleep(nanoseconds: LiaisonRelais.pingSecondes * 1_000_000_000)
+    private func relancerVeille() {
+        veille?.cancel()
+        veille = Task { await veiller() }
+    }
+
+    /// Veille : un ping à chaque échéance. Pas de pong dans le délai = liaison morte : le flux se termine avec une
+    /// raison, pour que le modèle la refasse. Un pong sans erreur signale que la liaison vit.
+    private func veiller() async {
+        while !Task.isCancelled && tache.state == .running {
+            switch await vivacite.action() {
+            case .rien:
+                break
+            case .ping:
+                await vivacite.pingPartie()
+                sonder()
+            case .morte:
+                Trace.info("flux", "liaison morte : aucun pong du relais")
+                entree.yield(.ferme("aucun pong du relais"))
+                fermer()
+                return
+            }
+            try? await Task.sleep(for: await vivacite.attente())
         }
     }
 
     private func sonder() {
-        tache.sendPing { [entree] erreur in
+        tache.sendPing { [vivacite, entree] erreur in
             if let erreur {
                 Trace.detail("flux", "ping sans pong (\(erreur.localizedDescription))")
-            } else {
-                entree.yield(.ouvert)
+                return
             }
+            Task { await vivacite.recu() }
+            entree.yield(.ouvert)
         }
     }
 

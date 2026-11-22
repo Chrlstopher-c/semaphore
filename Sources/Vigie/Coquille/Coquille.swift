@@ -33,6 +33,7 @@ public struct Coquille: View {
         switch nouvelle {
         case .active:
             cablage.modele.demarrer()
+            Task { await cablage.verifierLiaisons() }
             Task { await CentreAlerte.partage.sonder(origine: .ouverture) }
         case .background: cablage.modele.arreter()
         default: break

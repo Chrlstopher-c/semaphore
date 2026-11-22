@@ -11,6 +11,15 @@ protocol TransportAiguilleur: Sendable {
     func envoyer(_ message: ProtocoleAiguilleur.VersAiguilleur) async throws
     func recevoir() async throws -> ProtocoleAiguilleur.DeAiguilleur
     func fermer() async
+    /// Ping de la liaison : `surPong` est appelé quand l'aiguilleur répond (jamais si la liaison est morte).
+    func sonder(surPong: @escaping @Sendable () -> Void) async
+}
+
+extension TransportAiguilleur {
+    /// Transport sans liaison réelle (tests) : il répond tout de suite, la liaison est vivante.
+    func sonder(surPong: @escaping @Sendable () -> Void) async {
+        surPong()
+    }
 }
 
 /// Motifs de refus que le nœud envoie et que le client sait lire (Quart, relais/federation/federation.ts).
@@ -43,5 +52,11 @@ final class TransportWebSocket: TransportAiguilleur, @unchecked Sendable {
 
     func fermer() async {
         tache.cancel(with: .goingAway, reason: nil)
+    }
+
+    func sonder(surPong: @escaping @Sendable () -> Void) async {
+        tache.sendPing { erreur in
+            if erreur == nil { surPong() }
+        }
     }
 }

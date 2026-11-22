@@ -30,6 +30,7 @@ public final class Cablage {
         return etat.noeuds[id]?.nom
     }
     @ObservationIgnored var clientAiguilleur: ClientAiguilleur?
+    @ObservationIgnored private var surveillanceReseau: SurveillanceReseau?
 
     public init() {
         let memorisee = UserDefaults.standard.string(forKey: Self.cleAdresse).flatMap(URL.init(string:))
@@ -44,11 +45,24 @@ public final class Cablage {
     public func amorcer() async {
         guard !amorce else { return }
         amorce = true
+        surveillanceReseau = SurveillanceReseau { Task { @MainActor [weak self] in await self?.reseauChange() } }
         DelegueApplication.ecouteur = Aiguillage.partage
         Aiguillage.partage.modele = modele
         if let etat = Self.etatAiguilleurGarde() { brancherAiguilleur(etat) } else { brancher(jeton: Trousseau.lire()) }
         await CentreAlerte.partage.demarrer()
         if PreferencesAlerte.maintienEnVie { MaintienVie.partage.demarrer() }
+    }
+
+    /// Changement de réseau : les deux liaisons (aiguilleur, flux direct) sont refaites tout de suite.
+    func reseauChange() async {
+        await clientAiguilleur?.reconnecter()
+        modele.reseauChange()
+    }
+
+    /// Retour au premier plan : chaque liaison envoie un ping ; une liaison muette est refaite.
+    public func verifierLiaisons() async {
+        await clientAiguilleur?.verifier()
+        await modele.verifierLiaison()
     }
 
     public func connecter(adresse: URL, motDePasse: String) async throws {

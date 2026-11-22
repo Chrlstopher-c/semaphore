@@ -4,8 +4,6 @@ import Foundation
 // long-poll, reprise). Pur : l'app câble ces valeurs, elle ne les réécrit pas.
 
 public enum LiaisonRelais {
-    /// Ping client : le relais coupe une liaison muette au-delà de son délai d'inactivité.
-    public static let pingSecondes: UInt64 = 25
     /// Échecs consécutifs du WebSocket avant de repasser par le long-poll `/api/attente`.
     public static let echecsAvantRepli = 3
     public static let attenteMinimale = 2

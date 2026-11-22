@@ -4,20 +4,25 @@ import Foundation
 // arrêt du lien, requêtes de l'API clients dans le canal chiffré. La boucle du lien est dans
 // ClientAiguilleurLien.swift, les réactions aux canaux dans ClientAiguilleurHote.swift.
 
-/// Délais du client : attente de l'ouverture du canal, réponse à une requête, reprise après coupure (doublée).
+/// Délais du client : attente de l'ouverture du canal, réponse à une requête, reprise après coupure (doublée),
+/// vivacité du lien (ping à chaque intervalle, pong attendu dans le délai).
 struct DelaisClient: Sendable {
     let ouverture: Duration
     let reponse: Duration
     let repriseInitiale: Duration
     let repriseMax: Duration
+    let vivaciteIntervalle: Duration
+    let vivaciteDelaiPong: Duration
 
     static let defaut = DelaisClient(
-        ouverture: .seconds(20), reponse: .seconds(20), repriseInitiale: .seconds(2), repriseMax: .seconds(30)
+        ouverture: .seconds(20), reponse: .seconds(20), repriseInitiale: .seconds(2), repriseMax: .seconds(30),
+        vivaciteIntervalle: DelaisVivacite.intervalle, vivaciteDelaiPong: DelaisVivacite.pong
     )
     /// Délais courts pour les tests sans réseau.
     static let rapides = DelaisClient(
         ouverture: .milliseconds(200), reponse: .milliseconds(500),
-        repriseInitiale: .milliseconds(20), repriseMax: .milliseconds(100)
+        repriseInitiale: .milliseconds(20), repriseMax: .milliseconds(100),
+        vivaciteIntervalle: .milliseconds(200), vivaciteDelaiPong: .milliseconds(200)
     )
 }
 
@@ -119,6 +124,10 @@ public actor ClientAiguilleur {
     let fluxes = TableFlux()
     var delaiReprise: Duration
     var transport: (any TransportAiguilleur)?
+    /// Vivacité du lien en cours, et sa veille (ping à chaque échéance) ; relancée par un ping immédiat ou
+    /// un changement de réseau.
+    var vivaciteCourante: VivaciteLiaison?
+    var veilleLien: Task<Void, Never>?
     var boucle: Task<Void, Never>?
     var canaux: [String: Chiffrement.CanalAppareil] = [:]
     var canalCourant: String?

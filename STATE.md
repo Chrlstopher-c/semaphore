@@ -9,6 +9,29 @@ ci-dessous) ; monde Quart v1 refait à l'identique de la partie Code de l'appli 
 
 ---
 
+## 22/11/2026 — Liaison vivante : une liaison morte est détectée et refaite (branche `agent/liaison-vivante`, non poussée)
+
+- **Constat** : journal iPhone (idevicesyslog, 17:38) : la liaison restait ouverte sur une route morte (passage Wi-Fi
+  → 4G) : `tcp_timers retransmit` puis `route is not usable` toutes les ~13 s, aucune reconnexion ; fil et compteurs
+  figés jusqu’à la fermeture de l’appli. Cause : un ping sans pong était seulement tracé, et `receive()` ne rend jamais
+  rien sur une liaison muette.
+- **Fait** : `VigieNoyau/Contrat/VivaciteLiaison.swift` — minuterie pure (`MinuterieVivacite`, instants passés en
+  paramètre) + acteur `VivaciteLiaison`. Un ping toutes les 15 s, pong attendu 10 s, sinon liaison morte : **détection
+  en 15 à 25 s** au pire. Appliquée au WebSocket de l’aiguilleur (`ClientAiguilleurLien.veillerLien`, la liaison est
+  fermée et la boucle reprend) et au flux direct (`FluxRelais.veiller`, le flux se termine avec une raison et
+  `ModeleRelais` le refait). Toute trame reçue vaut activité (pas de faux positif sur une liaison silencieuse).
+  Changement de réseau : `NWPathMonitor` (`Vigie/Lien/SurveillanceReseau.swift`) → `Cablage.reseauChange` ferme les
+  liaisons ouvertes, la reprise part 2 s après. Hors liaison ouverte (reprise déjà en attente, backoff jusqu’à 30 s),
+  rien n’est avancé : limite connue. Retour au premier plan : `Cablage.verifierLiaisons` envoie un ping
+  immédiat. Après reconnexion, la relecture des fils passe par le premier pong (`rattraperFils`, inchangé).
+- **Prouvé** : `swift test --filter "VivaciteLiaisonTests|ReprisesLienTests"` (10 tests verts : ping, pong attendu,
+  liaison morte au délai, ping forcé ; lien muet refait, lien vivant gardé, `reconnecter` refait) ; `VigieNoyauTests`
+  complet : 222 tests verts.
+- **Non vérifié** : le module `Vigie` (SwiftUI, `FluxRelais`, `ModeleRelais`, `Cablage`, `SurveillanceReseau`) ne se
+  compile pas sous Linux : à compiler avec `./build.sh` et à voir sur l’iPhone (Wi-Fi ↔ 4G, tour éteinte puis rallumée).
+- **Point de vigilance** : la détection suppose que l’aiguilleur et le relais répondent aux pings WebSocket. Si l’un ne
+  répond jamais, la liaison est refaite toutes les 25 s : à surveiller dans le journal (`liaison morte`).
+
 ## 22/11/2026 — Préférences gardées sur l’iPhone (branche `agent/prefs-locales`, non poussée)
 
 - **Constat** : l’iPhone ne gardait aucune organisation. Les favoris sont le drapeau `epinglee` de chaque session, lu

@@ -9,6 +9,13 @@
 - [x] **Correctif « Machine injoignable »** — le faux message ne réapparaît
       plus. « Le message n'apparaît plus, c'est nickel » (Chris).
 
+## Liaison vivante — à constater sur l’appareil (22/11)
+- [ ] **Compiler** `./build.sh` (module Vigie, non compilable sous Linux) puis **constater** : Wi-Fi → 4G pendant une
+      session ouverte → le fil reprend sans tuer l’appli ; tour éteinte pendant 1 min → « Liaison coupée » puis reprise.
+- [ ] **Vérifier** dans le journal qu’aucune reconnexion « liaison morte » ne tourne en boucle sur une liaison saine
+      (signe que l’aiguilleur ou le relais ne répond pas aux pings WebSocket).
+- [ ] Backlog : reprise immédiate même pendant un backoff (aujourd’hui le délai en cours est attendu).
+
 ## Préférences gardées sur l’iPhone — à constater / à faire (22/11)
 
 - [ ] **Constater sur l’iPhone** (après `./build.sh`) : éteindre la tour → ses épinglées restent dans le tiroir ; couper

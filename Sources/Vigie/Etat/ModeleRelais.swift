@@ -49,6 +49,8 @@ public final class ModeleRelais {
     @ObservationIgnored var origineFils: String?
     @ObservationIgnored private var echecsFlux = 0
     @ObservationIgnored private var attenteReprise = LiaisonRelais.attenteMinimale
+    /// Le flux direct en cours (nil hors flux direct : long-poll, lien par l'aiguilleur, pas connecté).
+    @ObservationIgnored private var fluxCourant: FluxRelais?
 
     public init(stockage: StockageOrganisation = .parDefaut()) {
         self.stockage = stockage
@@ -75,6 +77,18 @@ public final class ModeleRelais {
         boucle?.cancel()
         boucle = nil
         if lien == .connecte { poser(.attente) }
+    }
+
+    /// Premier plan : sonde la liaison tout de suite. Une liaison muette est refaite (le flux se termine, la boucle
+    /// reprend). Le lien par l'aiguilleur se sonde dans ClientAiguilleur.verifier.
+    public func verifierLiaison() async {
+        await fluxCourant?.verifier()
+    }
+
+    /// Changement de réseau (Wi-Fi ↔ cellulaire, perte, retour) : le flux direct en cours est refait tout de suite.
+    /// La reprise relit l'état puis le fil (rattraperFils au premier pong).
+    public func reseauChange() {
+        fluxCourant?.fermer()
     }
 
     public func session(_ id: String) -> Session? {
@@ -145,7 +159,11 @@ public final class ModeleRelais {
             return false
         }
         flux.ouvrir()
-        defer { flux.fermer() }
+        fluxCourant = flux
+        defer {
+            flux.fermer()
+            fluxCourant = nil
+        }
         var tenu = false
         for await evenement in flux.evenements {
             switch evenement {

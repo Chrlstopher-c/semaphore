@@ -26,10 +26,55 @@ extension ClientAiguilleur {
         guard let url = URL(string: etat.adresse) else { throw ErreurAiguilleur("adresse de l'aiguilleur invalide") }
         let tache = try fabrique(url, etat.jeton)
         transport = tache
+        let mesure = VivaciteLiaison(intervalle: delais.vivaciteIntervalle, delaiPong: delais.vivaciteDelaiPong)
+        vivaciteCourante = mesure
+        relancerVeille(tache, mesure)
+        defer { veilleLien?.cancel() }
         await surLien(.rechercheNoeud)
         while true {
-            await traiterAiguilleur(try await tache.recevoir())
+            let message = try await tache.recevoir()
+            await mesure.recu()
+            await traiterAiguilleur(message)
         }
+    }
+
+    /// Veille du lien : un ping à chaque échéance. Pas de pong dans le délai = liaison morte : le lien est
+    /// fermé, la boucle le refait. Le pong arrive sur un autre fil ; il passe par la minuterie partagée.
+    func veillerLien(_ tache: any TransportAiguilleur, _ mesure: VivaciteLiaison) async {
+        while !Task.isCancelled {
+            switch await mesure.action() {
+            case .rien:
+                break
+            case .ping:
+                await mesure.pingPartie()
+                await tache.sonder(surPong: { Task { await mesure.recu() } })
+            case .morte:
+                Trace.info("aiguilleur", "liaison morte : aucun pong de l'aiguilleur, reconnexion")
+                await tache.fermer()
+                return
+            }
+            try? await Task.sleep(for: await mesure.attente())
+        }
+    }
+
+    func relancerVeille(_ tache: any TransportAiguilleur, _ mesure: VivaciteLiaison) {
+        veilleLien?.cancel()
+        veilleLien = Task { await self.veillerLien(tache, mesure) }
+    }
+
+    /// Premier plan : un ping tout de suite ; sans pong dans le délai, le lien est refait.
+    public func verifier() async {
+        guard let tache = transport, let mesure = vivaciteCourante else { return }
+        await mesure.forcerPing()
+        relancerVeille(tache, mesure)
+    }
+
+    /// Changement de réseau : le lien courant est fermé, la boucle le refait sans attendre la reprise. Sans lien
+    /// ouvert (reprise en cours), rien à faire : la reprise suivante part de nouveau.
+    public func reconnecter() async {
+        guard let tache = transport else { return }
+        delaiReprise = delais.repriseInitiale
+        await tache.fermer()
     }
 
     func coupureLien() async {
