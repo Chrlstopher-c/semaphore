@@ -19,6 +19,8 @@ struct ReseauReglages: View {
                     ProgressView().tint(Q.secondaire).frame(maxWidth: .infinity).padding(.top, 48)
                 } else if let charte = modele.charte {
                     contenu(charte)
+                } else if modele.erreur != nil {
+                    sansLecture
                 } else {
                     sansReseau
                 }
@@ -88,6 +90,20 @@ struct ReseauReglages: View {
             }
             .padding(.top, 8)
             Note(texte: "Le réseau se gère par l’aiguilleur : Réglages › Connexion › Passer par le Pi.")
+        }
+    }
+
+    /// La charte n'a pas pu être lue (erreur du nœud relié) : ce n'est pas un « aucun réseau ». Relu toutes les 4 s.
+    private var sansLecture: some View {
+        VStack(spacing: 0) {
+            BandeauErreurReseau(modele: modele)
+            Carte {
+                RangeeReglage(symbole: "exclamationmark.triangle", titre: "Réseau non lu sur ce nœud",
+                              couleur: Q.avertissement, chevron: false)
+            }
+            .padding(.top, 8)
+            Note(texte: "Le nœud relié n’a pas servi la charte. Il tourne peut-être une version qui ne gère pas "
+                 + "encore le téléphone chef.")
         }
     }
 
