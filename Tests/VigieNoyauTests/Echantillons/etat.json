@@ -1,131 +1,128 @@
 {
-  "version": 493,
+  "version": 12,
   "machines": [
     {
-      "id": "pi",
-      "description": "Raspberry Pi, production (sites, relais) : exploitation seulement, aucun build",
-      "racines": [
-        "/mnt/projects"
-      ],
+      "id": "alpha",
+      "description": "Poste principal, sans écran",
+      "racines": ["/srv/projets"],
       "projets": [
+        {"machine": "alpha", "chemin": "/srv/projets/exemple", "nom": "exemple"}
+      ],
+      "comptes": ["principal", "secondaire"],
+      "etatComptes": [
         {
-          "machine": "pi",
-          "chemin": "/mnt/projects/ccremote-relais",
-          "nom": "ccremote-relais"
+          "id": "principal",
+          "defaut": true,
+          "connecte": true,
+          "email": null,
+          "organisation": null,
+          "abonnement": "max",
+          "session": {"libelle": "Session", "pourcent": 42.5, "reinitialiseLe": "2026-11-01T12:00:00.000Z"},
+          "semaine": {"libelle": "Semaine", "pourcent": 10, "reinitialiseLe": null},
+          "autres": [{"libelle": "Modèle", "pourcent": 3, "reinitialiseLe": null}],
+          "probleme": null,
+          "releveLe": "2026-11-01T11:00:00.000Z"
         },
         {
-          "machine": "pi",
-          "chemin": "/mnt/projects/ccremote-harness",
-          "nom": "ccremote-harness"
-        },
-        {
-          "machine": "pi",
-          "chemin": "/mnt/projects/claude-arcade",
-          "nom": "claude-arcade"
-        },
-        {
-          "machine": "pi",
-          "chemin": "/mnt/projects/Portfolio",
-          "nom": "Portfolio"
-        },
-        {
-          "machine": "pi",
-          "chemin": "/mnt/projects/access-gate",
-          "nom": "access-gate"
-        },
-        {
-          "machine": "pi",
-          "chemin": "/mnt/projects/saily",
-          "nom": "saily"
-        },
-        {
-          "machine": "pi",
-          "chemin": "/mnt/projects/studio",
-          "nom": "studio"
-        },
-        {
-          "machine": "pi",
-          "chemin": "/mnt/projects/homelab-vm-manager",
-          "nom": "homelab-vm-manager"
-        },
-        {
-          "machine": "pi",
-          "chemin": "/mnt/projects/nullnode-relay",
-          "nom": "nullnode-relay"
+          "id": "secondaire",
+          "defaut": false,
+          "connecte": false,
+          "email": null,
+          "organisation": null,
+          "abonnement": null,
+          "session": "illisible",
+          "semaine": null,
+          "autres": [],
+          "probleme": "non connecté",
+          "releveLe": "2026-11-01T11:00:00.000Z"
         }
       ],
-      "comptes": [
-        "principal"
-      ],
-      "version": "2.0.0",
+      "version": "2.1.0",
       "etat": {
-        "cpu": 3.3,
-        "memoire": {
-          "utilisee": 1018568704,
-          "totale": 3981168640
-        },
-        "disque": {
-          "utilise": 45961818112,
-          "total": 62239682560
-        },
-        "charge": 0.35,
-        "demarreeDepuis": 299011
+        "cpu": 12.5,
+        "memoire": {"utilisee": 4.0, "totale": 16.0},
+        "disque": {"utilise": 120.0, "total": 500.0},
+        "charge": 0.4,
+        "demarreeDepuis": 86400
       },
-      "derniereVue": "2026-09-28T01:16:46.961Z",
+      "acces": {"etat": "local", "detail": null, "depuis": "2026-11-01T08:00:00.000Z"},
+      "derniereVue": "2026-11-01T11:59:00.000Z",
       "enLigne": true
+    },
+    {
+      "id": "beta",
+      "description": "Portable de test",
+      "racines": ["/home/exemple"],
+      "projets": [],
+      "comptes": ["principal"],
+      "etatComptes": "pas une liste",
+      "version": "2.1.0",
+      "etat": null,
+      "acces": {"etat": "injoignable", "detail": "pas de réponse", "depuis": "2026-11-01T09:00:00.000Z"},
+      "derniereVue": "2026-11-01T09:00:00.000Z",
+      "enLigne": false
     }
   ],
   "sessions": [
     {
-      "id": "45919252-ea37-43a2-8bc7-f11b2a16b1d2",
-      "machine": "pi",
-      "projet": {
-        "machine": "tour",
-        "chemin": "/tmp/ccremote-essai",
-        "nom": "ccremote-essai"
-      },
-      "cwd": "/home/pi/.local/share/ccremote/poste/espaces/45919252-ea37-43a2-8bc7-f11b2a16b1d2",
-      "titre": "Prod B3 — pi sur la tour",
-      "objectif": "Via ssh tour, lire /tmp/ccremote-essai/README.md et écrire sur la tour /tmp/ccremote-essai/RESUME.md (une phrase qui le résume), le vérifier via ssh, puis appeler objectif_atteint.",
-      "modele": "haiku",
+      "id": "00000000-0000-4000-8000-000000000001",
+      "machine": "alpha",
+      "projet": {"machine": "alpha", "chemin": "/srv/projets/exemple", "nom": "exemple"},
+      "cwd": "/srv/projets/exemple",
+      "titre": "Exemple de session",
+      "objectif": "Vérifier le décodage",
+      "modele": "claude-exemple-1",
+      "modeleNom": "Exemple 1",
       "compte": "principal",
       "autonomie": true,
       "statut": "terminee",
-      "contexte": {
-        "tokens": 50658,
-        "max": 1000000
-      },
-      "etapes": 0,
+      "contexte": {"tokens": 51898, "max": 1000000},
+      "etapes": 3,
       "compactions": 0,
-      "claudeSessionId": "45919252-ea37-43a2-8bc7-f11b2a16b1d2",
-      "tmux": "claude-ccremote-essai",
+      "claudeSessionId": "11111111-1111-4111-8111-111111111111",
+      "tmux": "cc-exemple",
       "attachee": false,
       "pilotee": true,
-      "creeLe": "2026-09-28T00:59:10.995Z",
-      "majLe": "2026-09-28T00:59:41.177Z"
-    }
-  ],
-  "notifications": [
-    {
-      "seq": 2,
-      "sessionId": "45919252-ea37-43a2-8bc7-f11b2a16b1d2",
-      "niveau": "important",
-      "titre": "Prod B3 — pi sur la tour — objectif atteint",
-      "texte": "Lecture du README.md sur tour confirmée. RESUME.md écrit et vérifié sur tour avec une phrase résumé du projet (essai temporaire pour valider v2 en production). Aucun reste.",
-      "ts": "2026-09-28T00:59:39.081Z",
-      "lue": false
+      "terminal": false,
+      "dialogue": null,
+      "moteur": "sdk",
+      "mode": "default",
+      "effort": "high",
+      "rapide": {"demande": false, "etat": null, "raison": null, "compatible": true},
+      "ultracode": {"demande": false, "actif": false, "disponible": null},
+      "inactiveDepuis": "2026-11-01T11:00:00.000Z",
+      "archivee": false,
+      "epinglee": true,
+      "nonLue": true,
+      "distant": null,
+      "creeLe": "2026-11-01T08:30:00.000Z",
+      "majLe": "2026-11-01T11:00:00.000Z"
     },
     {
-      "seq": 1,
-      "sessionId": "da988b04-09ef-4660-9535-6a625c829745",
-      "niveau": "important",
-      "titre": "Prod A — tour — objectif atteint",
-      "texte": "Objectif atteint : NOTES.md créé avec la date du jour (Mon Sep 28 02:45:45 AM CEST 2026), vérifié et commité sous le hash 85fa73c.",
-      "ts": "2026-09-28T00:45:55.599Z",
-      "lue": false
+      "id": "00000000-0000-4000-8000-000000000002",
+      "machine": "beta",
+      "projet": {"machine": "beta", "chemin": "/home/exemple/x", "nom": "x"},
+      "cwd": "/home/exemple/x",
+      "titre": "Session distante",
+      "objectif": null,
+      "modele": "claude-exemple-1",
+      "compte": "principal",
+      "autonomie": false,
+      "statut": "statut-futur",
+      "contexte": {"tokens": 0, "max": 1000000},
+      "etapes": 0,
+      "compactions": 0,
+      "claudeSessionId": null,
+      "tmux": null,
+      "attachee": false,
+      "pilotee": false,
+      "moteur": "claude_ai",
+      "rapide": "mal formé",
+      "distant": {"compte": "principal", "idDistant": "dist-1", "connexion": "connectee", "probleme": null},
+      "creeLe": "2026-11-01T07:00:00.000Z",
+      "majLe": "2026-11-01T07:05:00.000Z"
     }
   ],
-  "reveilPossible": [
-    "tour"
-  ]
+  "notifications": [],
+  "reveilPossible": ["beta"]
 }
