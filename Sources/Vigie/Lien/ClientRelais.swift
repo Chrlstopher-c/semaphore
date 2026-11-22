@@ -20,6 +20,17 @@ public enum ErreurRelais: Error, CustomStringConvertible {
     }
 }
 
+/// Un morceau de la voix de la tour : PCM 24 kHz mono (transport direct), ou le MP3 entier (canal chiffré, relais).
+public enum MorceauSynthese: Sendable {
+    case pcm(Data)
+    case mp3(Data)
+}
+
+/// Les octets d'une réponse en cours, passés d'une tâche à l'autre (lus par une seule à la fois).
+private struct OctetsFlux: @unchecked Sendable {
+    let valeur: URLSession.AsyncBytes
+}
+
 public final class ClientRelais: Sendable {
     public let adresse: URL
     private let jeton: String
@@ -187,6 +198,70 @@ public final class ClientRelais: Sendable {
         let (donnees, reponse) = try await transferer(requete)
         try verifier(donnees, reponse)
         return donnees
+    }
+
+    /// Mode vocal en flux : la tour livre la phrase au fil de sa génération (transport direct : PCM 24 kHz mono,
+    /// audio/L16). Par le canal chiffré, ou relayée à un pair, c'est le MP3 entier, comme avant.
+    public func syntheseFlux(_ texte: String) async throws -> AsyncThrowingStream<MorceauSynthese, Error> {
+        guard aiguilleur == nil else {
+            let mp3 = try await synthese(texte)
+            return AsyncThrowingStream { suite in
+                suite.yield(.mp3(mp3))
+                suite.finish()
+            }
+        }
+        struct Corps: Encodable { let texte: String }
+        var requete = try requete("POST", "/api/voix?flux=1")
+        requete.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        requete.httpBody = try JSONEncoder().encode(Corps(texte: texte))
+        requete.timeoutInterval = 15
+        let (octets, reponse) = try await ouvrirFlux(requete)
+        let statut = (reponse as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(statut) else {
+            var corps = Data()
+            for try await octet in octets.valeur { corps.append(octet) }
+            try verifier(corps, reponse)
+            throw ErreurRelais.refus(statut, "erreur \(statut)")
+        }
+        let pcm = (reponse as? HTTPURLResponse)?.value(forHTTPHeaderField: "Content-Type")?.hasPrefix("audio/L16") ?? false
+        let flux: AsyncThrowingStream<MorceauSynthese, Error> = AsyncThrowingStream { suite in
+            let tache = Task {
+                do {
+                    try await Self.relayer(octets, pcm: pcm, vers: suite)
+                    suite.finish()
+                } catch {
+                    suite.finish(throwing: ErreurRelais.injoignable(error.localizedDescription))
+                }
+            }
+            suite.onTermination = { _ in tache.cancel() }
+        }
+        return flux
+    }
+
+    /// Le transport direct rend la réponse dès ses en-têtes ; ses octets sont lus ensuite, morceau par morceau.
+    private func ouvrirFlux(_ requete: URLRequest) async throws -> (OctetsFlux, URLResponse) {
+        do {
+            let (octets, reponse) = try await session.bytes(for: requete)
+            return (OctetsFlux(valeur: octets), reponse)
+        } catch {
+            throw ErreurRelais.injoignable(error.localizedDescription)
+        }
+    }
+
+    /// PCM : un morceau tous les 2 Ko au plus (≈ 40 ms d'audio) ; MP3 : le corps entier, une fois reçu.
+    private static func relayer(
+        _ octets: OctetsFlux, pcm: Bool, vers suite: AsyncThrowingStream<MorceauSynthese, Error>.Continuation
+    ) async throws {
+        var lot = Data()
+        for try await octet in octets.valeur {
+            lot.append(octet)
+            if pcm, lot.count >= 2048 {
+                suite.yield(.pcm(lot))
+                lot = Data()
+            }
+        }
+        guard !lot.isEmpty else { return }
+        suite.yield(pcm ? .pcm(lot) : .mp3(lot))
     }
 
     private func verifier(_ donnees: Data, _ reponse: URLResponse) throws {

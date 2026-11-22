@@ -50,13 +50,13 @@ final class ModeVocal {
         let reco = self.reco
         let moteur = MoteurVocal { tampon in reco.ajouter(tampon) }
         do {
-            try moteur.demarrer()
+            try await moteur.demarrer()
         } catch {
             Trace.erreur("vocal", "démarrage audio", error)
             return "Micro indisponible."
         }
         guard let client = modele.client else { moteur.arreter(); return "Pas connecté au nœud." }
-        let lecteur = LecteurVoix(moteur: moteur) { texte in try await client.synthese(texte) }
+        let lecteur = LecteurVoix(moteur: moteur) { texte in try await client.syntheseFlux(texte) }
         brancher(lecteur, moteur, modele, session: id)
         if let refus = reco.demarrer(surResultat: { [weak self] texte in self?.entendre(texte) }) {
             sortir()

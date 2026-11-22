@@ -26,6 +26,17 @@ enum DecodageAudio {
         }
     }
 
+    /// Échantillons flottants 24 kHz mono (flux PCM de la tour) → tampon au format de lecture ; nil si vide.
+    nonisolated static func pcm(_ echantillons: [Float]) -> AVAudioPCMBuffer? {
+        guard !echantillons.isEmpty,
+              let tampon = AVAudioPCMBuffer(pcmFormat: MoteurVocal.formatLecture,
+                                            frameCapacity: AVAudioFrameCount(echantillons.count)),
+              let canal = tampon.floatChannelData?[0] else { return nil }
+        for (i, valeur) in echantillons.enumerated() { canal[i] = valeur }
+        tampon.frameLength = AVAudioFrameCount(echantillons.count)
+        return tampon
+    }
+
     /// Un tampon quelconque → format de lecture (rééchantillonné, mono, flottant).
     nonisolated static func convertir(_ source: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
         let cible = MoteurVocal.formatLecture
