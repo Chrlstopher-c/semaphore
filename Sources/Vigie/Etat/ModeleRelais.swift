@@ -101,14 +101,6 @@ public final class ModeleRelais {
 
     /// Un tour : état complet, puis flux tant qu'il tient. Après trois échecs du flux, un tour de long-poll.
     private func tour(_ client: ClientRelais) async throws {
-        // Par l'aiguilleur, pas de WebSocket de flux : long-poll seul (il rend dès qu'une session ou un fil change),
-        // puis rattrapage des fils affichés.
-        guard client.fluxDisponible else {
-            if version < 0 { try await charger(client) }
-            try await attendre(client)
-            await rattraperFils()
-            return
-        }
         try await charger(client)
         let tenu = await suivreFlux(client)
         if tenu {
@@ -125,8 +117,9 @@ public final class ModeleRelais {
         await rattraperFils()
     }
 
-    /// Lit le flux jusqu'à sa coupure. Rend `true` si le WebSocket a répondu au moins une fois.
+    /// Lit le flux jusqu'à sa coupure. Rend `true` si le flux a répondu au moins une fois.
     private func suivreFlux(_ client: ClientRelais) async -> Bool {
+        if let aiguilleur = client.aiguilleur { return await suivreDiffusion(aiguilleur) }
         let flux: FluxRelais
         do {
             flux = try FluxRelais(client: client)
@@ -140,6 +133,24 @@ public final class ModeleRelais {
         for await evenement in flux.evenements {
             switch evenement {
             case .ouvert:
+                if !tenu { Task { await rattraperFils() } }
+                tenu = true
+                poser(.connecte)
+            case .message(let message): appliquer(message)
+            case .ferme(let raison):
+                Trace.info("flux", "fermé : \(raison)")
+                poser(.coupe("Liaison coupée, nouvel essai."))
+            }
+        }
+        return tenu
+    }
+
+    /// Le flux du nœud par le canal chiffré : les mêmes événements que le WebSocket direct.
+    private func suivreDiffusion(_ aiguilleur: ClientAiguilleur) async -> Bool {
+        var tenu = false
+        for await evenement in await aiguilleur.ouvrirDiffusion() {
+            switch evenement {
+            case .ouverte:
                 if !tenu { Task { await rattraperFils() } }
                 tenu = true
                 poser(.connecte)

@@ -146,7 +146,7 @@ struct ClientAiguilleurTests {
         let client = clientTest(faux, rec, etat: etatInitial(), graines: .generer())
         await client.demarrer()
         await client.recevoir(canal: "c1", message: .revocation)
-        #expect(await rec.contient(.refuse("révoqué")))
+        #expect(await rec.contient(.revoque))
         #expect(await faux.ferme)
         await client.arreter()
     }

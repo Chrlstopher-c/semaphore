@@ -2,9 +2,11 @@
 // automatiquement les appareils qui demandent à s'appairer et leur sert `/api/etat` dans le canal chiffré.
 // Lancé par lancer-banc.sh. Variables : QUART_RACINE (worktree Quart), BANC_URL (aiguilleur),
 // BANC_CODE_NOEUD, BANC_CODE_APPAREIL, BANC_CODE_INTRUS, BANC_SORTIE (fichier JSON, écrit quand le nœud est relié).
+// Scénarios de l'API : `/api/banc/image` (un PNG de ~480 Ko, écrit à côté du JSON), `/api/banc/diffuser` (deux deltas
+// de texte et un événement), et un terminal d'écho sur la machine « noeud-banc ».
 import { writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 function requis(nom: string): string {
   const valeur = process.env[nom];
@@ -18,15 +20,38 @@ const requireQuart = createRequire(join(racine, 'package.json'));
 const pino = requireQuart('pino');
 
 const { servirAppareil } = await import(join(racine, 'relais/federation/appareils.ts'));
-const { creerNoeud } = await import(join(racine, 'relais/federation/banc-federation.ts'));
+const { creerNoeud, ficheDe } = await import(join(racine, 'relais/federation/banc-federation.ts'));
+const { pngDeBruit } = await import(join(racine, 'relais/federation/banc-png.ts'));
+const sortie = requis('BANC_SORTIE');
+const png = pngDeBruit(400);
+writeFileSync(join(dirname(sortie), 'image.png'), png);
 
 const TABLE = {
   '/api/etat': { GET: () => Response.json({ machine: 'noeud-banc' }) },
   '/api/federation/aiguilleur': { POST: () => new Response('jamais') },
+  '/api/banc/image': { GET: () => new Response(png, { headers: { 'content-type': 'image/png' } }) },
+  '/api/banc/diffuser': {
+    POST: () => {
+      noeud.diffusion.diffuser({ type: 'flux', sessionId: 's1', bloc: 'b', delta: 'Bon' });
+      noeud.diffusion.diffuser({ type: 'flux', sessionId: 's1', bloc: 'b', delta: 'jour' });
+      noeud.diffusion.diffuser({ type: 'session', session: ficheDe('s1', 'noeud-banc', 'Titre') });
+      return Response.json({ ok: true });
+    },
+  },
 };
 
 const noeud = creerNoeud('noeud-banc', {
   servirAppareil: servirAppareil(TABLE, pino({ enabled: false })),
+});
+noeud.federation.terminaux.brancher({
+  ouvert: async (ws: { send: (d: string | Uint8Array) => unknown }) => {
+    ws.send(new TextEncoder().encode('$ '));
+    return true;
+  },
+  recu: (ws: { send: (d: string | Uint8Array) => unknown }, message: string | Buffer) => {
+    if (typeof message !== 'string') ws.send(message);
+  },
+  ferme: () => undefined,
 });
 const reponse = await noeud.federation.rejoindreAiguilleur({
   url, code: requis('BANC_CODE_NOEUD'), nom: 'noeud-banc',
@@ -47,11 +72,13 @@ while (!(await noeud.federation.etat()).aiguilleur?.relie) {
   await Bun.sleep(100);
 }
 
-writeFileSync(requis('BANC_SORTIE'), JSON.stringify({
+writeFileSync(sortie, JSON.stringify({
   adresse: url,
   codeAppareil: requis('BANC_CODE_APPAREIL'),
   codeIntrus: requis('BANC_CODE_INTRUS'),
+  codeAppareil2: requis('BANC_CODE_APPAREIL2'),
   noeud: reponse.valeur.id,
+  image: join(dirname(sortie), 'image.png'),
 }));
 console.log(`banc prêt : nœud ${reponse.valeur.id} relié à ${url}`);
 await new Promise(() => undefined);

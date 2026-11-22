@@ -42,10 +42,14 @@ final class LienTerminal {
     private(set) var ouvert = false
     @ObservationIgnored weak var vue: TerminalView?
     @ObservationIgnored private var tache: URLSessionWebSocketTask?
+    /// Terminal ouvert par l'aiguilleur : même écran, les octets passent dans le canal chiffré.
+    @ObservationIgnored private var parCanal: (aiguilleur: ClientAiguilleur, terminal: String)?
+    @ObservationIgnored private var lecture: Task<Void, Never>?
 
     func ouvrir(_ client: ClientRelais?, _ cible: CibleTerminal) {
         fermer()
         guard let client else { etat = "non connecté"; return }
+        if let aiguilleur = client.aiguilleur { return ouvrirParAiguilleur(aiguilleur, cible) }
         let terminal = vue?.getTerminal()
         let chemin = Route.terminal(cible.machine, tmux: cible.tmux, dossier: cible.dossier,
                                     colonnes: max(terminal?.cols ?? 80, 20), lignes: max(terminal?.rows ?? 24, 5))
@@ -67,19 +71,72 @@ final class LienTerminal {
         }
     }
 
+    /// Le terminal d'une machine par l'aiguilleur : ouverture, sortie et fin viennent du flux du canal.
+    private func ouvrirParAiguilleur(_ aiguilleur: ClientAiguilleur, _ cible: CibleTerminal) {
+        let terminal = vue?.getTerminal()
+        let colonnes = max(terminal?.cols ?? 80, 20)
+        let lignes = max(terminal?.rows ?? 24, 5)
+        let cibleCanal: CibleTerminalAiguilleur = cible.tmux.map { .tmux($0) } ?? .shell(dossier: cible.dossier)
+        etat = "connexion…"
+        ouvert = true
+        lecture = Task { [weak self] in
+            do {
+                let (id, evenements) = try await aiguilleur.ouvrirTerminal(
+                    machine: cible.machine, cible: cibleCanal, colonnes: colonnes, lignes: lignes
+                )
+                self?.parCanal = (aiguilleur, id)
+                for await evenement in evenements { self?.recevoirCanal(evenement) }
+            } catch {
+                self?.echec(error)
+            }
+        }
+    }
+
+    private func recevoirCanal(_ evenement: EvenementTerminal) {
+        switch evenement {
+        case .sortie(let octets): vue?.feed(byteArray: [UInt8](octets)[...])
+        case .fin(let code):
+            etat = "terminé (code \(code.map(String.init) ?? "—"))"
+            ouvert = false
+        case .ferme(let raison):
+            etat = raison
+            ouvert = false
+        }
+    }
+
+    private func echec(_ erreur: Error) {
+        etat = (erreur as? ErreurAiguilleur)?.message ?? "terminal refusé"
+        ouvert = false
+    }
+
     func fermer() {
         tache?.cancel(with: .normalClosure, reason: nil)
         tache = nil
+        lecture?.cancel()
+        lecture = nil
+        if let p = parCanal {
+            Task { await p.aiguilleur.fermerTerminal(p.terminal) }
+        }
+        parCanal = nil
         ouvert = false
     }
 
     func envoyer(_ octets: ArraySlice<UInt8>) {
+        if let p = parCanal {
+            let donnees = Data(octets)
+            Task { await p.aiguilleur.envoyerTerminal(p.terminal, octets: donnees) }
+            return
+        }
         tache?.send(.data(Data(octets))) { erreur in
             if let erreur { Trace.erreur("terminal", "frappe perdue", erreur) }
         }
     }
 
     func redimensionner(colonnes: Int, lignes: Int) {
+        if let p = parCanal {
+            Task { await p.aiguilleur.redimensionnerTerminal(p.terminal, colonnes: colonnes, lignes: lignes) }
+            return
+        }
         let json = "{\"type\":\"taille\",\"colonnes\":\(colonnes),\"lignes\":\(lignes)}"
         tache?.send(.string(json)) { _ in }
     }

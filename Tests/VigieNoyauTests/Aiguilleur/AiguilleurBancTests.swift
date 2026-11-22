@@ -9,7 +9,9 @@ private struct DescriptionBanc: Decodable {
     let adresse: String
     let codeAppareil: String
     let codeIntrus: String
+    let codeAppareil2: String
     let noeud: String
+    let image: String
 }
 
 private let bancActif = ProcessInfo.processInfo.environment["QUART_AIGUILLEUR_BANC"] != nil
@@ -22,6 +24,7 @@ private func chargerBanc() throws -> DescriptionBanc {
     return try JSONDecoder().decode(DescriptionBanc.self, from: octets)
 }
 
+@Suite(.serialized)
 struct AiguilleurBancTests {
     @Test(.enabled(if: bancActif), .timeLimit(.minutes(2)))
     func appareilAppaireServLApiDuNoeudDansLeCanalChiffre() async throws {
@@ -47,6 +50,59 @@ struct AiguilleurBancTests {
     }
 
     @Test(.enabled(if: bancActif), .timeLimit(.minutes(2)))
+    func imageFluxEtTerminalPassentParLeCanalChiffre() async throws {
+        let banc = try chargerBanc()
+        let graines = GrainesIdentite.generer()
+        let etat = try await ClientAiguilleur.appairer(
+            adresse: try urlBanc(banc), code: banc.codeAppareil2, nom: "appareil-banc-2", graines: graines
+        )
+        let rec = Enregistreur()
+        let client = ClientAiguilleur(
+            etat: etat, graines: graines, nomAppareil: "appareil-banc-2",
+            surEtat: { await rec.noterEtat($0) }, surLien: { await rec.noterLien($0) }
+        )
+        await client.demarrer()
+        try await rec.attendreLien(secondes: 30) { $0 == .ouvert }
+
+        // Image : octets identiques à ceux du fichier servi par le nœud (morceaux dans les deux sens).
+        let reponse = try await client.requete(methode: "GET", chemin: "/api/banc/image", corps: nil)
+        #expect(reponse.codage == "base64")
+        #expect(reponse.type == "image/png")
+        let attendu = try Data(contentsOf: URL(fileURLWithPath: banc.image))
+        #expect(Data(base64Encoded: reponse.corps) == attendu)
+
+        // Flux en direct : le delta publié par le nœud arrive par le canal, sans interrogation.
+        let flux = await client.ouvrirDiffusion()
+        let recu = Task { () -> String in
+            var texte = ""
+            for await evenement in flux {
+                if case let .message(.flux(_, _, delta, _, _)) = evenement { texte += delta }
+                if texte == "Bonjour" { break }
+            }
+            return texte
+        }
+        _ = try await client.requete(methode: "POST", chemin: "/api/banc/diffuser", corps: "{}")
+        #expect(await recu.value == "Bonjour")
+
+        // Terminal de machine : l'écho du poste de banc revient dans le canal.
+        let (terminal, sorties) = try await client.ouvrirTerminal(
+            machine: "noeud-banc", cible: .shell(dossier: nil), colonnes: 80, lignes: 24
+        )
+        let echo = Task { () -> Data in
+            var octets = Data()
+            for await evenement in sorties {
+                if case let .sortie(brut) = evenement { octets.append(brut) }
+                if String(decoding: octets, as: UTF8.self).contains("ping") { break }
+            }
+            return octets
+        }
+        await client.envoyerTerminal(terminal, octets: Data("ping\n".utf8))
+        #expect(String(decoding: await echo.value, as: UTF8.self).contains("ping"))
+        await client.fermerTerminal(terminal)
+        await client.arreter()
+    }
+
+    @Test(.enabled(if: bancActif), .timeLimit(.minutes(2)))
     func identiteNonApparieeEstRefuseeParLeNoeud() async throws {
         let banc = try chargerBanc()
         var etat = try await ClientAiguilleur.appairer(
@@ -60,7 +116,7 @@ struct AiguilleurBancTests {
             surEtat: { await rec.noterEtat($0) }, surLien: { await rec.noterLien($0) }
         )
         await client.demarrer()
-        try await rec.attendreLien(secondes: 30) { $0 == .refuse("non appairé") }
+        try await rec.attendreLien(secondes: 30) { $0 == .refuse("identité non appairée") }
         #expect(await rec.contient(.ouvert) == false)
         await client.arreter()
     }

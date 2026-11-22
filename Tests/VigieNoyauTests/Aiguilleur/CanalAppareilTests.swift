@@ -108,7 +108,7 @@ actor BancLien: Chiffrement.HoteAppareil {
     private func traiterTrame(_ trame: String) async throws {
         guard let canal = canalNoeud else { throw ErreurChiffrement("pas de lien") }
         let clair = try await canal.dechiffrer(try Chiffrement.Octets.depuisBase64url(trame))
-        guard case let .api(ref, _, _, _) = try ProtocoleAiguilleur.decoderDuLien(clair) else { return }
+        guard case let .api(ref, _, _, _, _, _, _) = try ProtocoleAiguilleur.decoderDuLien(clair) else { return }
         let reponse = try ProtocoleAiguilleur.encoder(ProtocoleAiguilleur.DuLien.apiReponse(
             ref: ref, statut: 200, corps: "{\"machine\":\"tour\"}"
         ))

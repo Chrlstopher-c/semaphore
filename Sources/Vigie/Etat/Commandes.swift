@@ -19,8 +19,19 @@ extension ModeleRelais {
         let lu = sourceLecture(session)
         envois[lu, default: []].append(texte)
         let erreur = await executer { try await $0.ecrire(Route.messages(cible), corps) }
-        if erreur != nil { retirerEnvoi(texte, de: lu) }
+        if erreur != nil { retirerEnvoi(texte, de: lu) } else { rattraperApresEnvoi() }
         return erreur
+    }
+
+    /// Filet sous le flux : après un envoi, les fils affichés sont relus par interrogation, à intervalles croissants,
+    /// tant que la réponse n'est pas revenue. Sans flux (ou flux coupé), c'est le seul chemin qui ramène la réponse.
+    private func rattraperApresEnvoi() {
+        Task { [weak self] in
+            for delai in [2, 5, 12, 25] {
+                try? await Task.sleep(for: .seconds(delai))
+                await self?.rattraperFils()
+            }
+        }
     }
 
     /// Le message est revenu dans le fil (ou l'envoi a échoué) : la bulle optimiste s'efface.

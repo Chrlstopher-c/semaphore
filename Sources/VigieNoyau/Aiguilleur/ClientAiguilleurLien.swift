@@ -8,7 +8,13 @@ extension ClientAiguilleur {
         while !Task.isCancelled && !revoque {
             await surLien(.connexion)
             // La coupure se lit dans les états du lien ; l'erreur précise n'est pas remontée à l'appli.
-            try? await sessionLien()
+            do {
+                try await sessionLien()
+            } catch is ErreurRevocation {
+                return await revoquerLien()
+            } catch {
+                // coupure ordinaire : la boucle reprend
+            }
             await coupureLien()
             guard !Task.isCancelled && !revoque else { return }
             try? await Task.sleep(for: delaiReprise)
@@ -30,8 +36,25 @@ extension ClientAiguilleur {
         if let tache = transport { await tache.fermer() }
         transport = nil
         for canal in Array(canaux.values) { await canal.surFermetureDistante() }
+        finirDiffusion("lien avec l'aiguilleur coupé")
+        finirTerminaux("lien avec l'aiguilleur coupé")
         await requetes.echouerTout(ErreurAiguilleur("lien avec l'aiguilleur coupé"))
         if !bloque { await surLien(.deconnecte) }
+    }
+
+    /// L'appareil est révoqué (par l'aiguilleur, fermeture 4401, ou par le nœud) : rien ne se rouvre, l'état le dit.
+    func revoquerLien() async {
+        revoque = true
+        bloque = true
+        await surLien(.revoque)
+        if let tache = transport { await tache.fermer() }
+        transport = nil
+        for canal in Array(canaux.values) { await canal.surFermetureDistante() }
+        canaux = [:]
+        canalCourant = nil
+        finirDiffusion("appareil révoqué")
+        finirTerminaux("appareil révoqué")
+        await requetes.echouerTout(ErreurAiguilleur("appareil révoqué"))
     }
 
     func traiterAiguilleur(_ message: ProtocoleAiguilleur.DeAiguilleur) async {
@@ -40,9 +63,11 @@ extension ClientAiguilleur {
         case let .ouvrir(canal, _): await envoyerAiguilleur(.refuser(canal: canal))
         case let .accepter(canal): await canaux[canal]?.surAccepter()
         case let .refuser(canal): await canaux[canal]?.surRefus()
-        case let .fermer(canal): await canaux[canal]?.surFermetureDistante()
+        case let .fermer(canal):
+            await canaux[canal]?.surFermetureDistante()
         case let .donnees(canal, charge): await canaux[canal]?.surDonnees(charge)
-        case let .erreur(canal, motif): await surErreur(canal, motif)
+        case let .erreur(canal, motif):
+            await surErreur(canal, motif)
         }
     }
 

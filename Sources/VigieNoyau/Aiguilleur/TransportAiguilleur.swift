@@ -13,6 +13,11 @@ protocol TransportAiguilleur: Sendable {
     func fermer() async
 }
 
+/// Motifs de refus que le nœud envoie et que le client sait lire (Quart, relais/federation/federation.ts).
+enum MotifsRevocation {
+    static let noeud = "révoqué"
+}
+
 /// Fabrique d'un transport à partir de l'adresse de l'aiguilleur et du jeton de membre.
 typealias FabriqueTransport = @Sendable (URL, String) throws -> any TransportAiguilleur
 

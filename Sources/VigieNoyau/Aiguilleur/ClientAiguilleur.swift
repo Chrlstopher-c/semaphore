@@ -45,6 +45,8 @@ public actor ClientAiguilleur {
 
     public enum Lien: Sendable, Equatable {
         case deconnecte, connexion, rechercheNoeud, attenteAccord(empreinte: String), ouvert, refuse(String)
+        /// L'appareil est révoqué : le lien ne se rouvre pas, sans nouvel appairage.
+        case revoque
     }
 
     var etat: Etat
@@ -61,6 +63,14 @@ public actor ClientAiguilleur {
     var boucle: Task<Void, Never>?
     var canaux: [String: Chiffrement.CanalAppareil] = [:]
     var canalCourant: String?
+    /// Morceaux des corps reçus en route (réponses, événements du flux).
+    var reassemblage = ReassemblageMorceaux()
+    /// Le flux en direct du nœud, quand l'appli le suit (voir AiguilleurFlux.swift).
+    var diffusion: AsyncStream<EvenementDiffusion>.Continuation?
+    /// Identifiant du flux courant : la fin d'un flux remplacé ne doit pas toucher le suivant.
+    var diffusionCourante: UUID?
+    /// Les terminaux de machine ouverts par l'appli, par identifiant (voir AiguilleurTerminal.swift).
+    var terminaux: [String: AsyncStream<EvenementTerminal>.Continuation] = [:]
     var presence: [ProtocoleAiguilleur.Membre] = []
     /// Révocation reçue : le lien ne se rouvre plus.
     var revoque = false
@@ -124,22 +134,56 @@ public actor ClientAiguilleur {
         for canal in Array(canaux.values) { await canal.surFermetureDistante() }
         canaux = [:]
         canalCourant = nil
+        finirDiffusion("client arrêté")
+        finirTerminaux("client arrêté")
         await requetes.echouerTout(ErreurAiguilleur("client arrêté"))
         await surLien(.deconnecte)
     }
 
     /// Une requête de l'API clients dans le canal chiffré ; attend l'ouverture du lien (20 s au plus).
-    public func requete(methode: String, chemin: String, corps: String?) async throws -> (statut: Int, corps: String) {
+    public func requete(
+        methode: String, chemin: String, corps: String?, delai: Duration? = nil
+    ) async throws -> ReponseRequete {
+        try await requeteDansCanal(methode: methode, chemin: chemin, corps: corps, codage: nil, type: nil, delai: delai)
+    }
+
+    /// Une requête dont le corps est binaire (fichier envoyé) : il part en base64, en morceaux s'il est grand.
+    public func requeteOctets(methode: String, chemin: String, corps: Data, type: String) async throws -> ReponseRequete {
+        try await requeteDansCanal(
+            methode: methode, chemin: chemin, corps: corps.base64EncodedString(), codage: "base64", type: type
+        )
+    }
+
+    private func requeteDansCanal(
+        methode: String, chemin: String, corps: String?, codage: String?, type: String?, delai: Duration? = nil
+    ) async throws -> ReponseRequete {
         let canal = try await canalOuvert()
         let ref = UUID().uuidString.lowercased()
         await requetes.prevoir(ref)
-        armerDelaiReponse(ref)
-        guard await canal.envoyer(.api(ref: ref, methode: methode, chemin: chemin, corps: corps)) else {
+        armerDelaiReponse(ref, delai ?? delais.reponse)
+        guard await envoyerApi(canal, ref: ref, methode: methode, chemin: chemin, corps: corps, codage: codage, type: type)
+        else {
             await requetes.annuler(ref)
             throw ErreurAiguilleur("requête non envoyée : lien fermé ou message trop grand")
         }
-        let reponse = try await requetes.attendre(ref)
-        return (reponse.statut, reponse.corps)
+        return try await requetes.attendre(ref)
+    }
+
+    /// Une requête de l'API : les morceaux de son corps partent d'abord, puis le message qui les annonce.
+    private func envoyerApi(
+        _ canal: Chiffrement.CanalAppareil, ref: String, methode: String, chemin: String,
+        corps: String?, codage: String?, type: String?
+    ) async -> Bool {
+        let morceaux = corps.map { DecoupeMorceaux.de($0) } ?? []
+        if morceaux.isEmpty {
+            return await canal.envoyer(.api(ref: ref, methode: methode, chemin: chemin, corps: corps,
+                                            codage: codage, type: type))
+        }
+        for (rang, morceau) in morceaux.enumerated() {
+            guard await canal.envoyer(.morceau(ref: ref, rang: rang, corps: morceau)) else { return false }
+        }
+        return await canal.envoyer(.api(ref: ref, methode: methode, chemin: chemin, corps: "",
+                                        codage: codage, type: type, morceaux: morceaux.count))
     }
 
     func canalOuvert() async throws -> Chiffrement.CanalAppareil {
@@ -151,8 +195,7 @@ public actor ClientAiguilleur {
         throw ErreurAiguilleur("lien vers le nœud non ouvert : réessaie dans un instant")
     }
 
-    func armerDelaiReponse(_ ref: String) {
-        let delai = delais.reponse
+    func armerDelaiReponse(_ ref: String, _ delai: Duration) {
         Task {
             try? await Task.sleep(for: delai)
             await self.requetes.echouer(ref, ErreurAiguilleur("pas de réponse du nœud"))

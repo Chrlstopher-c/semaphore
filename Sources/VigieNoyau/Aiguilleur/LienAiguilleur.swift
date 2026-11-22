@@ -20,9 +20,19 @@ enum LienAiguilleur {
         requete.setValue("application/json", forHTTPHeaderField: "content-type")
         let corps: [String: String] = ["code": code, "nom": nom, "genre": "appareil", "cle": cle]
         requete.httpBody = try JSONSerialization.data(withJSONObject: corps)
-        let (donnees, reponse) = try await URLSession.shared.data(for: requete)
+        let donnees: Data
+        let reponse: URLResponse
+        do {
+            (donnees, reponse) = try await URLSession.shared.data(for: requete)
+        } catch {
+            // Réseau absent, adresse injoignable depuis ici (VPN, tunnel) : ce n'est pas un refus du code.
+            throw ErreurAiguilleur(messageInjoignable)
+        }
         guard let http = reponse as? HTTPURLResponse, http.statusCode == 200 else {
-            throw ErreurChiffrement("appairage refusé")
+            let statut = (reponse as? HTTPURLResponse)?.statusCode ?? 0
+            // Passerelle ou tunnel qui ne joint pas l'aiguilleur (5xx), ou mauvais chemin (404) : l'adresse.
+            if statut == 0 || statut >= 500 || statut == 404 { throw ErreurAiguilleur(messageInjoignable) }
+            throw ErreurAiguilleur("Appairage refusé : code invalide ou expiré.")
         }
         guard let objet = try JSONSerialization.jsonObject(with: donnees) as? [String: Any],
               let id = objet["id"] as? String, let jeton = objet["jeton"] as? String else {
@@ -30,6 +40,8 @@ enum LienAiguilleur {
         }
         return Appairage(id: id, jeton: jeton)
     }
+
+    static let messageInjoignable = "Aiguilleur injoignable : vérifie l’adresse."
 
     /// Ouvre le lien sortant : https devient wss, http devient ws ; le jeton part en `Authorization: Bearer`.
     static func ouvrir(adresse: URL, jeton: String) throws -> URLSessionWebSocketTask {
@@ -52,9 +64,19 @@ enum LienAiguilleur {
         try await tache.send(.string(try ProtocoleAiguilleur.encoder(message)))
     }
 
+    /// Fermeture de l'aiguilleur pour un membre révoqué : le lien ne se rouvre pas (miroir de CODE_REVOQUE, Quart).
+    static let codeRevoque = 4401
+
     /// Un message de l'aiguilleur, ou une erreur s'il est hors protocole ou si le lien est coupé.
     static func recevoir(sur tache: URLSessionWebSocketTask) async throws -> ProtocoleAiguilleur.DeAiguilleur {
-        switch try await tache.receive() {
+        let trame: URLSessionWebSocketTask.Message
+        do {
+            trame = try await tache.receive()
+        } catch {
+            if tache.closeCode.rawValue == codeRevoque { throw ErreurRevocation() }
+            throw error
+        }
+        switch trame {
         case let .string(texte): return try ProtocoleAiguilleur.decoderDeAiguilleur(texte)
         case .data: throw ErreurChiffrement("aiguilleur : trame binaire refusée")
         @unknown default: throw ErreurChiffrement("aiguilleur : trame inconnue")

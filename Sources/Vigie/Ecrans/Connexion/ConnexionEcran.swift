@@ -136,7 +136,11 @@ struct FormulaireConnexion: View {
             }
             termine()
         } catch {
-            erreur = (error as? ErreurRelais)?.description ?? "Appairage refusé : vérifie l’adresse et le code."
+            if let aiguilleur = error as? ErreurAiguilleur {
+                erreur = aiguilleur.message
+            } else {
+                erreur = (error as? ErreurRelais)?.description ?? "Appairage refusé : vérifie l’adresse et le code."
+            }
         }
     }
 }
@@ -215,13 +219,14 @@ struct EtatLienVue: View {
         case .attenteAccord: return "En attente de ton acceptation sur le nœud"
         case .ouvert: return "Lien chiffré ouvert"
         case .refuse(let raison): return raison.isEmpty ? "Refusé par le nœud" : "Refusé : \(raison)"
+        case .revoque: return "Appareil révoqué par le nœud"
         }
     }
 
     private var symbole: String {
         switch lien {
         case .ouvert: return "lock"
-        case .refuse: return "xmark.shield"
+        case .refuse, .revoque: return "xmark.shield"
         case .deconnecte: return "wifi.slash"
         default: return "antenna.radiowaves.left.and.right"
         }
@@ -230,7 +235,7 @@ struct EtatLienVue: View {
     private var couleur: Color {
         switch lien {
         case .ouvert: return Q.enLigne
-        case .refuse: return Q.retraitTexte
+        case .refuse, .revoque: return Q.retraitTexte
         default: return Q.secondaire
         }
     }

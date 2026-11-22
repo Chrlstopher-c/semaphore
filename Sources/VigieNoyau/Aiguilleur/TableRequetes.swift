@@ -4,9 +4,19 @@ import Foundation
 // l'attente est gardée ; seule une référence déclarée reçoit un résultat ; un lien coupé échoue tout.
 
 /// Réponse d'une requête de l'API clients, telle que le nœud l'a servie.
-struct ReponseRequete: Equatable, Sendable {
-    let statut: Int
-    let corps: String
+public struct ReponseRequete: Equatable, Sendable {
+    public let statut: Int
+    /// Texte, ou base64 quand `codage` vaut `base64` (corps binaire de type `type`).
+    public let corps: String
+    public var codage: String?
+    public var type: String?
+
+    public init(statut: Int, corps: String, codage: String? = nil, type: String? = nil) {
+        self.statut = statut
+        self.corps = corps
+        self.codage = codage
+        self.type = type
+    }
 }
 
 actor TableRequetes {

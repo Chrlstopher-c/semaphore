@@ -13,3 +13,6 @@ public struct ErreurAiguilleur: Error, Equatable, Sendable, CustomStringConverti
     public var description: String { message }
     public var errorDescription: String? { message }
 }
+
+/// Le lien a été coupé par l'aiguilleur parce que l'appareil est révoqué (fermeture 4401) : il ne se rouvre plus.
+struct ErreurRevocation: Error, Equatable, Sendable {}

@@ -26,12 +26,9 @@ public final class ClientRelais: Sendable {
     private let session: URLSession
     /// Les terminaux restent ouverts des heures, parfois muets : pas de délai d'inactivité de 40 s.
     public let sessionTerminal: URLSession
-    /// Transport « par l'aiguilleur » : chaque requête passe dans le canal chiffré vers le nœud (aucun WebSocket de
-    /// flux ni terminal par ce chemin : le modèle se rabat sur le long-poll). nil : transport direct (HTTP).
+    /// Transport « par l'aiguilleur » : chaque requête, le flux et le terminal passent dans le canal chiffré vers le
+    /// nœud, avec les mêmes messages que le WebSocket direct. nil : transport direct (HTTP et WebSocket).
     public let aiguilleur: ClientAiguilleur?
-
-    /// Le WebSocket `/api/flux` n'existe qu'en transport direct.
-    public var fluxDisponible: Bool { aiguilleur == nil }
 
     public init(adresse: URL, jeton: String, aiguilleur: ClientAiguilleur? = nil) {
         self.adresse = adresse
@@ -136,18 +133,38 @@ public final class ClientRelais: Sendable {
         guard let url = requete.url else { throw ErreurRelais.illisible("adresse") }
         let chemin = url.path + (url.query.map { "?\($0)" } ?? "")
         let donnees = envoi ?? requete.httpBody
-        let corps = donnees.flatMap { String(data: $0, encoding: .utf8) }
+        let type = requete.value(forHTTPHeaderField: "Content-Type")
         do {
-            let r = try await canal.requete(methode: requete.httpMethod ?? "GET", chemin: chemin, corps: corps)
-            let entete = ["Content-Type": "application/json"]
+            let r = try await envoyerParCanal(canal, requete.httpMethod ?? "GET", chemin, donnees, type)
+            let octets = r.codage == "base64" ? (Data(base64Encoded: r.corps) ?? Data()) : Data(r.corps.utf8)
+            let entete = ["Content-Type": r.type ?? "application/json"]
             guard let http = HTTPURLResponse(url: url, statusCode: r.statut, httpVersion: nil, headerFields: entete)
             else { throw ErreurRelais.illisible("réponse du canal") }
-            return (Data(r.corps.utf8), http)
+            return (octets, http)
         } catch let e as ErreurRelais {
             throw e
         } catch {
             throw ErreurRelais.injoignable("aiguilleur : \(error.localizedDescription)")
         }
+    }
+
+    /// Le JSON part en texte, tout autre corps (fichier) part en base64 avec son type.
+    private static func envoyerParCanal(_ canal: ClientAiguilleur, _ methode: String, _ chemin: String,
+                                        _ donnees: Data?, _ type: String?) async throws -> ReponseRequete {
+        guard let donnees, let type, !estTexte(type) else {
+            let corps = donnees.flatMap { String(data: $0, encoding: .utf8) }
+            return try await canal.requete(methode: methode, chemin: chemin, corps: corps, delai: delai(chemin))
+        }
+        return try await canal.requeteOctets(methode: methode, chemin: chemin, corps: donnees, type: type)
+    }
+
+    /// Le long-poll du relais rend au plus à 30 s : sa réponse doit pouvoir arriver avant le délai du canal.
+    private static func delai(_ chemin: String) -> Duration? {
+        chemin.hasPrefix("/api/attente") ? .seconds(40) : nil
+    }
+
+    private static func estTexte(_ type: String) -> Bool {
+        type.hasPrefix("application/json") || type.hasPrefix("text/")
     }
 
     private func envoyer<Corps: Encodable, T: Decodable>(_ methode: String, _ chemin: String, _ corps: Corps?) async throws -> T {
