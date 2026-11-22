@@ -86,3 +86,11 @@
 - **Sillon** reste une app à part — elle a besoin de l'audio en exclusif pour
   l'écran verrouillé, et c'est incompatible avec la veille par audio.
 - **Les moteurs** (`/api/engines/*`) ne sont pas exposés dans EchoHub Mobile.
+
+## Aiguilleur iPhone (backlog, suite de STATE.md)
+- Client aiguilleur : identité d'appareil (trousseau), appairage par code, lien `/aiguilleur`, ouverture de canal vers un nœud.
+- Transport de l'API clients dans le canal chiffré, même interface que le client HTTP/WS (requête → réponse, flux).
+- Réglage « Passer par l'aiguilleur » (adresse + code), à côté de l'appairage direct ; design par l'agent Opus.
+- Canal d'appareil côté nœud Quart : présentation avec `genre`, pairs `appareil` exclus de `planifier` et de l'instantané,
+  routes API servies dans le canal, `GET /api/etat` testé de bout en bout avec l'aiguilleur réel.
+- CI : créer `.github/workflows/ci.yml` (lint, typecheck, `swift test`, build) avant la première poussée sur `main`.

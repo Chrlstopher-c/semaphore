@@ -296,3 +296,16 @@ propre au monde est son accent, dans `Sources/Duplex/Charte/Teinte.swift` —
 rose framboise `#F2589B`, choisi pour ne ressembler à aucun des trois autres
 mondes montrés côte à côte dans la barre du pupitre.
 
+
+## Aiguilleur iPhone : chiffrement de bout en bout (22/11/2026)
+- **Fait** : port Swift de `commun/chiffrement/` (X25519, Ed25519, HKDF-SHA256, AES-256-GCM, poignée signée, canal
+  à compteurs) dans `Sources/VigieNoyau/Aiguilleur/`. Interopérable : les vecteurs produits par Quart
+  (`commun/chiffrement/vecteurs-croises.ts`, graines fixées) sont reproduits octet pour octet, dans les deux sens.
+  15 tests (vecteurs, rejeu, réordonnancement, troncature, altération, réflexion, usurpation, réponse rejouée,
+  clé Ed25519 non canonique). `swift test` : 100 verts après rebase sur `dev`.
+- **Dépendance** : `swift-crypto` seulement sous Linux (CryptoKit sur Apple, API identique). Le build iOS n'en dépend pas.
+- **Pas fait** : client de l'aiguilleur (appairage `POST /api/membres/appairer`, lien `/aiguilleur`, identité de
+  l'appareil dans le trousseau) ; côté nœud Quart, accepter un canal d'appareil et servir l'API clients dedans
+  (`genre` dans la présentation et les pairs, routes en canal, `GET /api/etat` testé) ; réglage « Passer par
+  l'aiguilleur » ; transport qui reprend l'interface du client HTTP/WS actuel.
+- **CI** : le dépôt n'a pas de `.github/workflows/ci.yml` : à créer avant la première poussée sur `main`.
