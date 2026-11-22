@@ -134,20 +134,62 @@ struct ClientAiguilleurTests {
         let client = clientTest(faux, rec, etat: etat, graines: .generer())
         let identiteNoeud = try GrainesIdentite.generer().identite().publique
         await client.appairageAccepte(membre: noeud, nom: "noeud-test", identite: identiteNoeud)
-        #expect(await rec.dernierEtat?.identiteNoeud == Chiffrement.Identites.exporter(identiteNoeud))
-        #expect(await rec.dernierEtat?.nomNoeud == "noeud-test")
+        #expect(await rec.dernierEtat?.noeuds[noeud]?.identite == Chiffrement.Identites.exporter(identiteNoeud))
+        #expect(await rec.dernierEtat?.noeuds[noeud]?.nom == "noeud-test")
         #expect(await client.identitePairee(noeud) == identiteNoeud)
         #expect(await client.identitePairee("cccccccccccc") == nil)
     }
 
-    @Test func revocationRefuseLeLienEtFermeLeTransport() async throws {
+    @Test func revocationDUnNoeudOubliseCeNoeudSeulement() async throws {
         let faux = TransportFaux()
         let rec = Enregistreur()
-        let client = clientTest(faux, rec, etat: etatInitial(), graines: .generer())
+        var etat = etatInitial()
+        etat.noeud = noeud
+        etat.noeuds[noeud] = NoeudConnu(identite: Chiffrement.Identites.exporter(try GrainesIdentite.generer().identite().publique))
+        let client = clientTest(faux, rec, etat: etat, graines: .generer())
         await client.demarrer()
         await client.recevoir(canal: "c1", message: .revocation)
-        #expect(await rec.contient(.revoque))
-        #expect(await faux.ferme)
+        #expect(await rec.dernierEtat?.noeuds[noeud] == nil)
+        #expect(await rec.contient(.revoque) == false)
+        #expect(await faux.ferme == false)
         await client.arreter()
+    }
+
+    @Test func basculeSurLeNoeudEnLigneEtRevientAuPrefere() async throws {
+        let faux = TransportFaux()
+        let rec = Enregistreur()
+        let tour = "cccccccccccc"
+        var etat = etatInitial()
+        etat.noeud = noeud
+        etat.prefere = tour
+        etat.noeuds[noeud] = NoeudConnu(identite: Chiffrement.Identites.exporter(try GrainesIdentite.generer().identite().publique))
+        etat.noeuds[tour] = NoeudConnu(identite: Chiffrement.Identites.exporter(try GrainesIdentite.generer().identite().publique))
+        let client = clientTest(faux, rec, etat: etat, graines: .generer())
+        await client.demarrer()
+        await faux.pousser(.presence([
+            .init(id: noeud, enLigne: true, genre: "noeud"),
+            .init(id: tour, enLigne: true, genre: "noeud", sansEcran: true),
+        ]))
+        try await attendreVrai { await faux.ouvrirVers(tour) }
+        await faux.pousser(.presence([
+            .init(id: noeud, enLigne: true, genre: "noeud"),
+            .init(id: tour, enLigne: false, genre: "noeud", sansEcran: true),
+        ]))
+        try await attendreVrai { await faux.ouvrirVers(noeud) }
+        #expect(await rec.dernierEtat?.noeud == noeud)
+        await faux.pousser(.presence([
+            .init(id: noeud, enLigne: true, genre: "noeud"),
+            .init(id: tour, enLigne: true, genre: "noeud", sansEcran: true),
+        ]))
+        try await attendreVrai { await rec.dernierEtat?.noeud == tour }
+        await client.arreter()
+    }
+
+    @Test func etatDeLAncienneFormeSeLitAvecSonNoeud() throws {
+        let ancien = #"{"adresse":"https://a.test","membre":"aaaaaaaaaaaa","jeton":"j","noeud":"bbbbbbbbbbbb","identiteNoeud":"ID","nomNoeud":"Portable"}"#
+        let etat = try JSONDecoder().decode(ClientAiguilleur.Etat.self, from: Data(ancien.utf8))
+        #expect(etat.noeuds["bbbbbbbbbbbb"] == NoeudConnu(identite: "ID", nom: "Portable"))
+        let relu = try JSONDecoder().decode(ClientAiguilleur.Etat.self, from: JSONEncoder().encode(etat))
+        #expect(relu == etat)
     }
 }

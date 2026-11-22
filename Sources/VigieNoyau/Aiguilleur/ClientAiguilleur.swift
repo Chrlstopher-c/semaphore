@@ -21,25 +21,80 @@ struct DelaisClient: Sendable {
     )
 }
 
+/// Un nœud connu de l'iPhone : son identité publique (apprise à l'accord, donc appairé) et son nom.
+public struct NoeudConnu: Codable, Sendable, Equatable {
+    public var identite: String?
+    public var nom: String?
+
+    public init(identite: String? = nil, nom: String? = nil) {
+        self.identite = identite
+        self.nom = nom
+    }
+}
+
+/// Un nœud tel que les réglages le montrent : présence, appairage, préférence et nœud actuellement relié.
+public struct NoeudVu: Sendable, Equatable {
+    public let id: String
+    public let nom: String
+    public let enLigne: Bool
+    public let sansEcran: Bool
+    public let appaire: Bool
+    public let prefere: Bool
+    public let actif: Bool
+
+    public init(id: String, nom: String, enLigne: Bool, sansEcran: Bool, appaire: Bool, prefere: Bool, actif: Bool) {
+        self.id = id
+        self.nom = nom
+        self.enLigne = enLigne
+        self.sansEcran = sansEcran
+        self.appaire = appaire
+        self.prefere = prefere
+        self.actif = actif
+    }
+}
+
 public actor ClientAiguilleur {
     public struct Etat: Codable, Sendable, Equatable {
         public var adresse: String        // https://… ou http://… de l'aiguilleur
         public var membre: String         // id de l'iPhone chez l'aiguilleur
         public var jeton: String          // jeton de membre (Bearer du WebSocket /aiguilleur)
-        public var noeud: String?         // id du nœud choisi (appris par `presence`)
-        public var identiteNoeud: String? // identité publique exportée du nœud, apprise à l'accord
-        public var nomNoeud: String?
+        public var noeud: String?         // id du nœud visé par le lien en cours (choisi par la sélection)
+        public var noeuds: [String: NoeudConnu] // nœuds connus, par identifiant ; appairé = identité connue
+        public var prefere: String?       // nœud préféré, réglé par Chris
 
         public init(
             adresse: String, membre: String, jeton: String, noeud: String? = nil,
-            identiteNoeud: String? = nil, nomNoeud: String? = nil
+            noeuds: [String: NoeudConnu] = [:], prefere: String? = nil
         ) {
             self.adresse = adresse
             self.membre = membre
             self.jeton = jeton
             self.noeud = noeud
-            self.identiteNoeud = identiteNoeud
-            self.nomNoeud = nomNoeud
+            self.noeuds = noeuds
+            self.prefere = prefere
+        }
+
+        /// Les nœuds appariés (identité connue), par identifiant.
+        public var appaires: Set<String> { Set(noeuds.filter { $0.value.identite != nil }.keys) }
+
+        public func estAppaire(_ id: String) -> Bool { noeuds[id]?.identite != nil }
+
+        private enum CodingKeys: String, CodingKey { case adresse, membre, jeton, noeud, noeuds, prefere }
+        /// Forme d'avant la multi-liaison : un seul nœud, sa clé et son nom au niveau racine.
+        private enum Heritage: String, CodingKey { case identiteNoeud, nomNoeud }
+
+        public init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            adresse = try c.decode(String.self, forKey: .adresse)
+            membre = try c.decode(String.self, forKey: .membre)
+            jeton = try c.decode(String.self, forKey: .jeton)
+            noeud = try c.decodeIfPresent(String.self, forKey: .noeud)
+            noeuds = try c.decodeIfPresent([String: NoeudConnu].self, forKey: .noeuds) ?? [:]
+            prefere = try c.decodeIfPresent(String.self, forKey: .prefere)
+            let ancien = try decoder.container(keyedBy: Heritage.self)
+            if noeuds.isEmpty, let id = noeud, let identite = try ancien.decodeIfPresent(String.self, forKey: .identiteNoeud) {
+                noeuds[id] = NoeudConnu(identite: identite, nom: try ancien.decodeIfPresent(String.self, forKey: .nomNoeud))
+            }
         }
     }
 
@@ -54,6 +109,8 @@ public actor ClientAiguilleur {
     let nomAppareil: String
     let surEtat: @Sendable (Etat) async -> Void
     let surLien: @Sendable (Lien) async -> Void
+    /// Les nœuds vus (présence, appairage, préférence) : les réglages les montrent.
+    let surNoeuds: @Sendable ([NoeudVu]) async -> Void
     let fabrique: FabriqueTransport
     let delais: DelaisClient
     let moi: Chiffrement.Identite?
@@ -76,16 +133,20 @@ public actor ClientAiguilleur {
     var revoque = false
     /// Refus ou révocation : aucun canal ne se rouvre sans un nouvel appairage.
     var bloque = false
+    /// Nœuds refusés ou révoqués pendant cette session : exclus de la sélection jusqu'à un choix de Chris.
+    var refuses: Set<String> = []
 
     public init(
         etat: Etat, graines: GrainesIdentite, nomAppareil: String,
-        surEtat: @escaping @Sendable (Etat) async -> Void, surLien: @escaping @Sendable (Lien) async -> Void
+        surEtat: @escaping @Sendable (Etat) async -> Void, surLien: @escaping @Sendable (Lien) async -> Void,
+        surNoeuds: @escaping @Sendable ([NoeudVu]) async -> Void = { _ in }
     ) {
         self.etat = etat
         self.graines = graines
         self.nomAppareil = nomAppareil
         self.surEtat = surEtat
         self.surLien = surLien
+        self.surNoeuds = surNoeuds
         fabrique = TransportWebSocket.ouvrir
         delais = .defaut
         moi = try? graines.identite()
@@ -95,13 +156,15 @@ public actor ClientAiguilleur {
     init(
         etat: Etat, graines: GrainesIdentite, nomAppareil: String,
         surEtat: @escaping @Sendable (Etat) async -> Void, surLien: @escaping @Sendable (Lien) async -> Void,
-        fabrique: @escaping FabriqueTransport, delais: DelaisClient
+        fabrique: @escaping FabriqueTransport, delais: DelaisClient,
+        surNoeuds: @escaping @Sendable ([NoeudVu]) async -> Void = { _ in }
     ) {
         self.etat = etat
         self.graines = graines
         self.nomAppareil = nomAppareil
         self.surEtat = surEtat
         self.surLien = surLien
+        self.surNoeuds = surNoeuds
         self.fabrique = fabrique
         self.delais = delais
         moi = try? graines.identite()
@@ -117,6 +180,14 @@ public actor ClientAiguilleur {
             adresse: adresse, code: code, nom: nom, cle: Chiffrement.Identites.exporter(identite.publique)
         )
         return Etat(adresse: adresse.absoluteString, membre: appairage.id, jeton: appairage.jeton)
+    }
+
+    /// Choisit le nœud préféré (ou aucun, avec nil) : le lien passe à ce nœud dès qu'il est en ligne.
+    public func prefererNoeud(_ id: String?) async {
+        etat.prefere = id
+        if let id { refuses.remove(id) }
+        await surEtat(etat)
+        await cibler()
     }
 
     /// Lance la boucle du lien : connexion, présence, canal vers le nœud ; reprise automatique après coupure.

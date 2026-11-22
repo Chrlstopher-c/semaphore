@@ -53,7 +53,7 @@ struct AiguilleurBancTests {
         #expect(reponse.statut == 200)
         #expect(reponse.corps == "{\"machine\":\"noeud-banc\"}")
         #expect(await rec.dernierEtat?.noeud == banc.noeud)
-        #expect(await rec.dernierEtat?.identiteNoeud != nil)
+        #expect(await rec.dernierEtat?.estAppaire(banc.noeud) == true)
         await client.arreter()
     }
 
@@ -216,7 +216,7 @@ struct AiguilleurBancTests {
             adresse: try urlBanc(banc), code: banc.codeIntrus, nom: "intrus-banc", graines: .generer()
         )
         etat.noeud = banc.noeud
-        etat.identiteNoeud = Chiffrement.Identites.exporter(try GrainesIdentite.generer().identite().publique)
+        etat.noeuds[banc.noeud] = NoeudConnu(identite: Chiffrement.Identites.exporter(try GrainesIdentite.generer().identite().publique))
         let rec = Enregistreur()
         let client = ClientAiguilleur(
             etat: etat, graines: .generer(), nomAppareil: "intrus-banc",

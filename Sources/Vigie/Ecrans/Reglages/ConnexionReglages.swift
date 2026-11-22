@@ -14,8 +14,8 @@ struct ConnexionReglages: View {
     private static let note = "Changer de liaison ne touche ni aux sessions ouvertes ni aux réglages ; la liaison "
         + "actuelle reste en service jusqu’à ce que la nouvelle soit acceptée."
 
-    private var parPi: Bool { cablage.etatAiguilleur?.identiteNoeud != nil }
-    private var enAttente: Bool { cablage.etatAiguilleur != nil && cablage.etatAiguilleur?.identiteNoeud == nil }
+    private var parPi: Bool { !(cablage.etatAiguilleur?.appaires.isEmpty ?? true) }
+    private var enAttente: Bool { cablage.etatAiguilleur != nil && !parPi }
 
     var body: some View {
         ScrollView {
@@ -23,6 +23,13 @@ struct ConnexionReglages: View {
                 TitreSection(texte: "Liaison actuelle")
                 Carte { actuelle }
                 if enAttente { attente }
+                if parPi, !cablage.noeudsAiguilleur.isEmpty {
+                    TitreSection(texte: "Nœuds du réseau")
+                    Carte { noeuds }
+                    Text("Le lien passe par le nœud préféré quand il est en ligne, sinon par un autre nœud appairé. "
+                         + "Toucher un nœud le choisit ; toucher le nœud préféré le retire.")
+                        .font(Q.detail).foregroundStyle(Q.secondaire).padding(.horizontal, 32).padding(.top, 8)
+                }
                 TitreSection(texte: "Se relier autrement")
                 Carte { autrement }
                 Text(Self.note).font(Q.detail).foregroundStyle(Q.secondaire).padding(.horizontal, 32).padding(.top, 8)
@@ -42,7 +49,7 @@ struct ConnexionReglages: View {
         RangeeReglage(symbole: symboleEtat, titre: "État", valeur: libelleEtat, couleur: Q.texte, chevron: false)
         Filet(retrait: 60)
         RangeeReglage(symbole: "link", titre: "Adresse", valeur: adresse, chevron: false)
-        if parPi, let nom = cablage.etatAiguilleur?.nomNoeud {
+        if parPi, let nom = cablage.nomNoeudActif {
             Filet(retrait: 60)
             RangeeReglage(symbole: "desktopcomputer", titre: "Nœud", valeur: nom, chevron: false)
         }
@@ -51,6 +58,28 @@ struct ConnexionReglages: View {
             RangeeReglage(symbole: "touchid", titre: "Empreinte de cet iPhone")
         }
         .buttonStyle(.plain)
+    }
+
+    /// Un nœud par ligne : en ligne ou hors ligne, appairé, préféré ; toucher pour le choisir.
+    @ViewBuilder private var noeuds: some View {
+        ForEach(Array(cablage.noeudsAiguilleur.enumerated()), id: \.element.id) { rang, noeud in
+            if rang > 0 { Filet(retrait: 60) }
+            Button { cablage.prefererNoeud(noeud.prefere ? nil : noeud.id) } label: {
+                RangeeReglage(symbole: noeud.sansEcran ? "server.rack" : "desktopcomputer", titre: noeud.nom,
+                              valeur: libelleNoeud(noeud), couleur: noeud.enLigne ? Q.texte : Q.secondaire,
+                              chevron: false)
+            }
+            .buttonStyle(.plain)
+            .disabled(!noeud.appaire && !noeud.enLigne)
+        }
+    }
+
+    private func libelleNoeud(_ noeud: ClientAiguilleur.NoeudVu) -> String {
+        var morceaux = [noeud.enLigne ? "en ligne" : "hors ligne"]
+        if !noeud.appaire { morceaux.append("à appairer") }
+        if noeud.prefere { morceaux.append("préféré") }
+        if noeud.actif { morceaux.append("relié") }
+        return morceaux.joined(separator: " · ")
     }
 
     /// Demande en cours vers le Pi : empreinte à comparer, état du lien, annulation.
