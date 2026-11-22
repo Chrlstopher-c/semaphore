@@ -1,57 +1,34 @@
-// La coquille de Vigie : connexion, ou cinq onglets natifs (Sessions, Parc, Accès, Alertes, Réglages) à la teinte Echo.
-// Le pupitre laisse Vigie suivre le mode de l'iPhone (clair / sombre) quand elle est au premier plan.
+// La coquille de Quart : l'appairage tant qu'aucune clé n'est rangée, puis la racine (liste Code, tiroir, sessions).
+// Toujours sombre, comme l'étalon. La veille et les notifications natives sont celles de Vigie, inchangées.
 #if canImport(SwiftUI)
 import SwiftUI
 import VigieNoyau
 
 public struct Coquille: View {
-    enum Onglet: Hashable { case sessions, parc, acces, alertes, reglages }
-
     @Environment(Cablage.self) private var cablage
     @Environment(\.scenePhase) private var phase
-    @State private var onglet = Onglet.sessions
-    @State private var pile = NavigationPath()
+    @State private var pile: [String] = []
 
     public init() {}
 
     public var body: some View {
         Group {
-            if cablage.connecte { onglets } else { ConnexionEcran() }
+            if cablage.connecte { RacineQuart(pile: $pile) } else { ConnexionEcran() }
         }
-        .tint(Charte.accent)
+        .preferredColorScheme(.dark)
+        .tint(Q.coche)
         .task { await cablage.amorcer() }
         .onChange(of: phase) { _, nouvelle in suivrePhase(nouvelle) }
         .onChange(of: Aiguillage.partage.sessionDemandee) { _, id in ouvrirDemandee(id) }
     }
 
-    private var onglets: some View {
-        TabView(selection: $onglet) {
-            Tab("Sessions", systemImage: "bubble.left.and.text.bubble.right", value: .sessions) {
-                NavigationStack(path: $pile) {
-                    ListeSessionsEcran().navigationDestination(for: String.self) { SessionEcran(id: $0) }
-                }
-            }
-            .badge(cablage.modele.sessions.filter { $0.statut == .question }.count)
-            Tab("Parc", systemImage: "server.rack", value: .parc) { ParcEcran() }
-            Tab("Accès", systemImage: "externaldrive.connected.to.line.below", value: .acces) { AccesEcran() }
-            Tab("Alertes", systemImage: "bell", value: .alertes) { AlertesEcran(ouvrir: ouvrir) }
-                .badge(cablage.modele.notifications.filter { !$0.lue && $0.niveau != .info }.count)
-            Tab("Réglages", systemImage: "gearshape", value: .reglages) { ReglagesEcran() }
-        }
-    }
-
-    private func ouvrir(_ id: String) {
-        onglet = .sessions
-        pile = NavigationPath([id])
-    }
-
     private func ouvrirDemandee(_ id: String?) {
         guard let id else { return }
-        ouvrir(id)
+        pile = [id]
         Aiguillage.partage.sessionDemandee = nil
     }
 
-    /// Premier plan : long-poll actif ; arrière-plan : la veille (audio, réveils de fond) prend le relais.
+    /// Premier plan : flux en direct ; arrière-plan : la veille (audio, réveils de fond) prend le relais.
     private func suivrePhase(_ nouvelle: ScenePhase) {
         switch nouvelle {
         case .active:
@@ -60,6 +37,30 @@ public struct Coquille: View {
         case .background: cablage.modele.arreter()
         default: break
         }
+    }
+}
+
+/// Ouvre le tiroir depuis n'importe quel écran de la pile (bouton à trois traits de l'en-tête).
+private struct CleOuvrirTiroir: EnvironmentKey {
+    static let defaultValue: @MainActor @Sendable () -> Void = {}
+}
+
+extension EnvironmentValues {
+    var ouvrirTiroir: @MainActor @Sendable () -> Void {
+        get { self[CleOuvrirTiroir.self] }
+        set { self[CleOuvrirTiroir.self] = newValue }
+    }
+}
+
+/// Le glissement de retour reste actif même quand l'en-tête remplace la flèche par le bouton du tiroir.
+extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
+    override open func viewDidLoad() {
+        super.viewDidLoad()
+        interactivePopGestureRecognizer?.delegate = self
+    }
+
+    public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        viewControllers.count > 1
     }
 }
 #endif

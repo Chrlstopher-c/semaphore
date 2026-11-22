@@ -42,8 +42,8 @@ struct Pupitre: View {
             }
         }
         .background(Neutre.fond.ignoresSafeArea())
-        // Vigie suit le mode de l'iPhone (charte Echo Agency clair / night) ; les autres mondes n'ont qu'une charte sombre.
-        .preferredColorScheme(monde == .quart ? nil : .dark)
+        // Tous les mondes sont sombres ; Quart aussi depuis sa v1 (étalon capturé en sombre).
+        .preferredColorScheme(.dark)
         .sensoryFeedback(Toucher.selection, trigger: monde)
     }
 

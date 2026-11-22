@@ -65,7 +65,7 @@ private struct AppareilEcran: View {
             }
         }
         .navigationTitle(machine)
-        .sheet(isPresented: $nouvelle) { NouvelleSessionFeuille(machine: machine) }
+        .sheet(isPresented: $nouvelle) { NouvelleSessionFeuille(machineInitiale: machine) { _ in } }
     }
 
     private func ligne(_ s: Session) -> some View {
