@@ -64,6 +64,7 @@ extension ClientAiguilleur {
         case let .accepter(canal): await canaux[canal]?.surAccepter()
         case let .refuser(canal): await canaux[canal]?.surRefus()
         case let .fermer(canal):
+            Trace.info("aiguilleur", "canal \(canal) fermé par le nœud")
             await canaux[canal]?.surFermetureDistante()
         case let .donnees(canal, charge): await canaux[canal]?.surDonnees(charge)
         case let .erreur(canal, motif):
@@ -106,6 +107,7 @@ extension ClientAiguilleur {
 
     /// Un canal que l'aiguilleur signale en erreur (nœud hors ligne, canal inconnu) se ferme ; la reprise suit.
     func surErreur(_ canal: String?, _ motif: String) async {
+        Trace.info("aiguilleur", "erreur de l'aiguilleur (\(canal ?? "lien")) : \(motif)")
         guard let canal else {
             return await requetes.echouerTout(ErreurAiguilleur("aiguilleur : \(motif)"))
         }

@@ -47,6 +47,11 @@ extension ModeleRelais {
             do {
                 let suite: [EvenementDate] = try await client.lire(Route.evenements(id, apres: apres, attendre: 0))
                 if !suite.isEmpty, fils[id] != nil { fusionnerFil(id, suite, atteint: false) }
+                // Le tour est fini (vu par la relecture avant le flux) : plus rien ne s'écrit en direct.
+                if case .tourFini = suite.last?.evt {
+                    viderTexte(id)
+                    viderReflexion(id)
+                }
             } catch {
                 Trace.erreur("relais", "rattrapage du fil \(id) impossible", error)
             }

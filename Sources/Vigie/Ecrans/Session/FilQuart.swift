@@ -1,5 +1,5 @@
 // Le fil d'une session (étalon 001/022/023) : réponses pleine largeur, bulles de Chris à droite, suites d'actions
-// résumées en une ligne qui ouvre leur feuille, texte en cours d'écriture en direct. Ancré en bas.
+// résumées en une ligne qui ouvre leur feuille, texte en cours d'écriture en direct (Direct.swift). Ancré en bas.
 #if canImport(SwiftUI)
 import SwiftUI
 import VigieNoyau
@@ -22,13 +22,13 @@ struct FilQuart: View {
             LazyVStack(alignment: .leading, spacing: 20) {
                 debut(vide: blocs.isEmpty && envois.isEmpty)
                 ForEach(blocs) { bloc in
-                    BlocVue(bloc: bloc, ouvrirActions: ouvrirActions).equatable().transition(Self.arrivee)
+                    BlocVue(bloc: bloc, ouvrirActions: ouvrirActions).equatable().transition(arrivee(bloc))
                 }
                 ForEach(Array(envois.enumerated()), id: \.offset) { _, texte in
                     BulleChris(texte: texte).transition(Self.arrivee)
                 }
-                DirectVue(id: lu, statut: session.statut, taches: TachesDuFil.enCours(blocs),
-                          ouvrirTaches: ouvrirTaches)
+                DirectVue(id: lu, statut: session.statut, attente: !envois.isEmpty,
+                          taches: TachesDuFil.enCours(blocs), ouvrirTaches: ouvrirTaches)
             }
             .padding(.horizontal, Q.margeTexte).padding(.top, 12).padding(.bottom, 24)
             .animation(.smooth(duration: 0.3), value: blocs.last?.id)
@@ -56,6 +56,14 @@ struct FilQuart: View {
 
     private static let arrivee = AnyTransition.opacity.combined(with: .offset(y: 12))
 
+    /// Une réponse qui remplace le texte écrit en direct prend sa place telle quelle (aucun fondu ni glissement : le
+    /// même texte ne doit pas clignoter) ; tout autre bloc entre en fondu montant.
+    private func arrivee(_ bloc: BlocFil) -> AnyTransition {
+        guard case .assistant(_, let texte) = bloc, let direct = modele.texteDirectFini[lu],
+              texte.hasPrefix(direct.prefix(40)) else { return Self.arrivee }
+        return .identity
+    }
+
     /// La fiche dont on lit le fil : celle du poste quand la session montrée est sa jumelle Remote Control.
     private var lu: String { modele.sourceLecture(session.id) }
 
@@ -72,36 +80,6 @@ struct FilQuart: View {
         } else if !modele.debutAtteint.contains(lu) {
             IndicateurTravail().frame(width: 18, height: 18).frame(maxWidth: .infinity)
                 .task { await modele.chargerPlusAncien(lu) }
-        }
-    }
-}
-
-/// Ce qui s'écrit maintenant : réflexion, texte en flux, roue de travail, tâches de fond.
-private struct DirectVue: View {
-    @Environment(ModeleRelais.self) private var modele
-    let id: String
-    let statut: StatutSession
-    let taches: Int
-    let ouvrirTaches: () -> Void
-
-    var body: some View {
-        if let r = modele.reflexionEnCours[id], !r.isEmpty {
-            Text(r.suffix(280)).font(Q.detail).italic().foregroundStyle(Q.tertiaire).lineLimit(4)
-        }
-        if let t = modele.enEcriture[id], !t.isEmpty {
-            MarkdownVue(source: t)
-        } else if statut.enActivite {
-            HStack(spacing: 10) {
-                IndicateurTravail().frame(width: 16, height: 16)
-                Text(statut == .compaction ? "Compaction du contexte…" : "Claude travaille…")
-                    .font(Q.detail).foregroundStyle(Q.tertiaire)
-            }
-        }
-        if taches > 0 {
-            Button(action: ouvrirTaches) {
-                Text(taches > 1 ? "\(taches) tâches en cours" : "1 tâche en cours")
-                    .font(Q.rangee).foregroundStyle(Q.lien)
-            }
         }
     }
 }

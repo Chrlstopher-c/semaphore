@@ -293,6 +293,7 @@ Une ligne par fichier (hors `Vendor/`). Régénérée le 22/11/2026 — monde Qu
 - `Sources/Vigie/Ecrans/Session/BlocVue.swift`
 - `Sources/Vigie/Ecrans/Session/Composeur.swift`
 - `Sources/Vigie/Ecrans/Session/DemandeVue.swift`
+- `Sources/Vigie/Ecrans/Session/Direct.swift` — bas du fil en direct : étincelle, libellé en reflet, texte révélé mot à mot
 - `Sources/Vigie/Ecrans/Session/FilQuart.swift`
 - `Sources/Vigie/Ecrans/Session/MarkdownVue.swift`
 - `Sources/Vigie/Ecrans/Session/SessionEcran.swift`
@@ -325,6 +326,7 @@ Une ligne par fichier (hors `Vendor/`). Régénérée le 22/11/2026 — monde Qu
 - `Sources/VigieNoyau/Markdown/BlocMarkdown.swift`
 - `Sources/VigieNoyau/Markdown/FragmentTexte.swift`
 - `Sources/VigieNoyau/Presentation/BlocsFil.swift`
+- `Sources/VigieNoyau/Presentation/TexteEnDirect.swift` — cumul du direct par bloc, rythme de révélation
 - `Sources/VigieNoyau/Presentation/CatalogueModeles.swift`
 - `Sources/VigieNoyau/Presentation/DateRelative.swift`
 - `Sources/VigieNoyau/Presentation/DetailOutil.swift`
@@ -376,6 +378,7 @@ Une ligne par fichier (hors `Vendor/`). Régénérée le 22/11/2026 — monde Qu
 - `Tests/TamisNoyauTests/StratigraphieTests.swift`
 - `Tests/TamisNoyauTests/TamisageTests.swift`
 - `Tests/VigieNoyauTests/AppareilTests.swift`
+- `Tests/VigieNoyauTests/TexteEnDirectTests.swift`
 - `Tests/VigieNoyauTests/CatalogueModelesTests.swift`
 - `Tests/VigieNoyauTests/ContratTests.swift`
 - `Tests/VigieNoyauTests/DecodageContratTests.swift`

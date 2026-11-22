@@ -16,6 +16,45 @@ struct MarkdownVue: View {
     }
 }
 
+/// Le markdown d'un texte en train de s'écrire : analysé à chaque pas sans passer par le cache (chaque préfixe ne
+/// sert qu'une fois) ; la fin du dernier paragraphe s'éclaircit en fondu, les mots entrent sans à-coup.
+struct MarkdownDirect: View {
+    let source: String
+
+    var body: some View {
+        let blocs = AnalyseurMarkdown.blocs(source)
+        VStack(alignment: .leading, spacing: 14) {
+            ForEach(blocs) { b in
+                if b.id == blocs.last?.id, case .paragraphe(let contenu) = b.bloc {
+                    Paragraphe(contenu: contenu).textRenderer(FonduQueue())
+                } else {
+                    BlocMarkdownVue(bloc: b.bloc)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// Les derniers glyphes d'un texte en direct, du plus estompé (le dernier) au plein : à chaque mot ajouté, les
+/// précédents finissent d'apparaître. La rampe court sur les deux dernières lignes, sans saut au retour à la ligne.
+struct FonduQueue: TextRenderer {
+    var glyphes = 24
+
+    func draw(layout: Text.Layout, in ctx: inout GraphicsContext) {
+        let lignes = Array(layout)
+        let debutRampe = max(0, lignes.count - 2)
+        for ligne in lignes[..<debutRampe] { ctx.draw(ligne) }
+        let tranches = lignes[debutRampe...].flatMap { ligne in ligne.flatMap { $0 } }
+        for (i, tranche) in tranches.enumerated() {
+            let depuisFin = tranches.count - 1 - i
+            var c = ctx
+            if depuisFin < glyphes { c.opacity = 0.2 + 0.8 * Double(depuisFin) / Double(glyphes) }
+            c.draw(tranche)
+        }
+    }
+}
+
 /// Analyse markdown mémorisée par texte : une réponse n'est analysée qu'une fois, pas à chaque rendu.
 @MainActor enum CacheMarkdown {
     private final class Boite { let blocs: [BlocRange]; init(_ b: [BlocRange]) { blocs = b } }

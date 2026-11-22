@@ -4,8 +4,34 @@ Résumé vivant, inter-sessions. Les décisions et leurs raisons sont dans
 `ARCHITECTURE.md` ; ce qui reste à faire et ce qui demande un arbitrage sont
 dans `TODO.md`.
 
-Dernière mise à jour : **22/11/2026** — **Monde Quart v1** : l'onglet Quart refait à l'identique de la partie Code de
-l'appli Claude iOS, branché sur l'API clients d'un nœud Lanterne (branche `dev`). Compilé ; pas encore posé sur l'iPhone.
+Dernière mise à jour : **22/11/2026** — **Quart** : texte en direct, étincelle de travail et dictée qui défile (voir
+ci-dessous) ; monde Quart v1 refait à l'identique de la partie Code de l'appli Claude iOS (branche `dev`).
+
+---
+
+## 22/11/2026 — Quart : direct, étincelle, dictée (branche `dev`)
+
+- **Direct — cause trouvée** : le nœud envoyait ses messages de FÉDÉRATION (instantané des sessions, confirmations)
+  à tous les canaux ouverts, iPhone compris ; l'iPhone, ne les connaissant pas, fermait son canal. Comme la fiche de
+  la session change sans cesse pendant un tour, le flux en direct mourait à chaque réponse et l'appli retombait sur
+  l'interrogation (réponse d'un bloc, secondes après le PC). Corrigé des deux côtés : le nœud n'envoie plus la
+  fédération qu'aux nœuds (Quart), et l'iPhone écarte un message inconnu sans fermer son canal — ce qui suffit avec le
+  moteur actuel du portable, même non mis à jour.
+- **Prouvé sur banc réel** (aiguilleur + nœud de banc + client Swift sous Linux, `leDirectArriveAuFilDeLEau`, fiche
+  de session modifiée pendant la rafale) : ancien client → canal fermé après 2 deltas ; nouveau client, contre le
+  moteur actuel (6 instantanés écartés) comme contre le corrigé : 60/60 deltas, 31 paquets étalés sur 1,84 s, retard
+  médian 32 ms, max 65 ms.
+- Autour : ré-abonnement acquitté par le nœud ; flux tenu pour vivant dès le premier message ; direct cumulé par bloc ;
+  relecture qui voit la fin du tour éteint le direct ; journal `flux` / `aiguilleur` (abonnement, fermetures de canal
+  et de lien avec leur cause) lisible dans `idevicesyslog`.
+- **Rendu comme l'appli Claude** : étincelle orange qui respire dès l'envoi et jusqu'à la fin du tour, libellé en reflet
+  (« Claude travaille… », « Réflexion… ») ; texte révélé mot à mot à 30 pas/s (`RythmeDirect`, noyau testé), fin du
+  dernier paragraphe en fondu (`FonduQueue`, TextRenderer iOS 18) ; la réponse finale prend la place du direct sans
+  clignoter.
+- **Dictée** : la zone dictée grandit jusqu'à 8 lignes puis défile et suit la fin à chaque mot (avant : texte tronqué
+  en « … »).
+- **Non vérifié** : rendu et fluidité sur l'iPhone, direct en 4G réelle (moteur du portable et aiguilleur du Pi non
+  touchés).
 
 ---
 

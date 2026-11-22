@@ -30,9 +30,12 @@ public final class ModeleRelais {
     @ObservationIgnored var titresDemandes: Set<String> = []
     /// Blocs d'affichage par fil, recalculés seulement quand le fil change (jamais à chaque delta ni à chaque rendu).
     @ObservationIgnored private var cacheBlocs: [String: (cle: [Int], blocs: [BlocFil])] = [:]
-    /// Deltas reçus mais pas encore publiés : publiés ensemble toutes les 100 ms, pas un rendu par jeton.
-    @ObservationIgnored private var tamponTexte: [String: String] = [:]
-    @ObservationIgnored private var tamponReflexion: [String: String] = [:]
+    /// Texte en direct par fil, un bloc à la fois ; publié dans `enEcriture` toutes les 100 ms, pas un rendu par jeton.
+    @ObservationIgnored private var directs: [String: CumulDirect] = [:]
+    @ObservationIgnored private var directsReflexion: [String: CumulDirect] = [:]
+    @ObservationIgnored private var aPublier: Set<String> = []
+    /// Dernier texte en direct remplacé par son bloc final : ce bloc prend sa place sans animation d'arrivée.
+    @ObservationIgnored var texteDirectFini: [String: String] = [:]
     @ObservationIgnored private var publicationPrevue = false
     @ObservationIgnored private(set) var client: ClientRelais?
     @ObservationIgnored private var boucle: Task<Void, Never>?
@@ -145,18 +148,28 @@ public final class ModeleRelais {
         return tenu
     }
 
-    /// Le flux du nœud par le canal chiffré : les mêmes événements que le WebSocket direct.
+    /// Le flux du nœud par le canal chiffré : les mêmes événements que le WebSocket direct. Un message reçu vaut
+    /// acquittement (un nœud qui a déjà ce canal abonné ne le redit pas toujours).
     private func suivreDiffusion(_ aiguilleur: ClientAiguilleur) async -> Bool {
         var tenu = false
+        var recus = 0
+        Trace.info("flux", "aiguilleur : abonnement au flux du nœud")
         for await evenement in await aiguilleur.ouvrirDiffusion() {
             switch evenement {
             case .ouverte:
+                Trace.info("flux", "aiguilleur : flux ouvert")
                 if !tenu { Task { await rattraperFils() } }
                 tenu = true
                 poser(.connecte)
-            case .message(let message): appliquer(message)
+            case .message(let message):
+                if !tenu {
+                    tenu = true
+                    poser(.connecte)
+                }
+                recus += 1
+                appliquer(message)
             case .ferme(let raison):
-                Trace.info("flux", "fermé : \(raison)")
+                Trace.info("flux", "aiguilleur : flux fermé après \(recus) messages (\(raison))")
                 poser(.coupe("Liaison coupée, nouvel essai."))
             }
         }
@@ -212,7 +225,7 @@ public final class ModeleRelais {
             if suite != machines { machines = suite }
         case .notification(let notification): recevoirNotification(notification)
         case .evenement(let evenement): recevoirEvenement(evenement)
-        case .flux(let id, _, let delta, let genre, nil): ajouterDelta(id, delta, genre: genre)
+        case .flux(let id, let bloc, let delta, let genre, nil): ajouterDelta(id, bloc, delta, genre: genre)
         case .flux: break
         case .filModifie(let id): Task { await relireFil(id) }
         case .inconnu: break
@@ -239,22 +252,25 @@ public final class ModeleRelais {
         }
     }
 
-    private func viderTexte(_ id: String) {
-        tamponTexte[id] = nil
-        if enEcriture[id] != nil { enEcriture[id] = nil }
+    func viderTexte(_ id: String) {
+        directs[id] = nil
+        guard let texte = enEcriture[id] else { return }
+        texteDirectFini[id] = texte
+        enEcriture[id] = nil
     }
 
-    private func viderReflexion(_ id: String) {
-        tamponReflexion[id] = nil
+    func viderReflexion(_ id: String) {
+        directsReflexion[id] = nil
         if reflexionEnCours[id] != nil { reflexionEnCours[id] = nil }
     }
 
-    private func ajouterDelta(_ id: String, _ delta: String, genre: String?) {
+    private func ajouterDelta(_ id: String, _ bloc: String, _ delta: String, genre: String?) {
         if genre == "reflexion" {
-            tamponReflexion[id, default: reflexionEnCours[id] ?? ""] += delta
+            directsReflexion[id, default: CumulDirect(bloc: bloc)].ajouter(delta, bloc: bloc)
         } else {
-            tamponTexte[id, default: enEcriture[id] ?? ""] += delta
+            directs[id, default: CumulDirect(bloc: bloc)].ajouter(delta, bloc: bloc)
         }
+        aPublier.insert(id)
         guard !publicationPrevue else { return }
         publicationPrevue = true
         Task { [weak self] in
@@ -265,17 +281,18 @@ public final class ModeleRelais {
 
     private func publierDeltas() {
         publicationPrevue = false
-        for (id, texte) in tamponTexte { enEcriture[id] = texte }
-        for (id, texte) in tamponReflexion { reflexionEnCours[id] = texte }
-        tamponTexte = [:]
-        tamponReflexion = [:]
+        for id in aPublier {
+            if let texte = directs[id]?.texte, enEcriture[id] != texte { enEcriture[id] = texte }
+            if let texte = directsReflexion[id]?.texte, reflexionEnCours[id] != texte { reflexionEnCours[id] = texte }
+        }
+        aPublier = []
     }
 
     private func retirer(_ id: String) {
         sessions = MiseAJourParc.sansSession(id, dans: sessions)
         retirerFil(id)
-        enEcriture[id] = nil
-        reflexionEnCours[id] = nil
+        viderTexte(id)
+        viderReflexion(id)
     }
 
     private func vider() {
@@ -286,6 +303,8 @@ public final class ModeleRelais {
         cacheBlocs = [:]
         enEcriture = [:]
         reflexionEnCours = [:]
+        directs = [:]
+        directsReflexion = [:]
         debutAtteint = []
     }
 

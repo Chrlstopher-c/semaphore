@@ -54,6 +54,14 @@ struct ProtocoleTests {
         #expect(throws: ErreurChiffrement.self) { try ProtocoleAiguilleur.decoderDuLien(Data("{\"t\":\"api\"}".utf8)) }
     }
 
+    /// Un type inconnu dans le lien (ex. l'instantané de fédération d'un nœud) est signalé à part : le canal l'écarte
+    /// sans se fermer, le flux en direct continue.
+    @Test func unTypeInconnuDuLienEstDistingueDUnMessageCasse() {
+        #expect(throws: MessageLienInconnu(type: "instantane")) {
+            try ProtocoleAiguilleur.decoderDuLien(Data("{\"t\":\"instantane\",\"sessions\":[]}".utf8))
+        }
+    }
+
     @Test func reglageNeSActiveQueSCompletEtValide() {
         var r = ReglagesAiguilleur.defaut
         #expect(!r.actif)

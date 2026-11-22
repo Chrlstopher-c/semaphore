@@ -10,11 +10,19 @@ private struct DescriptionBanc: Decodable {
     let codeAppareil: String
     let codeIntrus: String
     let codeAppareil2: String
+    let codeAppareil3: String
     let noeud: String
     let image: String
 }
 
 private let bancActif = ProcessInfo.processInfo.environment["QUART_AIGUILLEUR_BANC"] != nil
+
+/// Le banc, après un temps de repos : sous Linux, la coupure du lien du test précédent (URLSession partagée) peut
+/// emporter le lien qui s'ouvre au même instant ; l'appli, elle, n'a qu'un client à la fois.
+private func preparerBanc() async throws -> DescriptionBanc {
+    try await Task.sleep(for: .milliseconds(400))
+    return try chargerBanc()
+}
 
 private func chargerBanc() throws -> DescriptionBanc {
     guard let chemin = ProcessInfo.processInfo.environment["QUART_AIGUILLEUR_BANC"] else {
@@ -28,7 +36,7 @@ private func chargerBanc() throws -> DescriptionBanc {
 struct AiguilleurBancTests {
     @Test(.enabled(if: bancActif), .timeLimit(.minutes(2)))
     func appareilAppaireServLApiDuNoeudDansLeCanalChiffre() async throws {
-        let banc = try chargerBanc()
+        let banc = try await preparerBanc()
         let graines = GrainesIdentite.generer()
         let etat = try await ClientAiguilleur.appairer(
             adresse: try urlBanc(banc), code: banc.codeAppareil, nom: "appareil-banc", graines: graines
@@ -51,7 +59,7 @@ struct AiguilleurBancTests {
 
     @Test(.enabled(if: bancActif), .timeLimit(.minutes(2)))
     func imageFluxEtTerminalPassentParLeCanalChiffre() async throws {
-        let banc = try chargerBanc()
+        let banc = try await preparerBanc()
         let graines = GrainesIdentite.generer()
         let etat = try await ClientAiguilleur.appairer(
             adresse: try urlBanc(banc), code: banc.codeAppareil2, nom: "appareil-banc-2", graines: graines
@@ -102,9 +110,55 @@ struct AiguilleurBancTests {
         await client.arreter()
     }
 
+    /// Le direct au fil de l'eau : 60 deltas horodatés émis toutes les 30 ms par le nœud arrivent un par un (ou par
+    /// petits paquets de la fenêtre de regroupement du nœud), jamais en un bloc à la fin. Mesure imprimée.
+    @Test(.enabled(if: bancActif), .timeLimit(.minutes(2)))
+    func leDirectArriveAuFilDeLEau() async throws {
+        let banc = try await preparerBanc()
+        let graines = GrainesIdentite.generer()
+        let etat = try await ClientAiguilleur.appairer(
+            adresse: try urlBanc(banc), code: banc.codeAppareil3, nom: "appareil-banc-3", graines: graines
+        )
+        let rec = Enregistreur()
+        let client = ClientAiguilleur(
+            etat: etat, graines: graines, nomAppareil: "appareil-banc-3",
+            surEtat: { await rec.noterEtat($0) }, surLien: { await rec.noterLien($0) }
+        )
+        await client.demarrer()
+        try await rec.attendreLien(secondes: 30) { $0 == .ouvert }
+        let flux = await client.ouvrirDiffusion()
+        let total = 60
+        let mesure = Task { () -> [(arrivee: Double, emis: [Double])] in
+            var paquets: [(arrivee: Double, emis: [Double])] = []
+            var vus = 0
+            for await evenement in flux {
+                if case let .ferme(raison) = evenement { print("BANC-DIRECT flux fermé : \(raison)") }
+                guard case let .message(.flux(_, "r", delta, _, _)) = evenement else { continue }
+                let maintenant = Date().timeIntervalSince1970 * 1000
+                let emis = HorodatageBanc.lire(delta)
+                paquets.append((maintenant, emis))
+                vus += emis.count
+                if vus >= total { break }
+            }
+            return paquets
+        }
+        _ = try await client.requete(methode: "POST", chemin: "/api/banc/rafale", corps: "{\"n\":\(total),\"ms\":30}")
+        let paquets = await mesure.value
+        let retards = paquets.flatMap { p in p.emis.map { p.arrivee - $0 } }.sorted()
+        let duree = (paquets.last?.arrivee ?? 0) - (paquets.first?.arrivee ?? 0)
+        print("BANC-DIRECT paquets=\(paquets.count) deltas=\(retards.count) étalement=\(Int(duree)) ms "
+              + "retard médian=\(Int(retards[retards.count / 2])) ms max=\(Int(retards.last ?? 0)) ms")
+        #expect(retards.count == total)
+        // 60 × 30 ms = 1,8 s d'émission : le client doit recevoir au fil de l'eau (≥ 15 paquets, étalés ≥ 1,2 s).
+        #expect(paquets.count >= 15)
+        #expect(duree >= 1200)
+        #expect((retards.last ?? .infinity) < 500)
+        await client.arreter()
+    }
+
     @Test(.enabled(if: bancActif), .timeLimit(.minutes(2)))
     func identiteNonApparieeEstRefuseeParLeNoeud() async throws {
-        let banc = try chargerBanc()
+        let banc = try await preparerBanc()
         var etat = try await ClientAiguilleur.appairer(
             adresse: try urlBanc(banc), code: banc.codeIntrus, nom: "intrus-banc", graines: .generer()
         )
@@ -119,6 +173,15 @@ struct AiguilleurBancTests {
         try await rec.attendreLien(secondes: 30) { $0 == .refuse("identité non appairée") }
         #expect(await rec.contient(.ouvert) == false)
         await client.arreter()
+    }
+}
+
+/// Les heures d'émission « [epoch_ms] » portées par les deltas de la rafale du nœud de banc.
+enum HorodatageBanc {
+    static func lire(_ texte: String) -> [Double] {
+        texte.split(separator: "]").compactMap { morceau in
+            morceau.split(separator: "[").last.flatMap { Double($0) }
+        }
     }
 }
 

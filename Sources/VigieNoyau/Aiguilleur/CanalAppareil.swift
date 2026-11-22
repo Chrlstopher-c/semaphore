@@ -79,6 +79,7 @@ extension Chiffrement {
             do {
                 try await traiter(try ProtocoleAiguilleur.decoderEnClair(charge))
             } catch {
+                Trace.erreur("aiguilleur", "canal \(id) : charge hors protocole, canal fermé", error)
                 await fermer()
             }
         }
@@ -179,7 +180,11 @@ extension Chiffrement {
         private func recevoirTrame(_ trame: String) async throws {
             guard let canalChiffre else { throw ErreurChiffrement("trame hors lien") }
             let clair = try await canalChiffre.dechiffrer(try Octets.depuisBase64url(trame))
-            await hote.recevoir(canal: id, message: try ProtocoleAiguilleur.decoderDuLien(clair))
+            do {
+                await hote.recevoir(canal: id, message: try ProtocoleAiguilleur.decoderDuLien(clair))
+            } catch let inconnu as MessageLienInconnu {
+                Trace.info("aiguilleur", "canal \(id) : message « \(inconnu.type) » inconnu, écarté")
+            }
         }
 
         /// Un seul consommateur chiffre et envoie : l'ordre des compteurs est celui des envois.

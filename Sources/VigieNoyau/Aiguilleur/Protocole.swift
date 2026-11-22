@@ -228,7 +228,7 @@ enum ProtocoleAiguilleur {
         case "reponse":
             guard let ok = objet["ok"] as? Bool else { throw ErreurChiffrement("champ « ok » absent") }
             return .reponse(ref: try chaine(objet, "ref"), ok: ok, raison: objet["raison"] as? String)
-        default: throw ErreurChiffrement("lien : message hors protocole")
+        case let inconnu: throw MessageLienInconnu(type: inconnu)
         }
     }
 
@@ -288,4 +288,10 @@ enum ProtocoleAiguilleur {
         let octets = try JSONSerialization.data(withJSONObject: imbrique)
         return try JSONDecoder().decode(T.self, from: octets)
     }
+}
+
+/// Un message bien formé et bien chiffré, mais d'un type que cet appareil ne connaît pas (nœud plus récent, message
+/// de fédération égaré) : écarté sans fermer le canal — le flux en direct et les requêtes en vol continuent.
+struct MessageLienInconnu: Error, Equatable {
+    let type: String
 }

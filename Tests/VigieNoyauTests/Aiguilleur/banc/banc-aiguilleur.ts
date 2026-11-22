@@ -3,7 +3,7 @@
 // Lancé par lancer-banc.sh. Variables : QUART_RACINE (worktree Quart), BANC_URL (aiguilleur),
 // BANC_CODE_NOEUD, BANC_CODE_APPAREIL, BANC_CODE_INTRUS, BANC_SORTIE (fichier JSON, écrit quand le nœud est relié).
 // Scénarios de l'API : `/api/banc/image` (un PNG de ~480 Ko, écrit à côté du JSON), `/api/banc/diffuser` (deux deltas
-// de texte et un événement), et un terminal d'écho sur la machine « noeud-banc ».
+// de texte et un événement), `/api/banc/rafale` (deltas horodatés au fil de l'eau, fiche de session modifiée en route), et un terminal d'écho sur la machine « noeud-banc ».
 import { writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -30,6 +30,20 @@ const TABLE = {
   '/api/etat': { GET: () => Response.json({ machine: 'noeud-banc' }) },
   '/api/federation/aiguilleur': { POST: () => new Response('jamais') },
   '/api/banc/image': { GET: () => new Response(png, { headers: { 'content-type': 'image/png' } }) },
+  // Rafale : `n` deltas de texte espacés de `ms`, chacun portant son heure d'émission « [epoch_ms] » (banc du direct).
+  '/api/banc/rafale': {
+    POST: async (req: Request) => {
+      const { n = 60, ms = 30 } = (await req.json().catch(() => ({}))) as { n?: number; ms?: number };
+      let i = 0;
+      const minuterie = setInterval(() => {
+        noeud.diffusion.diffuser({ type: 'flux', sessionId: 's1', bloc: 'r', delta: `[${Date.now()}]` });
+        // Comme un vrai tour : la fiche de la session change pendant que le texte s'écrit (statut, activité).
+        if (i % 10 === 0) noeud.diffusion.diffuser({ type: 'session', session: ficheDe('s1', 'noeud-banc', `Tour ${i}`) });
+        if (++i >= n) clearInterval(minuterie);
+      }, ms);
+      return Response.json({ ok: true });
+    },
+  },
   '/api/banc/diffuser': {
     POST: () => {
       noeud.diffusion.diffuser({ type: 'flux', sessionId: 's1', bloc: 'b', delta: 'Bon' });
@@ -77,6 +91,7 @@ writeFileSync(sortie, JSON.stringify({
   codeAppareil: requis('BANC_CODE_APPAREIL'),
   codeIntrus: requis('BANC_CODE_INTRUS'),
   codeAppareil2: requis('BANC_CODE_APPAREIL2'),
+  codeAppareil3: requis('BANC_CODE_APPAREIL3'),
   noeud: reponse.valeur.id,
   image: join(dirname(sortie), 'image.png'),
 }));

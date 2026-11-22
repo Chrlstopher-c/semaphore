@@ -10,6 +10,7 @@ extension ClientAiguilleur: Chiffrement.HoteAppareil {
             try await tache.envoyer(message)
         } catch {
             // Un envoi refusé coupe le lien : la boucle le relève et reprend.
+            Trace.erreur("aiguilleur", "envoi refusé, lien coupé", error)
             await tache.fermer()
         }
     }
@@ -71,6 +72,7 @@ extension ClientAiguilleur: Chiffrement.HoteAppareil {
     }
 
     func canalFerme(canal: String) async {
+        Trace.info("aiguilleur", "canal \(canal) terminé (courant : \(canal == canalCourant))")
         canaux.removeValue(forKey: canal)
         reassemblage.vider()
         await requetes.echouerTout(ErreurAiguilleur("le lien vers le nœud est fermé"))

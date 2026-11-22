@@ -187,30 +187,52 @@ struct Composeur: View {
     }
 }
 /// La dictée en direct DANS le champ : l'acquis en blanc, le segment en cours estompé ; chaque mot entre en fondu
-/// doux (interpolation de texte, aucune saccade) ; trois barres sobres respirent à droite. Toucher : arrêter et
-/// reprendre la main au clavier (le texte reste modifiable).
+/// doux (interpolation de texte, aucune saccade) ; trois barres sobres respirent à droite. Comme pendant la frappe,
+/// la zone grandit jusqu'à 8 lignes puis défile, et suit la fin à chaque mot ajouté. Toucher : arrêter et reprendre
+/// la main au clavier (le texte reste modifiable).
 private struct TexteDicte: View {
     let cumul: CumulDictee
     let reprendre: () -> Void
+    @State private var hauteur: CGFloat = 0
+    @State private var position = ScrollPosition(edge: .bottom)
+    /// Une ligne, et le champ à 8 lignes (sa limite pendant la frappe), en Q.rangee (17 pt).
+    private static let ligne = UIFont.systemFont(ofSize: 17).lineHeight
+    private static let hauteurMax = ligne * 8
 
     var body: some View {
-        HStack(alignment: .lastTextBaseline, spacing: 8) {
-            (Text(cumul.acquis).foregroundStyle(Q.texte)
-                + Text(cumul.partiel.isEmpty || cumul.acquis.isEmpty ? cumul.partiel : " " + cumul.partiel)
-                .foregroundStyle(Q.secondaire))
-                .font(Q.rangee)
-                .lineLimit(1...8)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentTransition(.interpolate)
-                .animation(.easeOut(duration: 0.22), value: cumul)
-                .overlay(alignment: .leading) {
-                    if cumul.texte.isEmpty { Text("Je t’écoute…").font(Q.rangee).foregroundStyle(Q.tertiaire) }
-                }
+        HStack(alignment: .bottom, spacing: 8) {
+            ScrollView(.vertical) {
+                texte
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { hauteur = $0 }
+            }
+            .frame(height: min(max(hauteur, Self.ligne), Self.hauteurMax))
+            .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize)
+            .defaultScrollAnchor(.bottom, for: .initialOffset)
+            .defaultScrollAnchor(.bottom, for: .sizeChanges)
+            .scrollPosition($position)
+            .onChange(of: cumul) { _, _ in
+                withAnimation(.easeOut(duration: 0.2)) { position.scrollTo(edge: .bottom) }
+            }
             Ecoute()
         }
         .contentShape(.rect)
         .onTapGesture(perform: reprendre)
         .accessibilityLabel("Dictée en cours : \(cumul.texte)")
+    }
+
+    private var texte: some View {
+        (Text(cumul.acquis).foregroundStyle(Q.texte)
+            + Text(cumul.partiel.isEmpty || cumul.acquis.isEmpty ? cumul.partiel : " " + cumul.partiel)
+            .foregroundStyle(Q.secondaire))
+            .font(Q.rangee)
+            .fixedSize(horizontal: false, vertical: true)
+            .contentTransition(.interpolate)
+            .animation(.easeOut(duration: 0.22), value: cumul)
+            .overlay(alignment: .leading) {
+                if cumul.texte.isEmpty { Text("Je t’écoute…").font(Q.rangee).foregroundStyle(Q.tertiaire) }
+            }
     }
 }
 

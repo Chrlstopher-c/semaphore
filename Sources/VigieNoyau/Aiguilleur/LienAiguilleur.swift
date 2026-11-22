@@ -73,6 +73,7 @@ enum LienAiguilleur {
         do {
             trame = try await tache.receive()
         } catch {
+            Trace.info("aiguilleur", "lien fermé (code \(tache.closeCode.rawValue)) : \(error.localizedDescription)")
             if tache.closeCode.rawValue == codeRevoque { throw ErreurRevocation() }
             throw error
         }
