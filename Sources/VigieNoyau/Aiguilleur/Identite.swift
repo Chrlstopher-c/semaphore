@@ -10,7 +10,7 @@ import Crypto
 
 extension Chiffrement {
     /// Identité publique : 32 octets X25519 puis 32 octets Ed25519, soit 86 caractères en base64url.
-    struct IdentitePublique: Equatable, Sendable {
+    public struct IdentitePublique: Equatable, Sendable {
         let dh: Data
         let signature: Data
 
@@ -18,7 +18,9 @@ extension Chiffrement {
     }
 
     /// Identité complète : les clés privées ne sortent pas de cette structure sans export explicite.
-    struct Identite {
+    /// Clés CryptoKit immuables (`let` seulement) : sûres à passer d'un acteur à l'autre. swift-crypto ne les
+    /// déclare pas Sendable sous Linux, d'où `@unchecked`.
+    public struct Identite: @unchecked Sendable {
         let publique: IdentitePublique
         let dhPrivee: Curve25519.KeyAgreement.PrivateKey
         let signaturePrivee: Curve25519.Signing.PrivateKey
@@ -42,15 +44,15 @@ extension Chiffrement {
         }
     }
 
-    enum Identites {
+    public enum Identites {
         private static let premierEd25519 = "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed"
 
-        static func exporter(_ id: IdentitePublique) -> String {
+        public static func exporter(_ id: IdentitePublique) -> String {
             Octets.versBase64url(id.octets)
         }
 
         /// Valide la forme : 64 octets, Ed25519 canonique (y < p), clés acceptées par les primitives.
-        static func importer(_ texte: String) throws -> IdentitePublique {
+        public static func importer(_ texte: String) throws -> IdentitePublique {
             let octets = try Octets.depuisBase64url(texte, longueur: 2 * tailleCleDh)
             let id = IdentitePublique(dh: Data(octets.prefix(tailleCleDh)), signature: Data(octets.suffix(tailleCleDh)))
             guard signatureCanonique(id.signature) else { throw ErreurChiffrement("clé Ed25519 non canonique") }
@@ -64,7 +66,7 @@ extension Chiffrement {
         }
 
         /// Empreinte SHA-256 : 16 groupes de 4 caractères hexadécimaux, lue des deux côtés à l'appairage.
-        static func empreinte(_ id: IdentitePublique) -> String {
+        public static func empreinte(_ id: IdentitePublique) -> String {
             let hache = SHA256.hash(data: id.octets)
             let hex = hache.map { String(format: "%02X", $0) }.joined()
             var groupes: [String] = []

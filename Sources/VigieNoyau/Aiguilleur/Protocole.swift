@@ -7,6 +7,8 @@ enum ProtocoleAiguilleur {
     struct Membre: Equatable, Sendable {
         let id: String
         let enLigne: Bool
+        /// « noeud » ou « appareil » ; absent chez un aiguilleur qui ne le transmet pas.
+        var genre: String? = nil
     }
 
     /// Messages d'un membre vers l'aiguilleur.
@@ -157,7 +159,9 @@ enum ProtocoleAiguilleur {
 
     private static func membres(_ objet: [String: Any]) throws -> [Membre] {
         guard let liste = objet["membres"] as? [[String: Any]] else { throw ErreurChiffrement("membres absents") }
-        return try liste.map { Membre(id: try chaine($0, "id"), enLigne: ($0["enLigne"] as? Bool) ?? false) }
+        return try liste.map {
+            Membre(id: try chaine($0, "id"), enLigne: ($0["enLigne"] as? Bool) ?? false, genre: $0["genre"] as? String)
+        }
     }
 
     private static func texte(_ objet: [String: Any]) throws -> String {

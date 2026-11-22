@@ -88,6 +88,13 @@ extension Chiffrement {
             await terminer()
         }
 
+        /// L'aiguilleur a refusé l'ouverture : le lien ne se fait pas, rien à renvoyer.
+        func surRefus() async {
+            guard phase == .ouverture else { return await surFermetureDistante() }
+            await hote.liaisonRefusee(canal: id, raison: "refus du nœud")
+            await terminer()
+        }
+
         /// Envoie un message de l'API dans le canal chiffré ; faux si le canal n'est pas ouvert.
         func envoyer(_ message: ProtocoleAiguilleur.DuLien) -> Bool {
             guard phase == .ouvert, let sortie else { return false }

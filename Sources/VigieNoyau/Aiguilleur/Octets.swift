@@ -13,7 +13,7 @@ struct ErreurChiffrement: Error, Equatable, CustomStringConvertible {
 }
 
 /// Namespace du chiffrement de bout en bout (poignée, canal, identités), commun à l'aiguilleur et aux nœuds.
-enum Chiffrement {
+public enum Chiffrement {
     static let tailleCompteur = 8
     static let tailleEtiquette = 16
     static let tailleCleDh = 32
