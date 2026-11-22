@@ -4,8 +4,31 @@ Résumé vivant, inter-sessions. Les décisions et leurs raisons sont dans
 `ARCHITECTURE.md` ; ce qui reste à faire et ce qui demande un arbitrage sont
 dans `TODO.md`.
 
-Dernière mise à jour : **28/09/2026** (nuit : monde Lueur) — **Vigie v2** : le monde Vigie refait de zéro sur l'API ccremote v2
-(branche `dev`). Compilé, noyau éprouvé ; pas encore posé sur l'iPhone.
+Dernière mise à jour : **22/11/2026** — **Monde Quart v1** : l'onglet Quart refait à l'identique de la partie Code de
+l'appli Claude iOS, branché sur l'API clients d'un nœud Lanterne (branche `dev`). Compilé ; pas encore posé sur l'iPhone.
+
+---
+
+## 22/11/2026 — monde Quart v1 (branche `dev`)
+
+- **Pourquoi** : piloter toutes les sessions Claude Code du parc depuis l'iPhone, avec l'interface de la partie Code de
+  l'appli Claude iOS (cadrage : `QUART-V1.md` ; écrans, jetons et écarts : `QUART-V1-ECRANS.md`). Étalon : 24 captures
+  de Chris dans `etalon/` (ignoré), inventaire mesuré au pixel dans `etalon/INVENTAIRE.md` (ignoré).
+- **Modules gardés** : `Vigie` / `VigieNoyau` (renommer aurait touché le pupitre et la veille pour rien) ; le monde
+  s'appelle Quart à l'écran. Plomberie de Vigie conservée : veille, notifications natives, trousseau, accès à distance
+  (fichiers, terminal, ouvert depuis le tiroir « Machines »).
+- **Noyau** : contrat du nœud (sessions étendues, 20 genres d'événements, messages du WebSocket `/api/flux`, panneau,
+  comptes, corps, routes), décodage tolérant (un champ inconnu ne casse jamais le fil), logique de présentation (dates
+  relatives, lignes de la liste, résumés d'actions repris de Lanterne, blocs du fil, détail d'outil, catalogue des
+  modèles). Tests sur les 5315 événements réels anonymisés (`QUART_FIL_REEL=<chemin>`, jamais copiés).
+- **Lien** : WebSocket `/api/flux` (Bearer, ping 25 s, reprise 2 → 30 s, rattrapage des fils, repli long-poll après 3
+  échecs), appairage par code (`/api/appareils/appairer`, clé au trousseau), texte en cours d'écriture en direct.
+- **Écrans** : liste Code, tiroir, session (fil, composeur, demandes de permission / questions), feuilles modèle /
+  effort, usage, tâches de fond, suite d'actions et détail (commande, sortie, diff), nouvelle session, réglages,
+  appairage. Toujours sombre (le pupitre aussi).
+- **Vérifié** : `swift test --filter VigieNoyauTests`, `xtool dev build`, comparaison structurelle écran par écran.
+  **Non vérifié** : rendu sur l'iPhone, connexion à un vrai nœud (l'aiguilleur et le tunnel, étape 5 de
+  `lanterne/recherche/RESEAU.md`, ne sont pas livrés).
 
 ---
 

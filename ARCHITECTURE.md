@@ -36,8 +36,8 @@ qui couple deux domaines indépendants.
 
 | Module | Ce que c'est | Dépend de |
 |---|---|---|
-| `VigieNoyau` | logique pure de Vigie : contrat ccremote v2, structure du fil, formats, veille (filigrane), markdown. Testable sur Linux. | — |
-| `Vigie` | les écrans de Vigie (charte Echo Agency clair/night), le client du relais, **et le système de veille** (`Alerte/`). | `VigieNoyau` |
+| `VigieNoyau` | logique pure du monde Quart : contrat du nœud Lanterne (sessions, événements, flux WebSocket, panneau, comptes), structure du fil et blocs d'affichage, présentation (dates, liste, résumés d'actions, détail d'outil, catalogue des modèles), veille (filigrane), markdown. Testable sur Linux. | — |
+| `Vigie` | le monde Quart : écrans refaits sur la partie Code de l'appli Claude iOS (charte `Q` mesurée sur l'étalon, voir `QUART-V1-ECRANS.md`), le client du nœud (HTTP + WebSocket `/api/flux`, appairage), l'accès à distance, **et le système de veille** (`Alerte/`). Le module garde son nom historique. | `VigieNoyau` |
 | `EchoHubNoyau` | logique pure d'EchoHub Mobile : relais, conversations, modèles, flux SSE, markdown. Testable sur Linux. | — |
 | `EchoHub` | les écrans d'EchoHub Mobile et sa charte. | `EchoHubNoyau` |
 | `SailyNoyau` | logique pure de Saily : état de la besace, contrat de synchro, file hors ligne. Testable sur Linux. | — |

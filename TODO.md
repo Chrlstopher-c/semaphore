@@ -9,6 +9,16 @@
 - [x] **Correctif « Machine injoignable »** — le faux message ne réapparaît
       plus. « Le message n'apparaît plus, c'est nickel » (Chris).
 
+## Monde Quart v1 — à constater / à faire
+
+- [ ] **Poser l'IPA et relier l'iPhone à un nœud** (adresse + code `bun run relais/commande.ts appairer` sur le nœud) ;
+      regarder chaque écran à côté de sa capture d'étalon (`QUART-V1-ECRANS.md`, écarts listés).
+- [ ] Brancher l'aiguilleur quand l'étape 5 de `lanterne/recherche/RESEAU.md` est livrée : aujourd'hui l'appli parle
+      HTTP/WebSocket en clair (Bearer) à l'API clients d'UN nœud ; l'aiguilleur exige un lien `/aiguilleur`, l'appairage
+      `/api/membres/appairer` (clé publique base64url) et le canal chiffré de bout en bout (X25519/Ed25519, AES-GCM).
+- [ ] Écarts ouverts de `QUART-V1-ECRANS.md` (coloration syntaxique, phrase de rythme de l'usage, aperçu d'appui long).
+- [ ] Pièces jointes du composeur (`pieces` de l'API), images du fil (route `/api/sessions/:id/fichiers/:fichier`).
+
 ## À constater sur l'appareil — Chris
 
 - [ ] **Vigie v2 sur l'iPhone** : poser l'IPA, se connecter, vérifier clair/sombre, polices, fil, et « Répondre »
