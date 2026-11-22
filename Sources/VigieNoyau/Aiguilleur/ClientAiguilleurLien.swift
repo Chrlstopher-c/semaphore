@@ -97,6 +97,7 @@ extension ClientAiguilleur {
         for canal in Array(canaux.values) { await canal.surFermetureDistante() }
         canaux = [:]
         canalCourant = nil
+        canalParNoeud = [:]
         finirDiffusion("appareil révoqué")
         finirTerminaux("appareil révoqué")
         await echouerEnVol(ErreurAiguilleur("appareil révoqué"))
@@ -134,6 +135,7 @@ extension ClientAiguilleur {
         }
         await publierNoeuds()
         await ouvrirVersNoeud()
+        await ouvrirAuxAutres()
     }
 
     /// Ferme le canal en cours sans relancer la boucle : la cible change, le suivant est ouvert par `cibler`.
@@ -170,6 +172,7 @@ extension ClientAiguilleur {
             id: id, membre: noeud, intention: intention, moi: moi, nomLocal: nomAppareil, hote: self
         )
         canaux[id] = canal
+        canalParNoeud[noeud] = id
         canalCourant = id
         if intention == .appairage {
             await surLien(.attenteAccord(empreinte: graines.empreinte))

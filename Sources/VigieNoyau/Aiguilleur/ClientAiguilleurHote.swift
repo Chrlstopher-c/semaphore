@@ -28,16 +28,20 @@ extension ClientAiguilleur: Chiffrement.HoteAppareil {
     }
 
     func liaisonOuverte(canal: String) async {
-        delaiReprise = delais.repriseInitiale
-        await surLien(.ouvert)
-        await publierNoeuds()
-        demanderNoeuds()
+        // Seul le canal de la cible porte l'état du lien ; un autre nœud s'abonne seulement au flux en cours.
+        if canal == canalCourant {
+            delaiReprise = delais.repriseInitiale
+            await surLien(.ouvert)
+            await publierNoeuds()
+            demanderNoeuds()
+        }
+        if let ouvert = canaux[canal] { await abonnerCanalAuFlux(ouvert) }
     }
 
     func liaisonRefusee(canal: String, raison: String) async {
         // « révoqué » : ce nœud ne reconnaît plus cet appareil. Les autres nœuds restent utilisables.
-        guard let visé = etat.noeud else { return }
-        await ecarterNoeud(visé, oublier: raison == MotifsRevocation.noeud)
+        guard let visé = noeudDeCanal(canal) else { return }
+        await ecarterPour(visé, oublier: raison == MotifsRevocation.noeud)
     }
 
     func recevoir(canal: String, message: ProtocoleAiguilleur.DuLien) async {
@@ -59,12 +63,12 @@ extension ClientAiguilleur: Chiffrement.HoteAppareil {
             _ = reassemblage.recevoir(ref: ref, rang: rang, corps: corps)
         case .revocation:
             // Révocation par un nœud : seul ce nœud est oublié ; le lien vers les autres reste ouvert.
-            if let visé = etat.noeud { await ecarterNoeud(visé, oublier: true) }
+            if let visé = noeudDeCanal(canal) { await ecarterPour(visé, oublier: true) }
         case .diffusionOuverte:
             diffusion?.yield(.ouverte)
         case let .diffusion(ref, corps, morceaux):
             guard let complet = corpsComplet(ref, corps, morceaux) else { return }
-            recevoirDiffusion(complet)
+            recevoirDiffusion(complet, noeud: noeudDeCanal(canal))
         case let .reponse(ref, ok, raison):
             await requetes.resoudre(ref, ReponseRequete(statut: ok ? 200 : 409, corps: raison ?? ""))
         case let .terminalSortie(terminal, base64):
@@ -84,13 +88,16 @@ extension ClientAiguilleur: Chiffrement.HoteAppareil {
     }
 
     func canalFerme(canal: String) async {
-        Trace.info("aiguilleur", "canal \(canal) terminé (courant : \(canal == canalCourant))")
+        let courant = canal == canalCourant
+        Trace.info("aiguilleur", "canal \(canal) terminé (courant : \(courant))")
         canaux.removeValue(forKey: canal)
+        canalParNoeud = canalParNoeud.filter { $0.value != canal }
+        // Un canal d'un autre nœud ne coupe ni le lien ni les requêtes des autres nœuds : ses requêtes expirent seules.
+        guard courant else { return }
         reassemblage.vider()
         await echouerEnVol(ErreurAiguilleur("le lien vers le nœud est fermé"))
         finirDiffusion("le lien vers le nœud est fermé")
         finirTerminaux("le lien vers le nœud est fermé")
-        guard canal == canalCourant else { return }
         canalCourant = nil
         if !bloque { await surLien(.rechercheNoeud) }
         await publierNoeuds()
