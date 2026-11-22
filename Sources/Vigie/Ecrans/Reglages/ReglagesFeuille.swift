@@ -16,7 +16,11 @@ struct ReglagesFeuille: View {
                 VStack(spacing: 0) {
                     carteNoeud.padding(.top, 8)
                     TitreSection(texte: "Liaison")
-                    Carte { lien("antenna.radiowaves.left.and.right", "Connexion") { ConnexionReglages() } }
+                    Carte {
+                        lien("antenna.radiowaves.left.and.right", "Connexion") { ConnexionReglages() }
+                        Filet(retrait: 60)
+                        lien("arrow.triangle.2.circlepath", "Synchronisation") { SynchroReglages() }
+                    }
                     TitreSection(texte: "Compte")
                     Carte {
                         lien("gauge.with.dots.needle.33percent", "Usage") { UsageContenu(sessionId: nil) }

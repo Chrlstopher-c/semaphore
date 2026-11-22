@@ -9,6 +9,18 @@
 - [x] **Correctif « Machine injoignable »** — le faux message ne réapparaît
       plus. « Le message n'apparaît plus, c'est nickel » (Chris).
 
+## Préférences gardées sur l’iPhone — à constater / à faire (22/11)
+
+- [ ] **Constater sur l’iPhone** (après `./build.sh`) : éteindre la tour → ses épinglées restent dans le tiroir ; couper
+      le réseau et relancer l’appli → les épinglées s’affichent avant la connexion ; Réglages › Liaison › Synchronisation
+      montre « à jour il y a X » puis « hors ligne » ; désépingler sur le PC → l’iPhone suit à la prochaine synchro.
+- [ ] Ouvrir un favori dont la machine est éteinte : aujourd’hui « introuvable ». Décider : fil gardé sur l’iPhone, ou
+      message « machine éteinte » dans l’écran de session.
+- [ ] Dossiers, catégories, sections : absents de l’iPhone (ni champ, ni route). À brancher sur le protocole de synchro
+      (`/api/synchro/demandes`, RESEAU.md étape 6) quand le nœud les expose ; le fichier est versionné pour les ajouter.
+- [ ] Demande de synchro « sur demande » depuis l’iPhone (demande → accord sur la machine source) : non fait, la synchro
+      actuelle suit les relevés du parc.
+
 ## Monde Quart v1 — à constater / à faire
 
 - [ ] **Poser l'IPA et relier l'iPhone à un nœud** (adresse + code `bun run relais/commande.ts appairer` sur le nœud) ;

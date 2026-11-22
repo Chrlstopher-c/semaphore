@@ -27,6 +27,9 @@ public final class ModeleRelais {
     /// Messages envoyés depuis l'iPhone pas encore revenus dans le fil (affichage optimiste), par fil lu.
     public internal(set) var envois: [String: [String]] = [:]
     public internal(set) var premiersMessages: [String: String] = ModeleRelais.premiersMessagesGardes()
+    /// Organisation gardée sur l'iPhone (favoris par machine, état de synchro) : lue avant tout réseau.
+    public internal(set) var organisation: Organisation
+    @ObservationIgnored let stockage: StockageOrganisation
     @ObservationIgnored var titresDemandes: Set<String> = []
     /// Blocs d'affichage par fil, recalculés seulement quand le fil change (jamais à chaque delta ni à chaque rendu).
     @ObservationIgnored private var cacheBlocs: [String: (cle: [Int], blocs: [BlocFil])] = [:]
@@ -45,7 +48,10 @@ public final class ModeleRelais {
     @ObservationIgnored private var echecsFlux = 0
     @ObservationIgnored private var attenteReprise = LiaisonRelais.attenteMinimale
 
-    public init() {}
+    public init(stockage: StockageOrganisation = .parDefaut()) {
+        self.stockage = stockage
+        organisation = stockage.lire()
+    }
 
     func brancher(_ client: ClientRelais?) {
         arreter()
@@ -94,11 +100,14 @@ public final class ModeleRelais {
             do {
                 try await tour(client)
             } catch ErreurRelais.nonConnecte {
+                echecOrganisation("clé refusée ou révoquée")
                 poser(.nonConnecte)
                 return
             } catch {
                 if Task.isCancelled { return }
-                poser(.coupe((error as? ErreurRelais)?.description ?? "Liaison coupée, nouvel essai."))
+                let raison = (error as? ErreurRelais)?.description ?? "Liaison coupée, nouvel essai."
+                echecOrganisation(raison)
+                poser(.coupe(raison))
                 await dormirReprise()
             }
         }
@@ -183,6 +192,7 @@ public final class ModeleRelais {
         version = e.version
         sessions = e.sessions.sorted { $0.majLe > $1.majLe }
         machines = e.machines
+        synchroniserOrganisation(maintenant: Date())
         notifications = e.notifications
         reveilPossible = e.reveilPossible
         await CentreAlerte.partage.sonner(e.notifications)
@@ -196,6 +206,7 @@ public final class ModeleRelais {
         version = r.version
         sessions = r.sessions.sorted { $0.majLe > $1.majLe }
         machines = r.machines
+        synchroniserOrganisation(maintenant: Date())
         if !r.notifications.isEmpty {
             notifications = MiseAJourParc.notifications(r.notifications, dans: notifications)
             await CentreAlerte.partage.sonner(r.notifications)
@@ -221,6 +232,7 @@ public final class ModeleRelais {
             // Une affectation invalide tous les lecteurs même à valeur égale : on n'écrit que ce qui change.
             let suite = MiseAJourParc.session(session, dans: sessions)
             if suite != sessions { sessions = suite }
+            memoriserFavori(session)
         case .supprimee(let id): retirer(id)
         case .machine(let machine):
             let suite = MiseAJourParc.machine(machine, dans: machines)
@@ -296,6 +308,7 @@ public final class ModeleRelais {
 
     private func retirer(_ id: String) {
         sessions = MiseAJourParc.sansSession(id, dans: sessions)
+        garderOrganisation(organisation.oublier(id))
         retirerFil(id)
         viderTexte(id)
         viderReflexion(id)

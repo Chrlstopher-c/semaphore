@@ -11,6 +11,10 @@ public enum DateRelative {
     /// Une date ISO8601, avec ou sans fractions de seconde. Une date illisible donne une chaîne vide.
     public static func texte(iso: String, maintenant: Date, fuseau: TimeZone = .current) -> String {
         guard let date = date(iso) else { return "" }
+        return texte(date: date, maintenant: maintenant, fuseau: fuseau)
+    }
+
+    public static func texte(date: Date, maintenant: Date, fuseau: TimeZone = .current) -> String {
         let ecart = maintenant.timeIntervalSince(date)
         if ecart < 60 { return "maintenant" }
         if ecart < 3600 { return "\(Int(ecart / 60)) min" }

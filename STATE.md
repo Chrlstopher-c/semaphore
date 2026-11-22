@@ -9,6 +9,27 @@ ci-dessous) ; monde Quart v1 refait à l'identique de la partie Code de l'appli 
 
 ---
 
+## 22/11/2026 — Préférences gardées sur l’iPhone (branche `agent/prefs-locales`, non poussée)
+
+- **Constat** : l’iPhone ne gardait aucune organisation. Les favoris sont le drapeau `epinglee` de chaque session, lu
+  dans le relais (tiroir « Épinglées », menu d’appui long) ; au démarrage hors ligne, ou quand une machine n’est plus
+  dans la liste du relais, il n’y avait plus rien à afficher. L’iPhone n’a ni dossiers, ni catégories, ni sections (ni
+  champ ni route) : rien à garder pour ceux-là tant que le nœud ne les expose pas. Le protocole de synchro sur demande
+  (`/api/synchro/…`, RESEAU.md étape 6) n’est pas appelé par l’iPhone.
+- **Fait** : `VigieNoyau/Organisation/` — favoris par machine (instantanés de sessions, pour les afficher sans réseau),
+  date et erreur de synchro par machine, fichier JSON versionné (`organisation.json`, écriture atomique, fichier
+  illisible ou version plus récente mis de côté en `.illisible`, jamais écrasé). Une lecture réussie du parc met à jour
+  les machines en ligne et joignables ; une session absente de la synchro garde son état ; un échec n’y touche pas et
+  porte la raison ; une session supprimée sort des favoris ; la déconnexion vide l’organisation.
+- **Affichage** : tiroir « Épinglées » = épinglées du relais + favoris gardés dont la session n’est pas au relais
+  (sans marque d’activité) ; Réglages › Liaison › « Synchronisation » : par machine « à jour il y a X », « hors ligne ·
+  vue il y a X », « ne répond pas », « dernière synchro … », « jamais synchronisée », dernière erreur.
+- **Prouvé** : `swift test --filter OrganisationTests` (12 tests) ; `VigieNoyauTests` complet : 195 tests verts.
+- **Non vérifié** : le module `Vigie` (SwiftUI) ne se compile pas sous Linux : `ModeleRelais`, `ModeleOrganisation`,
+  `Tiroir`, `SynchroReglages` à compiler et voir sur l’iPhone (`./build.sh`, par Chris).
+- **Limite connue** : ouvrir un favori dont la machine est éteinte affiche « introuvable » (l’écran de session lit le
+  relais) ; le fil n’est pas gardé.
+
 ## 22/11/2026 — Quart : mode vocal (branche `dev`)
 
 - Bouton rond « waveform » à droite du champ de la session → panneau vocal à la place du composeur. Écoute continue

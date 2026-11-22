@@ -40,14 +40,15 @@ struct Tiroir: View {
     /// Comme Lanterne : une jumelle Remote Control d'une fiche de poste n'est jamais listée à part.
     private var visibles: [Session] { JumellesDistantes.sansDoublons(modele.sessions) }
 
-    private var sessionsEpinglees: [Session] { visibles.filter { $0.epinglee == true && $0.archivee != true } }
+    private var sessionsEpinglees: [Session] { modele.favoris }
 
     @ViewBuilder private var epinglees: some View {
         let liste = sessionsEpinglees
         if !liste.isEmpty {
             TitreTiroir(texte: "Épinglées")
             ForEach(toutesEpinglees ? liste : Array(liste.prefix(4))) { s in
-                EntreeSession(session: s, symbole: "pin", choisie: s.id == courante) { choisir(.session(s.id)) }
+                EntreeSession(session: s, symbole: "pin", choisie: s.id == courante,
+                              vivante: modele.session(s.id) != nil) { choisir(.session(s.id)) }
             }
             if liste.count > 4 {
                 Button { withAnimation(.smooth(duration: 0.3)) { toutesEpinglees.toggle() } } label: {
@@ -125,6 +126,8 @@ private struct EntreeSession: View {
     let session: Session
     let symbole: String
     var choisie = false
+    /// Faux pour un favori gardé sur l'iPhone : son état (en cours, non lu) est celui de la dernière synchro.
+    var vivante = true
     let action: () -> Void
 
     var body: some View {
@@ -145,7 +148,9 @@ private struct EntreeSession: View {
     private var titre: String { TitreSession.affiche(session, premierMessage: modele.premiersMessages[session.id]) }
 
     @ViewBuilder private var marque: some View {
-        if session.statut.enActivite {
+        if !vivante {
+            EmptyView()
+        } else if session.statut.enActivite {
             IndicateurTravail().frame(width: 18, height: 18)
         } else if session.nonLue == true || session.statut == .question {
             Circle().fill(Q.accent).frame(width: 8, height: 8)

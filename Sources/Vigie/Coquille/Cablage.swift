@@ -65,6 +65,7 @@ public final class Cablage {
     public func deconnecter() {
         Trousseau.ecrire(nil)
         oublierAiguilleur()
+        modele.effacerOrganisation()
         brancher(jeton: nil)
     }
 

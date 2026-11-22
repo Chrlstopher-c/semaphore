@@ -289,6 +289,7 @@ Une ligne par fichier (hors `Vendor/`). Régénérée le 22/11/2026 — monde Qu
 - `Sources/Vigie/Ecrans/Racine/Tiroir.swift`
 - `Sources/Vigie/Ecrans/Reglages/PreferencesQuart.swift`
 - `Sources/Vigie/Ecrans/Reglages/ReglagesFeuille.swift`
+- `Sources/Vigie/Ecrans/Reglages/SynchroReglages.swift` — synchro par machine : état, dernière erreur
 - `Sources/Vigie/Ecrans/Session/AutreElement.swift`
 - `Sources/Vigie/Ecrans/Session/BlocVue.swift`
 - `Sources/Vigie/Ecrans/Session/Composeur.swift`
@@ -299,6 +300,7 @@ Une ligne par fichier (hors `Vendor/`). Régénérée le 22/11/2026 — monde Qu
 - `Sources/Vigie/Ecrans/Session/SessionEcran.swift`
 - `Sources/Vigie/Etat/Commandes.swift`
 - `Sources/Vigie/Etat/ModeleFil.swift`
+- `Sources/Vigie/Etat/ModeleOrganisation.swift` — favoris gardés sur l’iPhone : fusion à chaque lecture réussie
 - `Sources/Vigie/Etat/ModeleRelais.swift`
 - `Sources/Vigie/Lien/ClientRelais.swift`
 - `Sources/Vigie/Lien/FluxRelais.swift`
@@ -328,6 +330,9 @@ Une ligne par fichier (hors `Vendor/`). Régénérée le 22/11/2026 — monde Qu
 - `Sources/VigieNoyau/Presentation/BlocsFil.swift`
 - `Sources/VigieNoyau/Presentation/TexteEnDirect.swift` — cumul du direct par bloc, rythme de révélation
 - `Sources/VigieNoyau/Presentation/CatalogueModeles.swift`
+- `Sources/VigieNoyau/Organisation/EtatSynchro.swift` — libellés de synchro par machine (à jour, hors ligne, ne répond pas)
+- `Sources/VigieNoyau/Organisation/Organisation.swift` — favoris gardés par machine et fusion d’une synchro
+- `Sources/VigieNoyau/Organisation/StockageOrganisation.swift` — fichier JSON versionné, écriture atomique
 - `Sources/VigieNoyau/Presentation/DateRelative.swift`
 - `Sources/VigieNoyau/Presentation/DetailOutil.swift`
 - `Sources/VigieNoyau/Presentation/ListeSessions.swift`
@@ -394,6 +399,7 @@ Une ligne par fichier (hors `Vendor/`). Régénérée le 22/11/2026 — monde Qu
 - `Tests/VigieNoyauTests/LiaisonTests.swift`
 - `Tests/VigieNoyauTests/MessageRoutesCorpsTests.swift`
 - `Tests/VigieNoyauTests/MiseAJourParcTests.swift`
+- `Tests/VigieNoyauTests/OrganisationTests.swift`
 - `Tests/VigieNoyauTests/PresentationTests.swift`
 - `Tests/VigieNoyauTests/ResumeBlocsTests.swift`
 - `build.sh`
