@@ -96,7 +96,8 @@ struct ChefBancTests {
                                             compte: nil, nom: nil, le: le)
         }
         #expect(vue.charte?.version == avant + 1)
-        #expect(vue.charte?.par == (await chef.membreSignataire()))
+        let signataire = await chef.membreSignataire()
+        #expect(vue.charte?.par == signataire)
         try await jusqua(15) {
             let e = try await etatBanc(chef)
             return e.portable == avant + 1 && e.tour == avant + 1
