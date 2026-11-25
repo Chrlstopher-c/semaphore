@@ -115,7 +115,7 @@ struct ClientAiguilleurTests {
         ]))
         try await attendreVrai { await faux.ouvrirVers(noeud) }
         try await rec.attendreLien { $0 == .attenteAccord(empreinte: graines.empreinte) }
-        #expect(await rec.dernierEtat?.noeud == noeud)
+        try await attendreVrai { await rec.dernierEtat?.noeud == noeud }
         await client.arreter()
     }
 
