@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Installe le re-signeur sur le portable : fichiers, sources IPA, unités systemd utilisateur. Idempotent.
 # Retour arrière : ssh portable 'systemctl --user disable --now resigner.timer netmuxd.service' ; avahi : systemctl disable --now avahi-daemon.
+# Prérequis portable (une fois, sudo) : /etc/tmpfiles.d/netmuxd-usbmuxd.conf = `L /run/usbmuxd - - - - /run/user/1000/netmuxd.sock` — plumesign ne parle QU’À /var/run/usbmuxd (chemin en dur, il ignore USBMUXD_SOCKET_ADDRESS) ; netmuxd sert donc cette socket.
 set -euo pipefail
 cd "$(dirname "$0")"
 H="${IPHONE_HOTE:-portable}"
