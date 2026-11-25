@@ -51,7 +51,8 @@ struct SignatureReseauTests {
         let c = try CharteReseau(brut: brut)
         let signee = try await SignatureReseau.signerCharte(
             c, par: SignataireTest(membre: FabriqueCharte.chef, cle: cle))
-        #expect(signee.texte == (try c.brut.texteJSON()))
+        let attendu = try c.brut.texteJSON()
+        #expect(signee.texte == attendu)
         #expect(SignatureReseau.verifier(signee)?.version == 1)
     }
 }
