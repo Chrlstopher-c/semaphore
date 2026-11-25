@@ -35,6 +35,18 @@
 	<string></string>
 
 	<!-- ======== Vigie : le maintien en vie et les réveils ======== -->
+	<!-- Liens semaphore:// : la notification push (ntfy) touchée rouvre l'app, sur la session concernée. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.echo.labs.lien</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>semaphore</string>
+			</array>
+		</dict>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<!-- Exécution continue tant qu'une session audio joue : seul moyen de

@@ -31,6 +31,7 @@ struct EchoApp: App {
         WindowGroup {
             Pupitre()
                 .cable(cablage)
+                .onOpenURL { Vigie.LienProfond.ouvrir($0) }
         }
     }
 }

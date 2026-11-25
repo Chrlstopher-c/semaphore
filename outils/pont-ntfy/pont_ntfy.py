@@ -2,7 +2,7 @@
 
 Suit `/api/attente` (attente longue, comme l'iPhone) avec un filigrane `seq` persistant : un fait n'est publié qu'une fois,
 l'arriéré n'est jamais publié au premier lancement (ce n'est pas une nouvelle). Une publication ratée est retentée sans
-avancer le filigrane. `--essai` publie une notification d'essai et sort.
+avancer le filigrane. Le toucher de la notification rouvre l'app (`click` = lien semaphore://session/<id>). `--essai` publie une notification d'essai et sort.
 Environnement : LANTERNE_MOTEUR_PORT_WEB, LANTERNE_MOTEUR_JETON (noeud.env), NTFY_URL, NTFY_SUJET, NTFY_JETON.
 """
 import json
@@ -48,6 +48,7 @@ def publier(notif: dict[str, object]) -> None:
         "title": f"Sémaphore · {notif['titre']}",
         "message": str(notif["texte"]),
         "priority": PRIORITE.get(niveau, 3),
+        "click": f"semaphore://session/{notif['sessionId']}" if notif.get("sessionId") else "semaphore://",
     })
 
 

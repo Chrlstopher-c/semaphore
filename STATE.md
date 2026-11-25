@@ -29,6 +29,7 @@ ci-dessous) ; monde Quart v1 refait à l'identique de la partie Code de l'appli 
     Nouvelle version de Sillon : déposer son IPA dans `~/projets/sillon/xtool/Sillon.ipa`.
   - Emplacements App ID gratuits pris : Sillon + Echo (2/3).
 - **Notifications push par ntfy auto-hébergé (25/11/2026, en cours)** : l'app Sémaphore (sideloadée, compte gratuit) ne peut pas recevoir de push Apple ;
+  **Clic sur la notification** : le pont envoie `click: semaphore://session/<id>` ; l'app déclare le schéma `semaphore` (`CFBundleURLTypes`) et `LienProfond.ouvrir` (Sources/Vigie/Coquille) pose `Aiguillage.sessionDemandee`.
   ses notifications locales dépendaient d'un lien gardé vivant par un silence audio → retards. Solution : serveur `ntfy` 2.38.2 sur le Pi
   (`/usr/local/bin/ntfy`, `/etc/ntfy/server.yml`, données sur HDD `/mnt/hdd/ntfy`, service `ntfy`, 127.0.0.1:2586, 96 Mo max, CPU 25 %,
   mesuré : 44 Mo / 0,4 % CPU) + tunnel Cloudflare dédié `cloudflared-ntfy` (sous-domaine `push.`, zéro coupure) + app ntfy (App Store, gratuite)
