@@ -28,6 +28,26 @@ ci-dessous) ; monde Quart v1 refait à l'identique de la partie Code de l'appli 
     Prouvé le 25/11 (Sillon et Sémaphore installés par Wi-Fi, expiration 02/12). Limites : portable allumé et chez soi, iPhone sur le même Wi-Fi.
     Nouvelle version de Sillon : déposer son IPA dans `~/projets/sillon/xtool/Sillon.ipa`.
   - Emplacements App ID gratuits pris : Sillon + Echo (2/3).
+- **Notifications push par ntfy auto-hébergé (25/11/2026, en cours)** : l'app Sémaphore (sideloadée, compte gratuit) ne peut pas recevoir de push Apple ;
+  ses notifications locales dépendaient d'un lien gardé vivant par un silence audio → retards. Solution : serveur `ntfy` 2.38.2 sur le Pi
+  (`/usr/local/bin/ntfy`, `/etc/ntfy/server.yml`, données sur HDD `/mnt/hdd/ntfy`, service `ntfy`, 127.0.0.1:2586, 96 Mo max, CPU 25 %,
+  mesuré : 44 Mo / 0,4 % CPU) + tunnel Cloudflare dédié `cloudflared-ntfy` (sous-domaine `push.`, zéro coupure) + app ntfy (App Store, gratuite)
+  sur l'iPhone qui reçoit le vrai push APNs. Accès fermé (`deny-all`) : utilisateur `iphone` (lecture du sujet), `pub` (écriture seule, jeton),
+  sujet aléatoire `sema-…` ; valeurs dans le coffre `echo-vault` (`ntfy-serveur`, `ntfy-sujet`, `ntfy-iphone-mot-de-passe`, `ntfy-jeton-publication`)
+  et `/etc/ntfy/acces.env` (Pi, root). **Données sortantes prouvées** (instance de test avec serveur amont factice) : seul `POST /<SHA256 du sujet>` +
+  `X-Poll-Id` + corps vide part vers `ntfy.sh` (relais Firebase→APNs) ; ni message, ni titre, ni nom de sujet. Sans `upstream-base-url` le push iOS
+  peut mettre des heures. Push reçu sur l'iPhone le 25/11 (instantané). L'icône est celle de l'app ntfy (iOS ne permet pas mieux ; l'en-tête Icon de ntfy est Android seul) :
+  titre préfixé « Sémaphore · ». Sujet simple `semaphore` (l'accès est protégé par utilisateur + mot de passe).
+- **Pont relais → ntfy** (`outils/pont-ntfy/`, service utilisateur `pont-ntfy` sur la tour, installé par `installer.sh`) : suit `/api/attente` du nœud Lanterne de la
+  tour (jeton de `noeud.env`), publie vers ntfy les notifications `important` et `alerte` (mêmes règles que l'app : l'arriéré n'est jamais publié, `info` jamais),
+  filigrane `seq` dans `~/.local/state/pont-ntfy/filigrane.json`, retente sans avancer le filigrane si ntfy est injoignable. Source des faits : `relais/parc/postes.ts`
+  (quart-lanterne). Aucun changement du cœur de Noctis. App : réglage Réglages › Notifications › « Notifications push (ntfy) » (défaut ACTIF) : l'app ne
+  sonne plus elle-même les notifications du relais (sinon doublon) ; coupé, l'ancien comportement revient. Limite : seule la tour est suivie (un nœud par machine : autre machine = autre pont).
+  Pièges : (1) le DNS local (systemd-resolved) garde en cache négatif un sous-domaine neuf → `echo chris | sudo -S resolvectl flush-caches` (sans coupure) ;
+  (2) Cloudflare renvoie 403 au User-Agent par défaut de Python → le pont envoie `pont-ntfy/1.0`. Prouvé de bout en bout le 25/11 (vraie notification du relais rejouée).
+- **Sillon : pas de notifications pour l'instant** (décision de Chris, 25/11/2026 : « quand ce sera vraiment utile »). Le jour venu : même serveur ntfy, un second sujet
+  (`ntfy user`/`ntfy access` : lecture pour `iphone`, écriture pour `pub`), un second abonnement dans l'app ntfy, et un pont (ou une publication directe) côté Sillon
+  (relais/coffre de Sillon) sur le modèle de `outils/pont-ntfy/`. Rien d'autre à installer côté Pi.
 - Nom affiché de l'app : « Sémaphore » (CFBundleDisplayName) ; bundle id `com.echo.labs` inchangé. Icône : symbole H + N d'Echo Agency, fond blanc
   (`Icone.png`, 1024×1024 RVB sans transparence, d'après `favicon.svg` du skill echo-agency-design ; ancienne version violette sauvegardée hors dépôt).
 

@@ -410,3 +410,5 @@ Une ligne par fichier (hors `Vendor/`). Régénérée le 22/11/2026 — monde Qu
 - `outils/resigner/apps.json` — applis entretenues : nom → IPA dans `~/projets/<dépôt>/xtool/` (portable)
 - `outils/resigner/{netmuxd.service,resigner.service,resigner.timer}` — unités systemd utilisateur du portable
 - `outils/resigner/deployer.sh` — installe le démon sur le portable (idempotent)
+- `outils/resigner/pousser.sh` — dépose une IPA (Echo ou Sillon) sur le portable et l'installe tout de suite
+- `outils/pont-ntfy/{pont_ntfy.py,pont-ntfy.service,installer.sh}` — pont relais Lanterne → ntfy (notifications push), service utilisateur de la tour

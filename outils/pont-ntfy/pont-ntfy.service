@@ -1,0 +1,16 @@
+[Unit]
+Description=Pont relais Lanterne → ntfy (notifications push de Sémaphore)
+After=lanterne-noeud.service network-online.target
+Wants=lanterne-noeud.service
+
+[Service]
+EnvironmentFile=%h/.config/lanterne-noeud/noeud.env
+EnvironmentFile=%h/.config/pont-ntfy/ntfy.env
+ExecStart=/usr/bin/python3 -I %h/.local/opt/pont-ntfy/pont_ntfy.py
+Restart=always
+RestartSec=10
+MemoryMax=64M
+Nice=10
+
+[Install]
+WantedBy=default.target

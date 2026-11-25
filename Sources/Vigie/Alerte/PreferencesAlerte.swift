@@ -18,6 +18,15 @@ public enum PreferencesAlerte {
     private static let cleHeuresCalmesDebut = "vigie.reglages.alerte.heuresCalmes.debut"
     private static let cleHeuresCalmesFin = "vigie.reglages.alerte.heuresCalmes.fin"
 
+    private static let cleNotificationsParNtfy = "vigie.reglages.alerte.ntfy"
+
+    /// Le pont ntfy du serveur publie les notifications du relais : l'app ne les sonne plus elle-même (doublon sinon).
+    /// Actif par défaut ; à couper si le pont ne tourne pas, pour retrouver les alertes locales.
+    public static var notificationsParNtfy: Bool {
+        get { (UserDefaults.standard.object(forKey: cleNotificationsParNtfy) as? Bool) ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: cleNotificationsParNtfy) }
+    }
+
     /// Clé du pont : `Alerte` y dépose son `EtatCanal` encodé, Réglages le relit
     /// pour l'afficher. Aucune des deux parties ne construit l'autre.
     public static let cleEtatCanal = "vigie.canal.etat"

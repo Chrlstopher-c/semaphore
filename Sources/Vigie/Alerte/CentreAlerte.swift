@@ -62,6 +62,7 @@ public final class CentreAlerte {
     public func sonner(_ lot: [NotificationRelais]) async {
         let nouvelles = filigrane.retenir(lot)
         MemoireAlerte.ecrire(filigrane)
+        guard !PreferencesAlerte.notificationsParNtfy else { return }
         for n in nouvelles { _ = await Sonneur.poser(TraductionAlerte.projet(pour: n)) }
     }
 

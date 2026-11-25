@@ -145,6 +145,7 @@ private struct ClaudeCodeReglages: View {
 /// Notifications : la veille de Vigie (maintien en vie), gardée telle quelle.
 private struct NotificationsReglages: View {
     @State private var maintien = PreferencesAlerte.maintienEnVie
+    @State private var parNtfy = PreferencesAlerte.notificationsParNtfy
 
     var body: some View {
         ScrollView {
@@ -153,12 +154,17 @@ private struct NotificationsReglages: View {
                 Carte {
                     Toggle(isOn: $maintien) { Text("Veille en arrière-plan").font(Q.rangee).foregroundStyle(Q.texte) }
                         .tint(Q.coche).padding(.horizontal, Q.marge).frame(height: Q.rangeeHauteur)
+                    Toggle(isOn: $parNtfy) { Text("Notifications push (ntfy)").font(Q.rangee).foregroundStyle(Q.texte) }
+                        .tint(Q.coche).padding(.horizontal, Q.marge).frame(height: Q.rangeeHauteur)
                 }
+                Text("Les questions, fins de tour et erreurs arrivent par l'app ntfy, instantanément. Coupé : l'app les sonne elle-même.")
+                    .font(Q.detail).foregroundStyle(Q.secondaire).padding(.horizontal, 32)
                 Text("Garde Quart éveillé pour sonner les questions, les fins de tour et les erreurs, écran éteint.")
                     .font(Q.detail).foregroundStyle(Q.secondaire).padding(.horizontal, 32)
             }
         }
         .barreFeuille("Notifications")
+        .onChange(of: parNtfy) { _, actif in PreferencesAlerte.notificationsParNtfy = actif }
         .onChange(of: maintien) { _, actif in
             PreferencesAlerte.maintienEnVie = actif
             if actif { MaintienVie.partage.demarrer() } else { MaintienVie.partage.arreter() }

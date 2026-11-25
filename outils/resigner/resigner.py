@@ -2,6 +2,7 @@
 
 Tourne sur le portable (usbmuxd, plumesign, compte Apple). Applis et IPA non signées : ~/.config/resigner/apps.json ({"Nom": "~/projets/<dépôt>/xtool/<Nom>.ipa"}).
 Un appel = un contrôle : rien à faire si aucun profil n'expire dans moins de SEUIL_HEURES.
+`--forcer Nom [Nom…]` (ou `--forcer tout`) renouvelle sans attendre : après le dépôt d'une nouvelle IPA, par exemple.
 """
 import fcntl
 import json
@@ -106,7 +107,14 @@ def renouveler(nom: str, source: Path) -> str:
     return expiration_profil(signee).isoformat()
 
 
+def noms_forces() -> set[str]:
+    if "--forcer" not in sys.argv:
+        return set()
+    return set(sys.argv[sys.argv.index("--forcer") + 1:])
+
+
 def main() -> int:
+    forces = noms_forces()
     for dossier in (SIGNEES, JOURNAL.parent):
         dossier.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(filename=JOURNAL, level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -122,7 +130,7 @@ def main() -> int:
             log.error("%s : IPA introuvable (%s)", nom, source)
             en_echec += 1
             continue
-        if not a_renouveler(etat.get(nom)):
+        if not ({nom, "tout"} & forces) and not a_renouveler(etat.get(nom)):
             log.info("%s : profil valable jusqu'au %s, rien à faire", nom, etat[nom])
             continue
         if not iphone_joignable():
