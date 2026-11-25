@@ -115,7 +115,7 @@ struct ClientAiguilleurTests {
         ]))
         try await attendreVrai { await faux.ouvrirVers(noeud) }
         try await rec.attendreLien { $0 == .attenteAccord(empreinte: graines.empreinte) }
-        try await attendreVrai { await rec.dernierEtat?.noeud == noeud }
+        #expect(await rec.dernierEtat?.noeud == noeud)
         await client.arreter()
     }
 
@@ -190,7 +190,7 @@ struct ClientAiguilleurTests {
             .init(id: tour, enLigne: false, genre: "noeud", sansEcran: true),
         ]))
         try await attendreVrai { await faux.ouvrirVers(noeud) }
-        #expect(await rec.dernierEtat?.noeud == noeud)
+        try await attendreVrai { await rec.dernierEtat?.noeud == noeud }
         await faux.pousser(.presence([
             .init(id: noeud, enLigne: true, genre: "noeud"),
             .init(id: tour, enLigne: true, genre: "noeud", sansEcran: true),
