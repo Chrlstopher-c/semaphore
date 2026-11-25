@@ -1,0 +1,9 @@
+[Unit]
+Description=Re-signature des applis iPhone (Sillon, Sémaphore) avant expiration
+Wants=netmuxd.service
+After=netmuxd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -I %h/.local/opt/resigner/resigner.py
+TimeoutStartSec=45min

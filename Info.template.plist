@@ -6,6 +6,10 @@
 	     avec les clés générées par xtool — la nôtre l'emporte. Aucune de ces
 	     clés n'est un entitlement : toutes passent en free provisioning. -->
 
+	<!-- Nom affiché sous l'icône : Sémaphore. L'identifiant (bundleID) reste com.echo.labs : le changer brûlerait un App ID. -->
+	<key>CFBundleDisplayName</key>
+	<string>Sémaphore</string>
+
 	<!-- ======== Adresses des services ========
 	     `☠` Ce fichier est PUBLIC. Aucune adresse réelle ici : `build.sh` génère
 	     `.build/Info.plist` en y injectant les valeurs de `.env.local`, qui n'est
@@ -24,9 +28,11 @@
 	<string>wss://iris.example.com/ws</string>
 	<key>EchoCleIris</key>
 	<string></string>
-	<!-- Lueur : le serveur du ruban de LED, sur le Pi (réseau local). -->
+	<!-- Lueur : le serveur du ruban de LED, sur le Pi (tunnel HTTPS, clé d'appareil). -->
 	<key>EchoAdresseLueur</key>
-	<string>http://10.0.0.2:8450</string>
+	<string>https://lueur.example.com</string>
+	<key>EchoCleLueur</key>
+	<string></string>
 
 	<!-- ======== Vigie : le maintien en vie et les réveils ======== -->
 	<key>UIBackgroundModes</key>

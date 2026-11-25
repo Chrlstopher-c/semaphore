@@ -405,3 +405,8 @@ Une ligne par fichier (hors `Vendor/`). Régénérée le 22/11/2026 — monde Qu
 - `build.sh`
 - `deploy.sh`
 - `xtool.yml`
+- `installer-iphone.sh` — signe et installe Echo.ipa sur l'iPhone via le portable (plumesign)
+- `outils/resigner/resigner.py` — démon : renouvelle les applis dont le profil expire dans < 48 h (Wi-Fi)
+- `outils/resigner/apps.json` — applis entretenues : nom → IPA dans `~/projets/<dépôt>/xtool/` (portable)
+- `outils/resigner/{netmuxd.service,resigner.service,resigner.timer}` — unités systemd utilisateur du portable
+- `outils/resigner/deployer.sh` — installe le démon sur le portable (idempotent)

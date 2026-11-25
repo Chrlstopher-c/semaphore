@@ -31,7 +31,7 @@ generer_plist() {
 
     SAILY="${ECHO_ADRESSE_SAILY:-}" CCREMOTE="${ECHO_ADRESSE_CCREMOTE:-}" \
     CCREMOTE_LAN="${ECHO_ADRESSE_CCREMOTE_LAN:-}" ECHOHUB="${ECHO_ADRESSE_ECHOHUB:-}" \
-    IRIS="${ECHO_ADRESSE_IRIS:-}" IRIS_CLE="${ECHO_CLE_IRIS:-}" LUEUR="${ECHO_ADRESSE_LUEUR:-}" \
+    IRIS="${ECHO_ADRESSE_IRIS:-}" IRIS_CLE="${ECHO_CLE_IRIS:-}" LUEUR="${ECHO_ADRESSE_LUEUR:-}" LUEUR_CLE="${ECHO_CLE_LUEUR:-}" \
     GABARIT="$gabarit" SORTIE="$sortie" python3 - <<'PY' || die "génération de $sortie impossible"
 import os, re, sys
 
@@ -43,6 +43,7 @@ remplacements = {
     'EchoAdresseIris': os.environ.get('IRIS', ''),
     'EchoCleIris': os.environ.get('IRIS_CLE', ''),
     'EchoAdresseLueur': os.environ.get('LUEUR', ''),
+    'EchoCleLueur': os.environ.get('LUEUR_CLE', ''),
 }
 source = open(os.environ['GABARIT'], encoding='utf-8').read()
 for cle, valeur in remplacements.items():

@@ -2,6 +2,8 @@
 
 ## Constaté sur l'appareil — 28/08/2026
 
+- [~] Renommer « Echo » en « Sémaphore » (demande de Chris 25/11/2026) — FAIT : nom affiché sous l'icône (CFBundleDisplayName, bundle id inchangé). RESTE : nom interne (paquet, IPA, scripts), jamais le bundle id. Détail d'origine : nom affiché (Info.plist CFBundleDisplayName, paquet, build.sh, deploy.sh, installer-iphone.sh, IPA `Echo.ipa`). NE PAS changer le bundle id `com.echo.labs` : compte gratuit à 3/3 App IDs, 10 nouveaux max par 7 jours ; le changer = nouvelle app et perte des données.
+
 - [x] **Le pupitre et le sélecteur de monde** — `Quart` / `Machine` vus, la
       bascule fonctionne. Constaté par Chris (captures).
 - [x] **Le monde Machine** — chargement de modèles, conversations, génération en

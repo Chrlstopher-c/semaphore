@@ -17,13 +17,14 @@ Building without a Mac is the other half: the entire toolchain (Swift SDK for Da
 | swiftly + Swift | 6.3.3 | `~/.local/share/swiftly` |
 | Darwin SDK | installed | `swift sdk list` → `darwin` |
 | xtool | 1.17.0 | `~/.local/bin/xtool` |
-| Impactor | AppImage | `~/.local/opt/Impactor.AppImage` |
+| plumesign | CLI (portable) | `~/.local/opt/plumesign` |
 
 ## Build and deploy to the iPhone
 
 ```bash
 ./build.sh     # produces xtool/Echo.ipa (unsigned)
-./deploy.sh    # builds, then opens Impactor — the drag-and-drop stays manual
+./installer-iphone.sh   # copies to the laptop (~/projets/semaphore/xtool), signs and installs on the iPhone (USB)
+# Auto-renewal over Wi-Fi: outils/resigner/ (see STATE.md, « Où est quoi »)
 ```
 
 The environment must be set before any `swift` call — the scripts do it; on a bare shell, without these lines `swift` fails on an unrelated message (`libncurses.so.6 not found`):

@@ -200,3 +200,9 @@ remplissage lu au même instant — aucune valeur ne traverse deux fils.
 - L'analyse se suspend en arrière-plan (Vision y échoue) et reprend au retour.
 - Le monde ne démarre qu'à sa première visite : sinon la demande d'accès aux
   photos surgirait au lancement d'Echo.
+
+## Installation et renouvellement sur l'iPhone (25/11/2026)
+Domaine distinct du code de l'app : `installer-iphone.sh` (tour → portable → iPhone, une fois) et `outils/resigner/` (démon sur le portable,
+renouvelle Sillon et Sémaphore par Wi-Fi avant expiration du profil gratuit de 7 jours). Frontières : la tour compile et possède les sources ;
+le portable possède l'accès à l'iPhone (`~/projets/semaphore`, `~/projets/sillon`, IPA dans `xtool/`) ; rien d'autre n'y vit. Le démon ne
+compile jamais : il re-signe l'IPA déjà déposée. Aucune adresse ni clé réelle dans ces fichiers (placeholders ; vraies valeurs : `.env.local`).

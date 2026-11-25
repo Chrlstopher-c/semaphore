@@ -1,0 +1,12 @@
+[Unit]
+Description=netmuxd (usbmuxd par le réseau pour le re-signeur d'applis iPhone)
+After=network-online.target avahi-daemon.service
+
+[Service]
+ExecStart=%h/.local/opt/netmuxd/netmuxd --disable-unix --disable-usb --host 127.0.0.1 --port 27015 --plist-storage /var/lib/lockdown
+Environment=RUST_LOG=error
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

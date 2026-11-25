@@ -1,0 +1,10 @@
+[Unit]
+Description=Contrôle horaire de l'expiration des applis iPhone
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target

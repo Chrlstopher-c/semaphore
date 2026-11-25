@@ -1,4 +1,5 @@
-// Les appels HTTP au serveur Lueur. Réseau local seulement : délai court, un serveur muet se dit vite.
+// Les appels HTTP au serveur Lueur, par le tunnel HTTPS (Wi-Fi comme 4G). Le Pi attend jusqu'à 12 s que le ruban soit
+// joint avant de répondre à une commande : le délai (16 s) doit dépasser cette attente.
 #if canImport(UIKit)
 import Foundation
 import LueurNoyau
@@ -13,7 +14,7 @@ struct Client: Sendable {
     private let journal = Logger(subsystem: "com.echo.labs", category: "lueur")
     private let session: URLSession = {
         let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = 4
+        config.timeoutIntervalForRequest = 16
         config.waitsForConnectivity = false
         return URLSession(configuration: config)
     }()
@@ -36,7 +37,9 @@ struct Client: Sendable {
 
     private func requete(chemin: String) throws -> URLRequest {
         guard let base = Parametres.base else { throw PanneLiaison.sansAdresse }
-        return URLRequest(url: base.appending(path: chemin))
+        var demande = URLRequest(url: base.appending(path: chemin))
+        if let cle = Parametres.cle { demande.setValue("Bearer \(cle)", forHTTPHeaderField: "Authorization") }
+        return demande
     }
 
     private func charger<T: Decodable>(_ type: T.Type, _ demande: URLRequest) async throws -> T {

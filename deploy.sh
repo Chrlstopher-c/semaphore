@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Compile puis ouvre Impactor pour signer et installer sur l'iPhone.
+# OBSOLÈTE (25/11/2026) : remplacé par ./installer-iphone.sh (plumesign, sans glisser-déposer). Compile puis ouvre Impactor.
 set -euo pipefail
 
 cd "$(dirname "$0")"

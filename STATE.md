@@ -9,7 +9,27 @@ ci-dessous) ; monde Quart v1 refait à l'identique de la partie Code de l'appli 
 
 ---
 
-## 22/11/2026 — Liaison vivante : une liaison morte est détectée et refaite (branche `agent/liaison-vivante`, non poussée)
+## 25/11/2026 — Lueur par le tunnel + installation automatisée (branche `dev`, non commité)
+- Lueur : l'app visait une adresse du réseau local (aucune chance en 4G). Désormais `ECHO_ADRESSE_LUEUR` = sous-domaine
+  HTTPS (tunnel dédié du Pi) + `ECHO_CLE_LUEUR` (en-tête Bearer, Info.plist `EchoCleLueur`), délai 16 s (le Pi attend
+  jusqu'à 12 s le ruban). Côté Pi : voir `~/lueur/STATE.md`. `.env.local` recréé sur la tour depuis celui du portable.
+- **Où est quoi (25/11/2026, remplace l'ancienne organisation)** :
+  - Tour : `/mnt/projects/semaphore` = source, git, compilation (`./build.sh` → `xtool/Echo.ipa`), `.env.local` (adresses + clés, ignoré).
+  - Portable : `~/projets/semaphore` et `~/projets/sillon` = dépôts de l'iPhone (le portable seul voit l'iPhone en USB et en Wi-Fi) ;
+    l'IPA non signée de chaque appli est dans `xtool/` de son dépôt. Remotes : `origin` = GitHub, `tour` = la tour. Plus rien dans
+    `~/Downloads` (anciens `semaphore-installation`, `Sillon-*.ipa`, `echo-centre` supprimés ou remplacés).
+  - Installer à la main : `./installer-iphone.sh [--build] [--attendre[=MIN]] [--a-blanc]` (tour) copie l'IPA dans `~/projets/semaphore/xtool/`,
+    signe (`plumesign sign --apple-id`) et installe (`plumesign device -i`, sans `--udid` qui est buggé ; menu validé par un pty). Câble requis
+    (ou Wi-Fi si `netmuxd` tourne, voir ci-dessous). Impactor n'est plus nécessaire.
+  - **Re-signature automatique par Wi-Fi** : `outils/resigner/` (déployé sur le portable par `outils/resigner/deployer.sh`). Services utilisateur
+    `netmuxd` (usbmuxd par le réseau, 127.0.0.1:27015, avec `avahi-daemon` activé) et `resigner.timer` (toutes les heures) ;
+    `resigner.py` lit `~/.config/resigner/apps.json` (nom → IPA des dépôts ci-dessus), renouvelle une appli quand son profil expire dans moins
+    de 48 h. État : `~/.local/share/resigner/etat.json`, signées : `~/.local/share/resigner/signees/`, journal : `~/.local/state/resigner/journal.log`.
+    Prouvé le 25/11 (Sillon et Sémaphore installés par Wi-Fi, expiration 02/12). Limites : portable allumé et chez soi, iPhone sur le même Wi-Fi.
+    Nouvelle version de Sillon : déposer son IPA dans `~/projets/sillon/xtool/Sillon.ipa`.
+  - Emplacements App ID gratuits pris : Sillon + Echo (2/3).
+- Nom affiché de l'app : « Sémaphore » (CFBundleDisplayName) ; bundle id `com.echo.labs` inchangé. Icône : symbole H + N d'Echo Agency, fond blanc
+  (`Icone.png`, 1024×1024 RVB sans transparence, d'après `favicon.svg` du skill echo-agency-design ; ancienne version violette sauvegardée hors dépôt).
 
 - **Constat** : journal iPhone (idevicesyslog, 17:38) : la liaison restait ouverte sur une route morte (passage Wi-Fi
   → 4G) : `tcp_timers retransmit` puis `route is not usable` toutes les ~13 s, aucune reconnexion ; fil et compteurs
@@ -198,8 +218,8 @@ ci-dessous) ; monde Quart v1 refait à l'identique de la partie Code de l'appli 
   note esthétique médiane identique au reste — la piste « Documents et reçus »
   est probablement trop large. En attente du coup d'œil de Chris.
 - **Rien n'a encore été supprimé** : panier vide.
-- Le build iOS se fait sur le **portable** (`~/Downloads/echo-centre`, copie de
-  travail) ; xtool n'est plus sur la tour. La tour reste la source et le git.
+- (Obsolète depuis le 25/11/2026 : xtool est de nouveau sur la tour, qui compile ; le portable ne fait que signer/installer,
+  depuis `~/projets/`. Voir « Où est quoi ».)
 
 ---
 
