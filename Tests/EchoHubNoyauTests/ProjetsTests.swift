@@ -27,4 +27,20 @@ struct ProjetsTests {
         let fichier = try d.decode(ContenuFichier.self, from: Data(#"{"chemin":"img.png","taille":10,"contenu":null,"binaire":true,"tronque":false}"#.utf8))
         #expect(fichier.binaire && fichier.contenu == nil)
     }
+
+    @Test func niveauxDeLArbre() {
+        let arbre = ["app.py", "src/b.py", "src/a.py", "src/ui/x.ts", "README.md"].map { EntreeArbre(chemin: $0, taille: 1) }
+        let racine = NiveauArbre(arbre, dossier: "")
+        #expect(racine.dossiers == ["src"])
+        #expect(racine.fichiers.map(\.chemin) == ["app.py", "README.md"])
+        let src = NiveauArbre(arbre, dossier: "src")
+        #expect(src.dossiers == ["ui"])
+        #expect(src.fichiers.map(\.chemin) == ["src/a.py", "src/b.py"])
+    }
+
+    @Test func lignesDeDiff() {
+        let lignes = LigneDiff.lire("--- a/x\n+++ b/x\n@@ -1 +1 @@\n-avant\n+après\n même")
+        #expect(lignes == [.contexte("--- a/x"), .contexte("+++ b/x"), .bloc("@@ -1 +1 @@"),
+                           .retrait("-avant"), .ajout("+après"), .contexte(" même")])
+    }
 }

@@ -33,6 +33,11 @@ public struct EntreeArbre: Sendable, Decodable, Equatable, Identifiable {
     public let chemin: String
     public let taille: Int
     public var id: String { chemin }
+
+    public init(chemin: String, taille: Int) {
+        self.chemin = chemin
+        self.taille = taille
+    }
 }
 
 public struct ArbreProjet: Sendable, Decodable, Equatable {
@@ -153,4 +158,43 @@ public struct DepotProjets: Sendable {
     private struct Hybride: Codable { let hybride: Bool }
 
     private func json(_ valeur: some Encodable) throws -> Data { try CodageJSON.encodeur().encode(valeur) }
+}
+
+/// Le contenu d'UN dossier de l'arbre plat que rend le serveur : sous-dossiers puis fichiers, triés.
+public struct NiveauArbre: Sendable, Equatable {
+    public let dossiers: [String]
+    public let fichiers: [EntreeArbre]
+
+    /// `dossier` vide = racine ; sinon chemin sans `/` final (`src/app`).
+    public init(_ arbre: [EntreeArbre], dossier: String) {
+        let prefixe = dossier.isEmpty ? "" : dossier + "/"
+        var dossiers = Set<String>()
+        var fichiers: [EntreeArbre] = []
+        for entree in arbre where entree.chemin.hasPrefix(prefixe) {
+            let reste = entree.chemin.dropFirst(prefixe.count)
+            if let barre = reste.firstIndex(of: "/") {
+                dossiers.insert(String(reste[..<barre]))
+            } else {
+                fichiers.append(entree)
+            }
+        }
+        self.dossiers = dossiers.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        self.fichiers = fichiers.sorted { $0.chemin.localizedStandardCompare($1.chemin) == .orderedAscending }
+    }
+}
+
+/// Une ligne de diff unifié, classée pour la couleur.
+public enum LigneDiff: Sendable, Equatable {
+    case ajout(String), retrait(String), bloc(String), contexte(String)
+
+    public static func lire(_ diff: String) -> [LigneDiff] {
+        diff.split(separator: "\n", omittingEmptySubsequences: false).map { brut in
+            let ligne = String(brut)
+            if ligne.hasPrefix("+++") || ligne.hasPrefix("---") { return .contexte(ligne) }
+            if ligne.hasPrefix("@@") { return .bloc(ligne) }
+            if ligne.hasPrefix("+") { return .ajout(ligne) }
+            if ligne.hasPrefix("-") { return .retrait(ligne) }
+            return .contexte(ligne)
+        }
+    }
 }
