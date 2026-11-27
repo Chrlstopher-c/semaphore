@@ -37,6 +37,66 @@ public struct EvenementCompaction: Sendable, Decodable, Equatable {
 }
 
 /// Ce qu'une trame SSE d'EchoHub peut porter.
+/// Instantané de l'activité du moteur (`activite`), au plus deux par seconde, jamais persisté.
+public struct ActiviteMoteur: Sendable, Decodable, Equatable {
+    /// `reflexion`, `texte`, `outil`, `execution`, `lecture`, `compaction`.
+    public let phase: String
+    public let tokens: Int
+    public let tokensParSeconde: Double
+    public let outil: OutilEnDirect?
+    public let taches: [TacheAgent]?
+    public let contexte: Jauge?
+    public let lecture: Avancement?
+    public let debut: Date?
+
+    public struct Jauge: Sendable, Decodable, Equatable {
+        public let tokens: Int
+        public let total: Int
+    }
+
+    public struct Avancement: Sendable, Decodable, Equatable {
+        public let faits: Int
+        public let total: Int
+    }
+}
+
+/// Appel d'outil en cours d'écriture ou d'exécution.
+public struct OutilEnDirect: Sendable, Decodable, Equatable {
+    public let nom: String
+    public let chemin: String?
+    public let caracteres: Int
+}
+
+/// Tâche du plan de l'agent ; `etat` en anglais depuis le 25/11, en français avant.
+public struct TacheAgent: Sendable, Decodable, Equatable {
+    public let titre: String
+    public let etat: String
+}
+
+/// État d'une commande du chat (`/compact`), diffusé tant qu'elle tourne.
+public struct EtatCommande: Sendable, Decodable, Equatable {
+    public let id: String
+    public let nom: String
+    /// `en_cours`, `termine`, `echec`.
+    public let etat: String
+    public let etape: String
+    public let detail: String
+    public let tokens: Int?
+    public let tokensParSeconde: Double?
+    public let dureeMs: Int
+    public let erreur: String?
+}
+
+/// Sortie en direct d'une commande shell de l'agent (`commande_shell`) : un AJOUT, pas la sortie entière.
+public struct SortieCommandeShell: Sendable, Decodable, Equatable {
+    public let commandeId: String
+    public let appelId: String
+    /// `en_cours`, `en_fond`, `terminee`, `arretee`.
+    public let etat: String
+    public let sortie: String
+    public let code: Int?
+}
+
 public enum EvenementFlux: Sendable, Equatable {
     case debut(EvenementDebut)
     case fragment(String)
@@ -46,10 +106,24 @@ public enum EvenementFlux: Sendable, Equatable {
     case compaction(InfoCompaction)
     case fin(EvenementFin)
     case erreur(EvenementErreur)
+    case activite(ActiviteMoteur)
+    case commande(EtatCommande)
+    case commandeShell(SortieCommandeShell)
     /// La sentinelle `data: [DONE]` du flux `/api/inference/generer`. Le flux
     /// `chat` ne l'écrit pas ; on la reconnaît parce que les deux routes
     /// existent et que rien ne garantit qu'une future version n'y passe pas.
     case termine
+
+    /// Une coupure de transport que le flux a convertie en erreur (code `transport`) : la génération
+    /// continue peut-être sur le PC, on s'y raccroche au lieu de peindre une erreur.
+    public var estCoupureTransport: Bool {
+        if case .erreur(let erreur) = self { return erreur.code == EvenementErreur.codeTransport }
+        return false
+    }
+}
+
+extension EvenementErreur {
+    public static let codeTransport = "transport"
 }
 
 /// Traduit une trame en événement. Rend `nil` sur ce qui n'en est pas un —
@@ -86,6 +160,10 @@ public enum LectureEvenement {
                 return .compaction(try decodeur.decode(EvenementCompaction.self, from: donnees).compaction)
             case "fin": return .fin(try decodeur.decode(EvenementFin.self, from: donnees))
             case "erreur": return .erreur(try decodeur.decode(EvenementErreur.self, from: donnees))
+            case "activite": return .activite(try decodeur.decode(Activite.self, from: donnees).activite)
+            case "commande": return .commande(try decodeur.decode(Commande.self, from: donnees).commande)
+            case "commande_shell":
+                return .commandeShell(try decodeur.decode(SortieCommandeShell.self, from: donnees))
             default:
                 Journal.note("événement SSE inconnu ignoré : « \(type) »")
                 return nil
@@ -97,4 +175,6 @@ public enum LectureEvenement {
     }
 
     private struct Fragment: Decodable { let texte: String }
+    private struct Activite: Decodable { let activite: ActiviteMoteur }
+    private struct Commande: Decodable { let commande: EtatCommande }
 }

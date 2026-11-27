@@ -59,9 +59,7 @@ public enum ErreurRelais: Error, Sendable, Equatable {
         case .refuse:
             return "Vérifie le jeton dans Réglages."
         case .aucunModelePret:
-            // L'app a trois onglets — Fil, Conversations, Machine. Le remède
-            // désignait « l'onglet Modèles », qui n'a jamais existé.
-            return "Charge un modèle depuis l'onglet Machine."
+            return "Charge un modèle depuis l'onglet Modèles."
         case .generationEnCours:
             return "Attends la fin, ou appuie sur Arrêter."
         case .serveur(_, _, let remede):

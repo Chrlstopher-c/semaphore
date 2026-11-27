@@ -100,8 +100,9 @@ final class LectureRefusTests: XCTestCase {
 
     func testLeRemedeDesigneUnOngletQuiExiste() {
         let remede = ErreurRelais.aucunModelePret.remede ?? ""
-        XCTAssertTrue(remede.contains("Machine"))
-        XCTAssertFalse(remede.contains("Modèles"))
+        // Depuis la coque du web (28/11/2026) : Sessions, Modèles, Système.
+        XCTAssertTrue(remede.contains("Modèles"))
+        XCTAssertFalse(remede.contains("Machine"))
     }
 
     func testLaGenerationEnCoursProposeDArreter() {

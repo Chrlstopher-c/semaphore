@@ -23,11 +23,11 @@ public enum FluxGeneration {
     public static let plafondOctets = 64 * 1024 * 1024
 
     public static func ouvrir(
-        client: ClientEchoHub, chemin: String, corps: Data
+        client: ClientEchoHub, methode: String = "POST", chemin: String, corps: Data?
     ) -> AsyncStream<EvenementFlux> {
         AsyncStream { suite in
             let tache = Task {
-                await diffuser(client: client, chemin: chemin, corps: corps, vers: suite)
+                await diffuser(client: client, methode: methode, chemin: chemin, corps: corps, vers: suite)
                 suite.finish()
             }
             // L'écran qui referme la conversation annule le flux, donc la
@@ -37,12 +37,12 @@ public enum FluxGeneration {
     }
 
     private static func diffuser(
-        client: ClientEchoHub, chemin: String, corps: Data,
+        client: ClientEchoHub, methode: String, chemin: String, corps: Data?,
         vers suite: AsyncStream<EvenementFlux>.Continuation
     ) async {
         let requete: URLRequest
         do {
-            requete = try await client.requete("POST", chemin, corps: corps)
+            requete = try await client.requete(methode, chemin, corps: corps)
         } catch let erreur as ErreurRelais {
             suite.yield(erreurFlux(erreur))
             return
@@ -63,10 +63,26 @@ public enum FluxGeneration {
     ) async {
         let transfert = SessionSSE.ouvrir(requete)
         let (signaux, tache) = (transfert.signaux, transfert.tache)
-        defer { transfert.session.finishTasksAndInvalidate() }
+        let horloge = HorlogeFlux()
+        // Un flux muet est coupé : la coupure devient une erreur de transport, et l'appelant se raccroche.
+        let veilleur = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(RegleSilence.periodeSurveillance))
+                if horloge.muet(maintenant: Date()) {
+                    Journal.echec("flux \(chemin) muet, coupé pour se raccrocher")
+                    tache.cancel()
+                    return
+                }
+            }
+        }
+        defer {
+            veilleur.cancel()
+            transfert.session.finishTasksAndInvalidate()
+        }
         var etat = EtatLecture()
         await withTaskCancellationHandler {
             for await signal in signaux {
+                horloge.noter(signal, maintenant: Date())
                 guard case .arreter(let erreur) = absorber(
                     signal, dans: &etat, chemin: chemin, vers: suite
                 ) else { continue }
@@ -157,6 +173,47 @@ public enum FluxGeneration {
     }
 
     private static func erreurFlux(_ erreur: ErreurRelais) -> EvenementFlux {
-        .erreur(EvenementErreur(code: nil, message: erreur.libelle, remediation: erreur.remede))
+        let transport: Bool
+        if case .injoignable = erreur { transport = true } else { transport = false }
+        return .erreur(EvenementErreur(
+            code: transport ? EvenementErreur.codeTransport : nil,
+            message: erreur.libelle, remediation: erreur.remede
+        ))
+    }
+}
+
+/// Quand un flux est jugé muet (`suivi-flux-regles.ts` du web) : 20 s sans octet une fois le premier reçu,
+/// 120 s avant (le serveur prépare encore : chargement, compaction de départ).
+public enum RegleSilence {
+    public static let silence: TimeInterval = 20
+    public static let silenceAvantOctet: TimeInterval = 120
+    public static let periodeSurveillance: TimeInterval = 5
+
+    public static func muet(depuis vu: Date, octetsRecus: Bool, maintenant: Date) -> Bool {
+        maintenant.timeIntervalSince(vu) >= (octetsRecus ? silence : silenceAvantOctet)
+    }
+
+    /// Attente avant de se raccrocher après un échec : 1 s, doublée, plafonnée à 10 s.
+    public static func delaiApresEchec(_ echecs: Int) -> TimeInterval {
+        min(pow(2, Double(max(0, echecs - 1))), 10)
+    }
+}
+
+/// L'heure du dernier octet, partagée entre la lecture et le veilleur.
+final class HorlogeFlux: @unchecked Sendable {
+    private let verrou = NSLock()
+    private var vu = Date()
+    private var octets = false
+
+    func noter(_ signal: SignalFlux, maintenant: Date) {
+        guard case .octets = signal else { return }
+        verrou.withLock {
+            vu = maintenant
+            octets = true
+        }
+    }
+
+    func muet(maintenant: Date) -> Bool {
+        verrou.withLock { RegleSilence.muet(depuis: vu, octetsRecus: octets, maintenant: maintenant) }
     }
 }

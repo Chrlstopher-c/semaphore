@@ -46,12 +46,55 @@ extension Salon {
     /// Consomme un flux de génération, quel que soit le geste qui l'a ouvert :
     /// envoi, rejeu, édition. Le contrat d'événements est le même pour les trois
     /// — c'est ce qui permet aux branches de ne rien réécrire.
-    func lancer(_ flux: AsyncStream<EvenementFlux>) {
+    func lancer(_ flux: AsyncStream<EvenementFlux>?) {
+        guard let identifiant = conversation?.id else { return }
         poser(tache: Task { [weak self] in
-            await self?.consommer(flux)
+            await self?.suivre(identifiant, depuis: flux)
+            guard !Task.isCancelled else { return }
             self?.poser(tache: nil)
             await self?.conclureTour()
         })
+    }
+
+    /// Se raccroche à la génération en cours sur le PC, s'il y en a une (retour au premier plan,
+    /// conversation rouverte). Le serveur répond 204 sinon : le tour se conclut par une relecture.
+    public func raccrocher() {
+        guard conversation != nil, !enGeneration else { return }
+        lancer(nil)
+    }
+
+    /// Une connexion qui se ferme n'est pas une fin (`suivi-flux.ts` du web) : veille du téléphone,
+    /// tunnel coupé, flux muet. Seul le serveur tranche — on se raccroche (`GET …/flux`) jusqu'à sa
+    /// `fin` ou son 204. Après cinq coupures d'affilée sans rien recevoir, on rend la main.
+    private func suivre(_ identifiant: String, depuis premier: AsyncStream<EvenementFlux>?) async {
+        var flux = premier ?? conversations.rejoindre(identifiant)
+        var rejointe = premier == nil
+        var echecs = 0
+        var coupure: EvenementErreur?
+        var aDebute = false
+        while !Task.isCancelled, conversation?.id == identifiant {
+            let issue = await consommer(flux)
+            aDebute = aDebute || issue.aDebute
+            if issue.conclu { return }
+            if rejointe, issue.evenements == 0, issue.coupure == nil { break }
+            if let perdue = issue.coupure, issue.evenements == 0 {
+                echecs += 1
+                coupure = perdue
+                if echecs > 5 { break }
+                try? await Task.sleep(for: .seconds(RegleSilence.delaiApresEchec(echecs)))
+            } else {
+                echecs = 0
+                try? await Task.sleep(for: .milliseconds(150))
+            }
+            flux = conversations.rejoindre(identifiant)
+            rejointe = true
+        }
+        guard !Task.isCancelled else { return }
+        deposerEnCours(interrompu: true, affirmeParLeServeur: false)
+        // Rien n'a jamais démarré sur le PC et il est injoignable : le message n'est pas parti, on le dit.
+        if let coupure, !aDebute || echecs > 5 {
+            poser(erreur: [coupure.message, coupure.remediation].compactMap { $0 }.joined(separator: " "))
+        }
     }
 
     /// Relit le fil au serveur à la fin d'un tour réussi.
@@ -146,6 +189,7 @@ extension Salon {
         guard demarre else { return }
         await rafraichirStatut()
         await recharger()
+        raccrocher()
     }
 
     /// Le message de Chris, posé AVANT toute réponse du serveur.
@@ -161,10 +205,27 @@ extension Salon {
         )
     }
 
-    private func consommer(_ flux: AsyncStream<EvenementFlux>) async {
+    /// Ce qu'un flux a donné avant de se fermer.
+    private struct Issue {
+        /// `fin`, erreur du serveur ou `[DONE]` : le tour est tranché.
+        var conclu = false
+        var aDebute = false
+        /// Événements reçus, hors coupure de transport : zéro sur une rejointe = 204.
+        var evenements = 0
+        var coupure: EvenementErreur?
+    }
+
+    private func consommer(_ flux: AsyncStream<EvenementFlux>) async -> Issue {
+        var issue = Issue()
         for await evenement in flux {
+            if case .erreur(let erreur) = evenement, evenement.estCoupureTransport {
+                issue.coupure = erreur
+                continue
+            }
+            issue.evenements += 1
             switch evenement {
             case .debut(let debut):
+                issue.aDebute = true
                 accueillir(debut)
             case .fragment(let texte):
                 ajouter(fragment: texte)
@@ -174,21 +235,26 @@ extension Salon {
                 // s'écrit, et le rechargement de fin de tour la retrouvera sur
                 // `MessageChat.compaction`.
                 poser(compaction: info)
+            case .activite(let activite):
+                poser(activite: activite)
+            case .commande, .commandeShell:
+                // Décodés ici ; affichés par la carte `/compact` (E2.S4) et la commande en direct (E3.S1).
+                break
             case .fin(let fin):
                 deposerEnCours(interrompu: fin.interrompu, mesures: fin)
                 noterChangementDeListe()
+                issue.conclu = true
             case .erreur(let erreur):
                 deposerEnCours(interrompu: true)
                 poser(erreur: [erreur.message, erreur.remediation]
                     .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " "))
+                issue.conclu = true
             case .termine:
                 deposerEnCours(interrompu: false)
+                issue.conclu = true
             }
         }
-        // Le flux s'est fermé sans `fin` — coupure réseau, app suspendue. Ce qui
-        // était écrit est conservé, et marqué DOUTEUX : l'app ne sait pas si le
-        // serveur a interrompu ou si c'est elle qui a cessé d'écouter.
-        deposerEnCours(interrompu: true, affirmeParLeServeur: false)
+        return issue
     }
 
     /// Aligne l'état local sur ce que le serveur vient de décider : le vrai
@@ -197,6 +263,9 @@ extension Salon {
         // Un tour neuf ne porte pas la balise du précédent. La sienne, s'il en a
         // une, arrive juste après ce `debut`.
         poser(compaction: nil)
+        poser(activite: nil)
+        // Raccrochage : le serveur rejoue la réponse depuis le début ; celle déposée comme douteuse s'efface.
+        retirer(message: debut.messageId)
         if let reel = debut.messageUtilisateurId,
            let local = messages.last(where: { Salon.estLocal($0.id) })?.id {
             remplacerIdentifiant(de: local, par: reel)
@@ -215,6 +284,7 @@ extension Salon {
     private func deposerEnCours(
         interrompu: Bool, affirmeParLeServeur: Bool = true, mesures: EvenementFin? = nil
     ) {
+        poser(activite: nil)
         guard let courant = enCours, let conversation else { return }
         poser(enCours: nil)
         marquer(courant.id, douteux: interrompu && !affirmeParLeServeur)

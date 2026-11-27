@@ -65,6 +65,12 @@ public struct DepotConversations: Sendable {
         fluxAvecCorps("chat/conversations/\(identifiant)/generer", demande)
     }
 
+    /// Se raccroche à la génération EN COURS (`GET …/flux`) : déjà-produit puis direct, `debut` compris.
+    /// Le serveur répond 204 s'il n'y en a pas : le flux se ferme alors sans aucun événement.
+    public func rejoindre(_ identifiant: String) -> AsyncStream<EvenementFlux> {
+        FluxGeneration.ouvrir(client: client, methode: "GET", chemin: "chat/conversations/\(identifiant)/flux", corps: nil)
+    }
+
     /// Rejoue un message dans une sous-branche. L'existant est conservé :
     /// l'ancienne réponse reste accessible en variante.
     public func rejouer(

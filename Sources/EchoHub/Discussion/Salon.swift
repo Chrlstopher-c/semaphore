@@ -51,6 +51,8 @@ public final class Salon {
     /// balise revient portée par `MessageChat.compaction` : cette valeur est
     /// alors remise à `nil`, elle ne double jamais celle du fil relu.
     public private(set) var compactionEnCours: InfoCompaction?
+    /// L'activité du moteur pendant le tour (phase, outil, plan, débit), jamais persistée : `nil` hors tour.
+    public private(set) var activite: ActiviteMoteur?
     public private(set) var etatFil: EtatFil = .vide
     /// L'échec du dernier tour ou de la dernière relecture, affiché sous le fil.
     /// Distinct de `etatFil` : une génération ratée ne doit pas effacer la
@@ -188,6 +190,7 @@ public final class Salon {
             conversation = detail.conversation
             appliquer(detail)
             etatFil = .pret
+            raccrocher()
         } catch {
             Journal.note("dernier fil non rouvert (\(identifiant)) : \(error)")
             conversation = nil
@@ -261,7 +264,9 @@ public final class Salon {
 
     public func ouvrir(_ resume: ResumeConversation, force: Bool = false) async {
         guard force || conversation?.id != resume.id || etatFil != .pret else { return }
-        arreter()
+        // Changer de conversation ne coupe pas la génération du PC (comme au web) : on s'en détache,
+        // on s'y raccrochera en revenant.
+        suspendre()
         conversation = resume
         etatFil = .chargement
         erreurGeneration = nil
@@ -269,6 +274,7 @@ public final class Salon {
             appliquer(try await conversations.detail(resume.id))
             etatFil = .pret
             dernierFil.ecrire(resume.id)
+            raccrocher()
         } catch {
             oublierLeFil()
             etatFil = .echec(Self.libelle(error))
@@ -387,6 +393,7 @@ public final class Salon {
         aRelire.removeAll()
         enCours = nil
         compactionEnCours = nil
+        activite = nil
         enAttente = nil
     }
 
@@ -394,7 +401,7 @@ public final class Salon {
     /// défaut du serveur : le renommage se fait depuis la liste, et inventer un
     /// titre avant le premier message n'apporte rien.
     public func nouvelleConversation() async {
-        arreter()
+        suspendre()
         etatFil = .chargement
         erreurGeneration = nil
         do {
@@ -427,6 +434,9 @@ public final class Salon {
     // MARK: - Écritures réservées à la génération
 
     func poser(message: MessageChat) { messages.append(message) }
+    /// Retire une réponse déposée comme douteuse quand le serveur la rejoue en direct (raccrochage).
+    func retirer(message identifiant: String) { messages.removeAll { $0.id == identifiant } }
+    func poser(activite nouvelle: ActiviteMoteur?) { activite = nouvelle }
     func poser(enCours nouveau: MessageEnCours?) { enCours = nouveau }
     /// La balise du tour en cours. `nil` au début de chaque tour ; posée quand
     /// l'événement `compaction` arrive, avant les fragments.
