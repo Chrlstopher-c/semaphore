@@ -18,6 +18,14 @@ struct FilConversation: View {
                 }
                 ForEach(salon.messages) { message in
                     tour(message)
+                    ForEach(salon.effacements.filter { $0.ancreMessageId == message.id }) { effacement in
+                        SeparateurEffacement(effacement: effacement) {
+                            Task { await salon.annuler(effacement: effacement) }
+                        }
+                    }
+                }
+                if let commande = salon.commande {
+                    CarteCommande(commande: commande)
                 }
                 if let enCours = salon.enCours {
                     VStack(alignment: .leading, spacing: Trame.serre) {

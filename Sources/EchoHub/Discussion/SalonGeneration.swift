@@ -104,6 +104,7 @@ extension Salon {
     /// la génération vient d'en coûter mille fois plus. En cas d'échec, on ne
     /// relit rien : le message d'erreur doit rester lisible.
     private func conclureTour() async {
+        consignesGlissees = []
         guard erreurGeneration == nil else { return }
         await recharger()
         await mesurerContexte()
@@ -237,8 +238,10 @@ extension Salon {
                 poser(compaction: info)
             case .activite(let activite):
                 poser(activite: activite)
-            case .commande, .commandeShell:
-                // Décodés ici ; affichés par la carte `/compact` (E2.S4) et la commande en direct (E3.S1).
+            case .commande(let etat):
+                commande = etat
+            case .commandeShell:
+                // Décodée ici ; affichée par la commande shell en direct (E3.S1).
                 break
             case .fin(let fin):
                 deposerEnCours(interrompu: fin.interrompu, mesures: fin)

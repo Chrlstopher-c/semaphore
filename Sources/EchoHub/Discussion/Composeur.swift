@@ -13,12 +13,25 @@ struct Composeur: View {
     /// Compteur de butées — sert de déclencheur haptique. Un `Bool` ne
     /// rejouerait pas le retour deux fois de suite pour le même refus.
     @State private var refus = 0
-    @State private var photo: PhotosPickerItem?
+    @State private var photos: [PhotosPickerItem] = []
     @State private var importateurOuvert = false
+    /// L'échec de la dernière soumission (commande refusée, aucun modèle), sous la saisie.
+    @State private var erreurSaisie: String?
 
     var body: some View {
         VStack(spacing: 0) {
+            if !propositions.isEmpty {
+                PaletteCommandes(propositions: propositions) { definition in
+                    texte = AnalyseSaisie.completion(definition)
+                }
+            }
             Rectangle().fill(Teinte.trait).frame(height: Trame.trait)
+            if let erreurSaisie {
+                Text(erreurSaisie).legende().foregroundStyle(Teinte.panne)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, Trame.ecran).padding(.top, Trame.fin)
+            }
+            LignesConsignes()
             LigneAttente()
             LigneContexte()
             BandePiecesJointes()
@@ -36,8 +49,11 @@ struct Composeur: View {
         .animation(Elan.normal, value: salon.enAttente)
         .sensoryFeedback(Retour.butee, trigger: refus)
         .sensoryFeedback(Retour.engage, trigger: salon.messages.count)
-        .onChange(of: photo) { _, choisie in absorber(choisie) }
-        .fileImporter(isPresented: $importateurOuvert, allowedContentTypes: [.item]) { issue in
+        .onChange(of: photos) { _, choisies in absorber(choisies) }
+        .onChange(of: texte) { _, _ in erreurSaisie = nil }
+        .fileImporter(
+            isPresented: $importateurOuvert, allowedContentTypes: [.item], allowsMultipleSelection: true
+        ) { issue in
             absorber(issue)
         }
     }
@@ -48,12 +64,12 @@ struct Composeur: View {
     private var trombone: some View {
         Menu {
             #if canImport(PhotosUI)
-            PhotosPicker(selection: $photo, matching: .images) {
-                Label("Photo", systemImage: "photo")
+            PhotosPicker(selection: $photos, matching: .images) {
+                Label("Photos", systemImage: "photo")
             }
             #endif
             Button { importateurOuvert = true } label: {
-                Label("Fichier", systemImage: "folder")
+                Label("Fichiers", systemImage: "folder")
             }
         } label: {
             Image(systemName: "paperclip")
@@ -65,25 +81,28 @@ struct Composeur: View {
         .accessibilityLabel("Joindre une pièce")
     }
 
-    private func absorber(_ choisie: PhotosPickerItem?) {
-        guard let choisie else { return }
-        photo = nil
+    private func absorber(_ choisies: [PhotosPickerItem]) {
+        guard !choisies.isEmpty else { return }
+        photos = []
         Task {
-            do {
-                guard let octets = try await choisie.loadTransferable(type: Data.self) else {
-                    return Journal.echec("photo choisie illisible : aucune donnée")
+            for choisie in choisies {
+                do {
+                    guard let octets = try await choisie.loadTransferable(type: Data.self) else {
+                        Journal.echec("photo choisie illisible : aucune donnée")
+                        continue
+                    }
+                    let type = choisie.supportedContentTypes.first?.preferredMIMEType ?? "image/jpeg"
+                    await salon.joindre(nom: nomPhoto(type), typeMime: type, octets: octets)
+                } catch {
+                    Journal.echec("photo choisie illisible : \(error)")
                 }
-                let type = choisie.supportedContentTypes.first?.preferredMIMEType ?? "image/jpeg"
-                await salon.joindre(nom: nomPhoto(type), typeMime: type, octets: octets)
-            } catch {
-                Journal.echec("photo choisie illisible : \(error)")
             }
         }
     }
 
-    private func absorber(_ issue: Result<URL, any Error>) {
+    private func absorber(_ issue: Result<[URL], any Error>) {
         switch issue {
-        case .success(let url): Task { await salon.joindre(fichierA: url) }
+        case .success(let urls): Task { for url in urls { await salon.joindre(fichierA: url) } }
         case .failure(let erreur): Journal.echec("import de fichier annulé : \(erreur)")
         }
     }
@@ -149,11 +168,11 @@ struct Composeur: View {
     }
 
     private var symboleBouton: String {
-        salon.enGeneration && envoyable ? "clock.arrow.circlepath" : "arrow.up"
+        salon.enGeneration && envoyable ? "arrow.turn.down.right" : "arrow.up"
     }
 
     private var libelleBouton: String {
-        salon.enGeneration && envoyable ? "Mettre en attente" : "Envoyer"
+        salon.enGeneration && envoyable ? "Glisser à l'agent" : "Envoyer"
     }
 
     private var couleurBouton: Color {
@@ -177,8 +196,25 @@ struct Composeur: View {
             refus += 1
             return
         }
-        salon.envoyerOuFileDAttente(texte)
+        let saisie = texte
+        // Comme au web : sans modèle prêt, un message ne part pas ; une commande, si.
+        if case .commande = AnalyseSaisie(saisie) {} else if salon.statutPret?.estPret != true {
+            refus += 1
+            erreurSaisie = "Aucun modèle chargé : charges-en un depuis l'onglet Modèles."
+            return
+        }
         texte = ""
+        Task {
+            if let echec = await salon.soumettre(saisie) {
+                erreurSaisie = echec
+                refus += 1
+            }
+        }
+    }
+
+    private var propositions: [DefinitionCommande] {
+        guard let prefixe = AnalyseSaisie.nomEnFrappe(texte) else { return [] }
+        return AnalyseSaisie.filtrer(salon.catalogueCommandes, prefixe)
     }
 }
 #endif

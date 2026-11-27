@@ -50,4 +50,20 @@ struct FluxEnDirectTests {
         let serveur = EvenementFlux.erreur(EvenementErreur(code: "modele_absent", message: "m", remediation: nil))
         #expect(coupure.estCoupureTransport && !serveur.estCoupureTransport)
     }
+
+    /// Trames d'un vrai raccrochage `GET …/flux` (CyberTiel en session agent, 28/11/2026), structure
+    /// intacte, contenus anonymisés.
+    @Test func tramesReellesDUnRaccrochage() {
+        let trames = [
+            #"{"type": "debut", "conversation_id": "c", "message_id": "m", "modele_id": "org/depot::f.gguf", "parent_id": "p", "message_utilisateur_id": "p"}"#,
+            #"{"type": "fragment", "texte": "x"}"#,
+            #"{"type": "activite", "activite": {"phase": "outil", "tokens": 12075, "tokens_par_seconde": 0.0, "outil": {"nom": "suivre_taches", "chemin": null, "caracteres": 1, "fichiers_sauves": [], "parametres": {}}, "taches": [{"titre": "x", "etat": "done"}, {"titre": "x", "etat": "done"}], "contexte": {"tokens": 55695, "total": 100352}, "lecture": null, "compaction": null, "debut": "2026-11-28T09:12:44.512331Z"}}"#,
+            #"{"type": "commande_shell", "commande_id": "cmd_1", "appel_id": "a", "etat": "en_cours", "sortie": "", "code": null}"#,
+        ]
+        let lus = trames.compactMap(lire)
+        #expect(lus.count == 4)
+        guard case .debut = lus.first, case .activite(let a) = lus[2] else { Issue.record("ordre inattendu"); return }
+        #expect(a.contexte?.tokens == 55695)
+        #expect(a.debut != nil)
+    }
 }

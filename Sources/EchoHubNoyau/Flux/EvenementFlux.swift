@@ -80,11 +80,19 @@ public struct EtatCommande: Sendable, Decodable, Equatable {
     /// `en_cours`, `termine`, `echec`.
     public let etat: String
     public let etape: String
+    public let etapes: [Etape]
     public let detail: String
     public let tokens: Int?
     public let tokensParSeconde: Double?
     public let dureeMs: Int
     public let erreur: String?
+
+    public struct Etape: Sendable, Decodable, Equatable {
+        public let cle: String
+        public let libelle: String
+        /// `fait`, `en_cours`, `a_faire`.
+        public let etat: String
+    }
 }
 
 /// Sortie en direct d'une commande shell de l'agent (`commande_shell`) : un AJOUT, pas la sortie entière.

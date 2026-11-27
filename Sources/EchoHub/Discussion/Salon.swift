@@ -53,6 +53,14 @@ public final class Salon {
     public private(set) var compactionEnCours: InfoCompaction?
     /// L'activité du moteur pendant le tour (phase, outil, plan, débit), jamais persistée : `nil` hors tour.
     public private(set) var activite: ActiviteMoteur?
+    /// Le catalogue des commandes slash du PC, lu une fois au démarrage (vide si illisible).
+    public internal(set) var catalogueCommandes: [DefinitionCommande] = []
+    /// La dernière commande longue (`/compact`) de la conversation : sa carte d'étapes.
+    public internal(set) var commande: EtatCommande?
+    /// Les `/clear` actifs de la branche affichée : un séparateur chacun, annulable.
+    public internal(set) var effacements: [InfoEffacement] = []
+    /// Ce que Chris a glissé à l'agent pendant le tour en cours : lu à la fin de son étape.
+    public internal(set) var consignesGlissees: [String] = []
     public private(set) var etatFil: EtatFil = .vide
     /// L'échec du dernier tour ou de la dernière relecture, affiché sous le fil.
     /// Distinct de `etatFil` : une génération ratée ne doit pas effacer la
@@ -138,6 +146,8 @@ public final class Salon {
     public var statutPret: StatutInference? { statut.contenu }
 
     public var enGeneration: Bool { tacheGeneration != nil }
+    /// Attend la fin du tour en cours (raccrochage d'une commande).
+    func attendreLeTour() async { await tacheGeneration?.value }
 
     // MARK: - Ce qui n'appartient qu'au salon
 
@@ -174,6 +184,7 @@ public final class Salon {
         reglages = await gestionnaire.actuels()
         outilsParDefaut = await outilsDefaut.actuels()
         await client.configurer(reglages)
+        Task { await chargerCatalogueCommandes() }
         await rafraichirStatut()
         await rouvrirLeDernierFil()
         demarre = true
@@ -272,6 +283,8 @@ public final class Salon {
         erreurGeneration = nil
         do {
             appliquer(try await conversations.detail(resume.id))
+            commande = nil
+            await releverEffacements()
             etatFil = .pret
             dernierFil.ecrire(resume.id)
             raccrocher()
@@ -296,6 +309,7 @@ public final class Salon {
         do {
             appliquer(try await conversations.detail(conversation.id))
             erreurGeneration = nil
+            await releverEffacements()
         } catch {
             // Une relecture annulée (retour d'écran, tâche remplacée) n'est pas
             // un échec : l'afficher mettait « Relecture impossible — Relais
@@ -394,6 +408,9 @@ public final class Salon {
         enCours = nil
         compactionEnCours = nil
         activite = nil
+        commande = nil
+        effacements = []
+        consignesGlissees = []
         enAttente = nil
     }
 
