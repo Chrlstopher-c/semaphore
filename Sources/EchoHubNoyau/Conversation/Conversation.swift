@@ -9,11 +9,13 @@ public struct ResumeConversation: Sendable, Codable, Identifiable, Hashable {
     public var majLe: Date
     public var archivee: Bool
     public var nbMessages: Int
+    /// Projet confié (mode projet) ; absent pour une conversation libre ou un backend antérieur au 13/11.
+    public var projet: String?
 
     public init(
         id: String, titre: String, modeleId: String? = nil,
         creeLe: Date = .now, majLe: Date = .now,
-        archivee: Bool = false, nbMessages: Int = 0
+        archivee: Bool = false, nbMessages: Int = 0, projet: String? = nil
     ) {
         self.id = id
         self.titre = titre
@@ -22,6 +24,7 @@ public struct ResumeConversation: Sendable, Codable, Identifiable, Hashable {
         self.majLe = majLe
         self.archivee = archivee
         self.nbMessages = nbMessages
+        self.projet = projet
     }
 }
 

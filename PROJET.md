@@ -46,7 +46,7 @@ web lui-même, sauf une route manquante pour le mobile.
 - [ ] E1.S4 — App : écran d'état de la tour (hors ligne / allumage / EchoHub prêt) avec Allumer et Démarrer — VERIFY: tests Noyau + essai iPhone en 4G
 ### E2 — Coque et sessions
 - [ ] E2.S1 — Coque 3 onglets, pastille moteur, Éjecter, thème, couleurs du web — VERIFY: capture iPhone (sombre + clair) — codé 28/11, à vérifier sur l'iPhone
-- [ ] E2.S2 — Liste des conversations complète (groupes, filtre, menu, archivées) — VERIFY: tests Noyau + parcours iPhone
+- [ ] E2.S2 — Liste des conversations complète (groupes, filtre, menu, archivées) — VERIFY: tests Noyau + parcours iPhone — codé 28/11, à vérifier sur l'iPhone
 - [ ] E2.S3 — Flux en direct (8 événements) + reprise `…/flux` + relance après silence — VERIFY: tests Noyau sur trames réelles enregistrées + verrouillage iPhone
 - [ ] E2.S4 — Composeur (pièces, photo, arrêter, consigne glissée, file) + commandes `/compact` `/clear` — VERIFY: tests + parcours
 - [ ] E2.S5 — Actions de message et variantes, Markdown et code — VERIFY: tests + parcours

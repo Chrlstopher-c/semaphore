@@ -1,9 +1,11 @@
-// L'onglet d'historique. La liste vit sur le PC : rien n'est gardé ici.
+// Le tiroir des conversations, comme la colonne du web : nouvelle session, filtre, projets puis périodes,
+// archivées repliées en bas. La liste vit sur le PC : rien n'est gardé ici.
 //
 // Le titre est un `Fronton` maison, pas la barre système : voir `Allures.swift`
 // — le mode `.large` compose à 34 pt, au-dessus du plafond de la charte.
 #if canImport(SwiftUI)
 import SwiftUI
+import UIKit
 import EchoHubNoyau
 
 public struct ConversationsEcran: View {
@@ -18,7 +20,10 @@ public struct ConversationsEcran: View {
     /// Actives ou archivées. Sans cette bascule, une conversation archivée
     /// depuis le navigateur disparaissait du téléphone sans explication et
     /// devenait irrécupérable depuis l'app.
-    @State private var archives = false
+    @State private var archivesOuvertes = false
+    @State private var archivees: [ResumeConversation] = []
+    @State private var filtre = ""
+    @Environment(\.scenePhase) private var phase
     /// Appelé quand une conversation est ouverte : la coquille bascule sur le
     /// fil. C'est un rappel et pas une navigation interne — l'écran de
     /// conversation EST un onglet, pas une destination poussée.
@@ -35,21 +40,29 @@ public struct ConversationsEcran: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: Trame.groupe) {
                         Fronton("Conversations")
-                        bascule
+                        entete
                         if let erreurAction { EchecAction(raison: erreurAction) }
                         contenu
+                        sectionArchivees
                     }
                     .padding(.top, Trame.groupe)
                 }
                 .refreshable { await charger() }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .task { await charger() }
+            // Resynchro toutes les 15 s, et au retour au premier plan, comme le web.
+            .task(id: phase == .active) {
+                guard phase == .active else { return }
+                while !Task.isCancelled {
+                    await charger()
+                    try? await Task.sleep(for: .seconds(15))
+                }
+            }
             // La liste vit dans cet écran, pas dans le salon, et son `.task` est
             // lié à la durée de vie de la vue — pas à l'apparition de l'onglet.
             // Une conversation créée depuis le Fil n'y apparaissait jamais.
             .onChange(of: salon.versionListe) { _, _ in Task { await charger() } }
-            .onChange(of: archives) { _, _ in Task { await charger() } }
+            .onChange(of: archivesOuvertes) { _, _ in Task { await charger() } }
             .alert("Renommer la conversation", isPresented: renommagePresente) { champRenommage }
             .confirmationDialog(
                 "Supprimer « \(aSupprimer?.titre ?? "") » ?",
@@ -60,42 +73,37 @@ public struct ConversationsEcran: View {
         }
     }
 
-    /// Les archives n'ont pas de bouton « Nouvelle conversation » : une neuve
-    /// naît active, elle n'apparaîtrait pas dans la liste qu'on regarde.
-    @ViewBuilder private var listeVide: some View {
-        if archives {
-            EtatCalme(
-                symbole: "archivebox",
-                titre: "Aucune archive",
-                detail: "Les conversations archivées, ici ou au navigateur, se rangent ici."
-            )
-        } else {
-            EtatCalme(
-                symbole: "bubble.left.and.bubble.right",
-                titre: "Aucune conversation",
-                detail: "Celles ouvertes au navigateur apparaîtront ici : c'est le même historique.",
-                actionTitre: "Nouvelle conversation",
-                action: creer
-            )
-        }
-    }
-
-    /// Deux libellés, pas un `Picker` système : la charte compose ses propres
-    /// contrôles, et un segmenté iOS impose sa police et son galbe.
-    private var bascule: some View {
-        HStack(spacing: Trame.element) {
-            onglet("Actives", actif: !archives) { archives = false }
-            onglet("Archivées", actif: archives) { archives = true }
-            Spacer(minLength: 0)
+    /// « Nouvelle session » et le filtre, en tête de colonne comme au web.
+    private var entete: some View {
+        VStack(spacing: Trame.element) {
+            Button(action: creer) {
+                Label("Nouvelle session", systemImage: "square.and.pencil")
+                    .mention()
+                    .frame(maxWidth: .infinity, minHeight: Trame.cible)
+            }
+            .buttonStyle(.appui)
+            .foregroundStyle(Teinte.encre)
+            .background(Teinte.surface, in: .rect(cornerRadius: 8))
+            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Teinte.trait))
+            HStack(spacing: Trame.serre) {
+                Image(systemName: "magnifyingglass").imageScale(.small).foregroundStyle(Teinte.encreEteinte)
+                TextField("Filtrer", text: $filtre)
+                    .mention()
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                if !filtre.isEmpty {
+                    Button { filtre = "" } label: { Image(systemName: "xmark.circle.fill") }
+                        .buttonStyle(.appui)
+                        .foregroundStyle(Teinte.encreEteinte)
+                        .accessibilityLabel("Effacer le filtre")
+                }
+            }
+            .padding(.horizontal, Trame.element)
+            .frame(height: 36)
+            .background(Teinte.surface, in: .rect(cornerRadius: 8))
+            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Teinte.trait))
         }
         .padding(.horizontal, Trame.ecran)
-    }
-
-    private func onglet(_ titre: String, actif: Bool, action: @escaping () -> Void) -> some View {
-        Button(titre) { withAnimation(Elan.normal) { action() } }
-            .buttonStyle(.appui)
-            .mention()
-            .foregroundStyle(actif ? Teinte.accent : Teinte.encreEteinte)
     }
 
     @ViewBuilder private var contenu: some View {
@@ -103,9 +111,13 @@ public struct ConversationsEcran: View {
         case .chargement:
             ChargementVue().transition(.scene)
         case .vide:
-            listeVide
-                .padding(.top, Trame.souffle)
-                .transition(.scene)
+            EtatCalme(
+                symbole: "bubble.left.and.bubble.right",
+                titre: "Aucune conversation",
+                detail: "Celles ouvertes au navigateur apparaîtront ici : c'est le même historique."
+            )
+            .padding(.top, Trame.souffle)
+            .transition(.scene)
         case .echec(let raison):
             EtatCalme(
                 symbole: "antenna.radiowaves.left.and.right.slash",
@@ -117,7 +129,61 @@ public struct ConversationsEcran: View {
             .padding(.top, Trame.souffle)
             .transition(.scene)
         case .pret(let liste):
-            rangees(liste)
+            groupes(RangementConversations(RangementConversations.filtrer(liste, filtre)))
+        }
+    }
+
+    @ViewBuilder private func groupes(_ rangement: RangementConversations) -> some View {
+        if rangement.estVide {
+            Text("Aucune conversation ne correspond.").note().foregroundStyle(Teinte.encreEteinte)
+                .padding(.horizontal, Trame.ecran)
+        }
+        if !rangement.projets.isEmpty {
+            Text("Projets").rubrique().foregroundStyle(Teinte.encreEteinte).padding(.horizontal, Trame.ecran)
+            ForEach(rangement.projets) { groupe in
+                VStack(alignment: .leading, spacing: 0) {
+                    Label(groupe.libelle, systemImage: "folder")
+                        .mention().foregroundStyle(Teinte.encreDouce)
+                        .padding(.horizontal, Trame.ecran)
+                    rangees(groupe.conversations)
+                }
+            }
+        }
+        ForEach(rangement.periodes) { groupe in
+            VStack(alignment: .leading, spacing: 0) {
+                Text(groupe.libelle).rubrique().foregroundStyle(Teinte.encreEteinte)
+                    .padding(.horizontal, Trame.ecran)
+                rangees(groupe.conversations)
+            }
+        }
+    }
+
+    /// Les archivées, repliées en bas comme au web ; relues à l'ouverture.
+    private var sectionArchivees: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(Elan.normal) { archivesOuvertes.toggle() }
+            } label: {
+                HStack(spacing: Trame.serre) {
+                    Image(systemName: "chevron.right").imageScale(.small)
+                        .rotationEffect(.degrees(archivesOuvertes ? 90 : 0))
+                    Text("Archivées").rubrique()
+                    Spacer(minLength: 0)
+                }
+                .foregroundStyle(Teinte.encreEteinte)
+                .padding(.horizontal, Trame.ecran)
+                .frame(minHeight: Trame.cible)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.appui)
+            if archivesOuvertes {
+                if archivees.isEmpty {
+                    Text("Aucune archive.").note().foregroundStyle(Teinte.encreEteinte)
+                        .padding(.horizontal, Trame.ecran)
+                } else {
+                    rangees(archivees)
+                }
+            }
         }
     }
 
@@ -147,6 +213,9 @@ public struct ConversationsEcran: View {
     /// supprimer, et le menu ne disait pas pourquoi — l'entrée disparaissait,
     /// exactement le défaut que le web s'interdit. `fermer()` existe désormais.
     @ViewBuilder private func menu(_ resume: ResumeConversation) -> some View {
+        Button { ouvrir(resume) } label: {
+            Label("Ouvrir", systemImage: "arrow.up.right")
+        }
         Button {
             nouveauTitre = resume.titre
             aRenommer = resume
@@ -160,6 +229,9 @@ public struct ConversationsEcran: View {
                 resume.archivee ? "Désarchiver" : "Archiver",
                 systemImage: resume.archivee ? "tray.and.arrow.up" : "archivebox"
             )
+        }
+        Button { UIPasteboard.general.string = resume.titre } label: {
+            Label("Copier le titre", systemImage: "doc.on.doc")
         }
         Button(role: .destructive) { aSupprimer = resume } label: {
             Label("Supprimer", systemImage: "trash")
@@ -252,8 +324,12 @@ public struct ConversationsEcran: View {
 
     private func charger() async {
         do {
-            let liste = try await salon.conversations.lister(archivees: archives)
-            withAnimation(Elan.normal) { etat = liste.isEmpty ? .vide : .pret(liste) }
+            let liste = try await salon.conversations.lister()
+            let archives = archivesOuvertes ? try await salon.conversations.lister(archivees: true) : archivees
+            withAnimation(Elan.normal) {
+                etat = liste.isEmpty ? .vide : .pret(liste)
+                archivees = archives
+            }
         } catch {
             Journal.echec("liste des conversations illisible : \(error)")
             withAnimation(Elan.normal) { etat = .echec(Salon.libelle(error)) }
