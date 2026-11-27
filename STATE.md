@@ -9,6 +9,13 @@ ci-dessous) ; monde Quart v1 refait à l'identique de la partie Code de l'appli 
 
 ---
 
+## 28/11/2026 — Refonte EchoHub, épique 2 (branche `dev`)
+- E1.S4 codé (a5951c9), E2.S1 (f9ea09d : onglets Sessions/Modèles/Système, couleurs du web sombre+clair via
+  `.environment(\.colorScheme)` — PAS `preferredColorScheme`, qui réglerait tous les mondes du pupitre ; pastille
+  moteur + Éjecter + thème), E2.S2 (c58ce36 : tiroir conversations), E2.S3 (410f124 : raccrochage `…/flux`, veille
+  20 s/120 s, changer de conversation se détache sans couper le PC). Tout compile en IPA, 281 tests verts.
+- RIEN n'est encore vérifié sur l'iPhone : Chris veut l'installation quand tout est fait (28/11).
+
 ## 27/11/2026 — Refonte du monde EchoHub (PROJET.md, checklist docs/echohub-parite.md)
 - Demande de Chris : parité écran par écran avec l'EchoHub web (mode étroit), + état/allumage de la tour, démarrage
   d'EchoHub, en 4G. Plan : PROJET.md (5 épiques).
