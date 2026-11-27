@@ -55,7 +55,7 @@ web lui-même, sauf une route manquante pour le mobile.
 - [ ] E3.S2 — Feuille Projet : choisir, créer, retirer, instantanés, restaurer — VERIFY: tests contre EchoHub réel — codé 28/11 (+ hybride, aperçu par port d'atelier via relais 7bff6cd), à vérifier sur l'iPhone
 - [ ] E3.S3 — Fichiers du projet, modifications, diff — VERIFY: parcours iPhone — codé 28/11, à vérifier sur l'iPhone
 - [ ] E3.S4 — Espace de travail : plan de l'agent, aperçu (WebView par le relais), terminal, contexte — VERIFY: parcours iPhone en 4G — codé 28/11, à vérifier sur l'iPhone
-- [ ] E3.S5 — Artefacts (versions, aperçu/code) et interrupteur hybride — VERIFY: parcours
+- [ ] E3.S5 — Artefacts (versions, aperçu/code) et interrupteur hybride — VERIFY: parcours — codé 28/11 (cartes dans le fil, versions, aperçu HTML/SVG/Markdown, fichiers présentés ; hybride dans la feuille Projet), à vérifier sur l'iPhone
 ### E4 — Réglages de conversation
 - [ ] E4.S1 — Réglages (tous les curseurs, arrêt, prompt système) — VERIFY: tests PATCH
 - [ ] E4.S2 — Outils par conversation — VERIFY: tests

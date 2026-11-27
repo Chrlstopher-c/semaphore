@@ -31,7 +31,13 @@ struct BlocReplie: View {
 
     var body: some View {
         if segment.convention == "outil", let appel = LectureAppel.lire(segment.texte, actif: actif) {
-            CarteOutil(appel: appel, deplie: deplie, surBascule: basculer)
+            if let version = Artefacts.version(appel) {
+                CarteVersionArtefact(version: version)
+            } else if let fichier = Artefacts.presente(appel) {
+                CarteFichierPresente(fichier: fichier)
+            } else {
+                CarteOutil(appel: appel, deplie: deplie, surBascule: basculer)
+            }
         } else {
             bloc
         }

@@ -146,6 +146,11 @@ public actor ClientEchoHub {
         _ = try await octets(methode, chemin, corps: corps)
     }
 
+    /// La réponse telle quelle, sans décodage (fichier servi par le PC).
+    public func brut(_ methode: String, _ chemin: String) async throws -> Data {
+        try await octets(methode, chemin, corps: nil)
+    }
+
     private func octets(
         _ methode: String, _ chemin: String, corps: Data?,
         typeContenu: String = "application/json"
