@@ -166,6 +166,9 @@ public final class Salon {
     var conversations: DepotConversations { DepotConversations(client: client) }
     var modeles: DepotModeles { DepotModeles(client: client) }
     var outils: DepotOutils { DepotOutils(client: client) }
+    var profils: DepotProfils { DepotProfils(client: client) }
+    /// Le profil des sessions neuves, comme le dernier choix mémorisé par le web.
+    static let cleProfilNeuf = "echohub.profil"
     var rechercheWeb: DepotRecherche { DepotRecherche(client: client) }
     var fichiers: DepotFichiers { DepotFichiers(client: client) }
     var projets: DepotProjets { DepotProjets(client: client) }
@@ -437,7 +440,8 @@ public final class Salon {
         erreurGeneration = nil
         do {
             let creee = try await conversations.creer(CreationConversation(
-                modeleId: statutPret?.modele, outilsParDefaut: outilsParDefaut
+                modeleId: statutPret?.modele, outilsParDefaut: outilsParDefaut,
+                profilId: UserDefaults.standard.string(forKey: Self.cleProfilNeuf)
             ))
             oublierLeFil()
             conversation = creee

@@ -72,13 +72,16 @@ public struct CreationConversation: Sendable, Encodable {
     /// alors ses propres défauts. Envoyer un objet vide dirait la même chose,
     /// mais par accident.
     public var reglages: ReglagesCreation?
+    /// Profil choisi à la création : ses valeurs remplacent celles de `reglages`.
+    public var profilId: String?
 
     public init(
         titre: String = "Nouvelle conversation", modeleId: String? = nil,
-        outilsParDefaut: SelectionOutils = SelectionOutils()
+        outilsParDefaut: SelectionOutils = SelectionOutils(), profilId: String? = nil
     ) {
         self.titre = titre
         self.modeleId = modeleId
+        self.profilId = profilId
         self.reglages = outilsParDefaut.outilsActifs.map(ReglagesCreation.init(outilsActifs:))
     }
 }
