@@ -11,13 +11,22 @@
 import SwiftUI
 import EchoHubNoyau
 
+/// Les deux onglets du web qui parlent de la machine : `Modèles` (ce qui est chargé, sur le disque, à
+/// télécharger) et `Système` (santé, journal, réglages du relais).
+public enum RayonMachine: Sendable {
+    case modeles, systeme
+
+    var titre: String { self == .modeles ? "Modèles" : "Système" }
+}
+
 public struct MachineEcran: View {
     @Environment(Salon.self) private var salon
+    let rayon: RayonMachine
     @State private var registre: [ModeleEnregistre] = []
     @State private var transfertsActifs = 0
     @State private var echecReleve: String?
 
-    public init() {}
+    public init(rayon: RayonMachine) { self.rayon = rayon }
 
     public var body: some View {
         NavigationStack {
@@ -25,14 +34,15 @@ public struct MachineEcran: View {
                 Teinte.fond.ignoresSafeArea()
                 ScrollView {
                     VStack(alignment: .leading, spacing: Trame.section) {
-                        Fronton("Machine")
+                        Fronton(rayon.titre)
                         corps
                     }
                     .padding(.vertical, Trame.groupe)
                 }
                 .refreshable { await relever() }
             }
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
+            .pastilleMoteur()
             .task { await relever() }
         }
     }
@@ -40,7 +50,7 @@ public struct MachineEcran: View {
     private var corps: some View {
         VStack(alignment: .leading, spacing: Trame.section) {
             if let echec = salon.echecMachine { EchecAction(raison: echec) }
-            CarteStatut(etat: salon.statut)
+            if rayon == .modeles { CarteStatut(etat: salon.statut) }
             portes
             if let echecReleve { EchecAction(raison: echecReleve) }
         }
@@ -49,22 +59,30 @@ public struct MachineEcran: View {
 
     /// L'ordre suit ce qu'on fait le plus souvent : charger un modèle qu'on a
     /// déjà, puis en chercher un neuf, puis ranger.
-    private var portes: some View {
-        SectionAtelier("L'atelier") {
-            VStack(spacing: 0) {
-                lien(RegistreEcran(), "square.stack.3d.up", "Modèles du PC", detailRegistre)
-                lien(DecouverteEcran(), "magnifyingglass", "Chercher sur le Hub", nil)
-                lien(
-                    TransfertsEcran(), "arrow.down.circle", "Transferts", detailTransferts,
-                    ton: transfertsActifs > 0 ? .actif : .neutre
-                )
-                lien(DisqueEcran(), "internaldrive", "Disque du PC", nil)
-                lien(JournalEcran(), "list.bullet.rectangle", "Journal et santé", nil)
-                lien(
-                    OutilsParDefautEcran(), "wrench.and.screwdriver", "Outils par défaut",
-                    "Appliqués aux conversations neuves"
-                )
-                lien(ReglagesRelaisEcran(), "antenna.radiowaves.left.and.right", "Relais", nil)
+    @ViewBuilder private var portes: some View {
+        switch rayon {
+        case .modeles:
+            SectionAtelier("Les modèles") {
+                VStack(spacing: 0) {
+                    lien(RegistreEcran(), "square.stack.3d.up", "Sur le disque", detailRegistre)
+                    lien(DecouverteEcran(), "magnifyingglass", "Découvrir", "Hugging Face")
+                    lien(
+                        TransfertsEcran(), "arrow.down.circle", "Transferts", detailTransferts,
+                        ton: transfertsActifs > 0 ? .actif : .neutre
+                    )
+                }
+            }
+        case .systeme:
+            SectionAtelier("La machine") {
+                VStack(spacing: 0) {
+                    lien(JournalEcran(), "list.bullet.rectangle", "Journal et santé", nil)
+                    lien(DisqueEcran(), "internaldrive", "Disque du PC", nil)
+                    lien(
+                        OutilsParDefautEcran(), "wrench.and.screwdriver", "Outils par défaut",
+                        "Appliqués aux conversations neuves"
+                    )
+                    lien(ReglagesRelaisEcran(), "antenna.radiowaves.left.and.right", "Relais", nil)
+                }
             }
         }
     }

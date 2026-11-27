@@ -1,4 +1,4 @@
-// La coquille : trois onglets, et rien d'autre. Elle ne contient aucune donnée
+// La coquille : les trois onglets du web (Sessions, Modèles, Système), et rien d'autre. Elle ne contient aucune donnée
 // et aucune règle de forme — elle pose l'ambiance racine, tient le salon, et
 // laisse chaque pièce décider du reste.
 #if canImport(SwiftUI)
@@ -8,7 +8,8 @@ import EchoHubNoyau
 public struct Coquille: View {
     @Environment(\.scenePhase) private var phase
     @State private var salon = Salon()
-    @State private var onglet: Onglet = .fil
+    @State private var onglet: Onglet = .sessions
+    @AppStorage(ThemeEchoHub.cle) private var theme: ThemeEchoHub = .sombre
     @State private var tour: SuiviTour?
     /// Faut-il couper la génération quand l'app passe à l'arrière-plan ?
     /// Seule, l'app est suspendue par iOS en une à deux secondes — couper
@@ -23,24 +24,21 @@ public struct Coquille: View {
 
     public var body: some View {
         TabView(selection: $onglet) {
-            Tab(Onglet.fil.libelle, systemImage: Onglet.fil.symbole, value: .fil) {
+            Tab(Onglet.sessions.libelle, systemImage: Onglet.sessions.symbole, value: .sessions) {
                 DiscussionEcran()
             }
-            Tab(
-                Onglet.conversations.libelle,
-                systemImage: Onglet.conversations.symbole,
-                value: .conversations
-            ) {
-                ConversationsEcran(surOuverture: { onglet = .fil })
+            Tab(Onglet.modeles.libelle, systemImage: Onglet.modeles.symbole, value: .modeles) {
+                MachineEcran(rayon: .modeles)
             }
-            Tab(Onglet.machine.libelle, systemImage: Onglet.machine.symbole, value: .machine) {
-                MachineEcran()
+            Tab(Onglet.systeme.libelle, systemImage: Onglet.systeme.symbole, value: .systeme) {
+                MachineEcran(rayon: .systeme)
             }
         }
         .tint(Teinte.accent)
         .environment(salon)
         .ambiance(Ambiance())
-        .preferredColorScheme(.dark)
+        // Pas `preferredColorScheme` : il réglerait toute la fenêtre, donc les autres mondes du pupitre.
+        .environment(\.colorScheme, theme.schema)
         .sensoryFeedback(Retour.bascule, trigger: onglet)
         .overlay { voileTour }
         .task {
@@ -49,7 +47,17 @@ public struct Coquille: View {
             tour = suivi
             suivi.suivre()
         }
+        .task(id: phase == .active) { await sonderLeMoteur() }
         .onChange(of: phase) { _, nouvelle in reagir(nouvelle) }
+    }
+
+    /// La pastille dit l'état réel : relevé toutes les 5 s au premier plan, comme l'en-tête du web.
+    private func sonderLeMoteur() async {
+        guard phase == .active else { return }
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(5))
+            if !Task.isCancelled { await salon.rafraichirStatut() }
+        }
     }
 
     /// Tant que la tour n'est pas prête, rien d'autre n'a de sens : l'écran d'état couvre l'app.
@@ -83,24 +91,23 @@ public struct Coquille: View {
     }
 }
 
-/// Trois onglets, pas cinq : l'app en fait trois choses. Un onglet qu'on ouvre
-/// une fois par mois vole un tiers de la barre.
+/// Les trois onglets de l'EchoHub web, dans son ordre.
 public enum Onglet: String, Hashable, CaseIterable {
-    case fil, conversations, machine
+    case sessions, modeles, systeme
 
     public var libelle: String {
         switch self {
-        case .fil: return "Fil"
-        case .conversations: return "Conversations"
-        case .machine: return "Machine"
+        case .sessions: return "Sessions"
+        case .modeles: return "Modèles"
+        case .systeme: return "Système"
         }
     }
 
     public var symbole: String {
         switch self {
-        case .fil: return "text.alignleft"
-        case .conversations: return "bubble.left.and.bubble.right"
-        case .machine: return "cpu"
+        case .sessions: return "bubble.left.and.bubble.right"
+        case .modeles: return "square.stack.3d.up"
+        case .systeme: return "cpu"
         }
     }
 }

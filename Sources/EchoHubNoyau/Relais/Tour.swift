@@ -75,7 +75,7 @@ public enum PhaseTour: Sendable, Equatable {
     }
 
     /// `org/depot::fichier.gguf` → `fichier` : le nom que Chris reconnaît.
-    static func nomCourt(_ identifiant: String) -> String {
+    public static func nomCourt(_ identifiant: String) -> String {
         let fichier = identifiant.components(separatedBy: "::").last ?? identifiant
         let base = fichier.split(separator: "/").last.map(String.init) ?? fichier
         return base.hasSuffix(".gguf") ? String(base.dropLast(5)) : base

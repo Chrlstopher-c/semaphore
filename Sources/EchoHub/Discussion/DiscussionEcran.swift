@@ -1,4 +1,4 @@
-// L'onglet où l'on vit : le fil de la conversation en cours, et le composeur.
+// L'onglet Sessions : le fil de la conversation en cours, le composeur, et les conversations en tiroir.
 #if canImport(SwiftUI)
 import SwiftUI
 import EchoHubNoyau
@@ -8,6 +8,7 @@ public struct DiscussionEcran: View {
     @State private var outilsOuverts = false
     @State private var reglagesOuverts = false
     @State private var arbreOuvert = false
+    @State private var conversationsOuvertes = false
 
     public init() {}
 
@@ -17,13 +18,16 @@ public struct DiscussionEcran: View {
                 Teinte.fond.ignoresSafeArea()
                 contenu
             }
-            .navigationTitle("Fil")
             .navigationBarTitleDisplayMode(.inline)
+            .pastilleMoteur()
             .toolbar { barre }
             .sheet(isPresented: $outilsOuverts) { OutilsFeuille() }
             .task(id: salon.conversation?.id) { await salon.releverLesOutils() }
             .sheet(isPresented: $reglagesOuverts) { ReglagesConversationFeuille() }
             .sheet(isPresented: $arbreOuvert) { ArbreEcran() }
+            .sheet(isPresented: $conversationsOuvertes) {
+                ConversationsEcran(surOuverture: { conversationsOuvertes = false })
+            }
         }
     }
 
@@ -33,7 +37,7 @@ public struct DiscussionEcran: View {
             EtatCalme(
                 symbole: "text.alignleft",
                 titre: "Aucune conversation",
-                detail: "Ouvres-en une depuis l'onglet Conversations, ou commences-en une neuve.",
+                detail: "Ouvres-en une depuis la liste des conversations, ou commences-en une neuve.",
                 actionTitre: "Nouvelle conversation",
                 action: { Task { await salon.nouvelleConversation() } }
             )
@@ -78,9 +82,13 @@ public struct DiscussionEcran: View {
 
     @ToolbarContentBuilder private var barre: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            if let modele = salon.statutPret?.modele, salon.statutPret?.estPret == true {
-                Text(modele).mesureFine().foregroundStyle(Teinte.encreDouce).lineLimit(1)
+            // Le tiroir des conversations du web : une feuille, ouverte au pouce.
+            Button { conversationsOuvertes = true } label: {
+                Image(systemName: "sidebar.left")
             }
+            .buttonStyle(.appui)
+            .foregroundStyle(Teinte.accent)
+            .accessibilityLabel("Conversations")
         }
         ToolbarItem(placement: .topBarTrailing) { menuConversation }
         ToolbarItem(placement: .topBarTrailing) {

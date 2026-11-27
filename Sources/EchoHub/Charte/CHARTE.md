@@ -1,5 +1,11 @@
 # Charte d'EchoHub Mobile — « Le fil »
 
+> **Amendement du 28/11/2026 (refonte, décision de Chris du 27/11)** : le monde EchoHub reprend la charte de
+> l'EchoHub web (`echohub-v2/frontend/src/shared/design/tokens.css`, direction Vercel) en sombre ET en clair :
+> couleurs dans `Teinte.swift`, thème au menu de la pastille moteur. Les trois onglets sont ceux du web
+> (Sessions, Modèles, Système) ; les conversations passent en tiroir (feuille) depuis Sessions. Ce qui suit
+> sur le graphite chaud, la pervenche et le « sombre permanent » est remplacé par ces règles ; le reste tient.
+
 Direction artistique fondatrice, août 2026. Ce document est le contrat de la
 forme : si un écran contredit une règle écrite ici, c'est l'écran qui a tort —
 ou c'est ce document qu'il faut amender, jamais les deux à la fois.
