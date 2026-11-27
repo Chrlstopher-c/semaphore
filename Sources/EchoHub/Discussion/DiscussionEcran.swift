@@ -9,6 +9,7 @@ public struct DiscussionEcran: View {
     @State private var reglagesOuverts = false
     @State private var arbreOuvert = false
     @State private var conversationsOuvertes = false
+    @State private var projetOuvert = false
 
     public init() {}
 
@@ -25,6 +26,7 @@ public struct DiscussionEcran: View {
             .task(id: salon.conversation?.id) { await salon.releverLesOutils() }
             .sheet(isPresented: $reglagesOuverts) { ReglagesConversationFeuille() }
             .sheet(isPresented: $arbreOuvert) { ArbreEcran() }
+            .sheet(isPresented: $projetOuvert) { ProjetFeuille() }
             .sheet(isPresented: $conversationsOuvertes) {
                 ConversationsEcran(surOuverture: { conversationsOuvertes = false })
             }
@@ -109,6 +111,9 @@ public struct DiscussionEcran: View {
     /// place du nom du modèle.
     private var menuConversation: some View {
         Menu {
+            Button { projetOuvert = true } label: {
+                Label("Projet — \(salon.conversation?.projet ?? "aucun")", systemImage: "folder")
+            }
             Button { reglagesOuverts = true } label: {
                 Label("Réglages", systemImage: "slider.horizontal.3")
             }

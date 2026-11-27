@@ -166,6 +166,13 @@ public final class Salon {
     var outils: DepotOutils { DepotOutils(client: client) }
     var rechercheWeb: DepotRecherche { DepotRecherche(client: client) }
     var fichiers: DepotFichiers { DepotFichiers(client: client) }
+    var projets: DepotProjets { DepotProjets(client: client) }
+
+    /// La liaison projet que la feuille Projet vient d'écrire : l'en-tête et le menu la montrent.
+    func poser(projet: String?) {
+        conversation?.projet = projet
+        noterChangementDeListe()
+    }
 
     public init() {
         let dossier = FileManager.dossierReglagesParDefaut()

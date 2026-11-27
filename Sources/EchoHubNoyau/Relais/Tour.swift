@@ -113,6 +113,13 @@ extension ClientEchoHub {
         return requete
     }
 
+    /// Même chose par le port DANS l'atelier (ce que rend `projets/{nom}/apercu`) : le relais le traduit.
+    public func requeteApercu(atelier port: Int) throws -> URLRequest {
+        var requete = try requeteRelais("GET", "apercu/ouvrir?atelier=\(port)")
+        requete.cachePolicy = .reloadIgnoringLocalCacheData
+        return requete
+    }
+
     private func routeRelais(_ methode: String, _ chemin: String) async throws -> Data {
         let requete = try requeteRelais(methode, chemin)
         let donnees: Data
