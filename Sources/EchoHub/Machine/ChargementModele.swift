@@ -71,6 +71,21 @@ extension Salon {
 
     /// Applique un plan et suit l'issue. Partagé par le geste à un doigt et par
     /// l'écran de plan : deux chemins vers le même appel divergeraient.
+    /// « Comme la dernière fois » : le serveur recharge le plan qui a déjà tenu, sans replanifier.
+    public func chargerPlanEprouve(_ plan: PlanEprouve) async {
+        guard !chargementEnCours else { return }
+        poser(chargement: true)
+        defer { poser(chargement: false) }
+        do {
+            statut = .pret(try await modeles.chargerPlanEprouve(plan.identifiant))
+            poser(echecMachine: nil)
+            await attendreLaFinDuChargement()
+        } catch {
+            Journal.echec("plan éprouvé de \(plan.identifiant) non rechargé : \(error)")
+            poser(echecMachine: Self.libelle(error))
+        }
+    }
+
     func appliquer(plan: ValeurJSON, chemin: String) async throws {
         statut = .pret(try await modeles.charger(cheminModele: chemin, plan: plan))
         poser(echecMachine: nil)

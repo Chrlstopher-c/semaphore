@@ -12,11 +12,13 @@ struct RegistreEcran: View {
     @Environment(Salon.self) private var salon
     @State private var etat: EtatChargement<[ModeleEnregistre]> = .chargement
     @State private var echecAction: String?
+    @State private var eprouves: [PlanEprouve] = []
 
     var body: some View {
         PageAtelier("Modèles du PC", rafraichir: charger) {
             if let echecAction { EchecAction(raison: echecAction) }
             if let echec = salon.echecMachine { EchecAction(raison: echec) }
+            if !eprouves.isEmpty { CommeLaDerniereFois(plans: eprouves) }
             contenu
         }
         .task { await charger() }
@@ -94,6 +96,7 @@ struct RegistreEcran: View {
         await salon.rafraichirStatut()
         do {
             let liste = try await salon.modeles.registre()
+            eprouves = (try? await salon.modeles.plansEprouves()) ?? []
             withAnimation(Elan.normal) { etat = liste.isEmpty ? .vide : .pret(liste) }
         } catch {
             Journal.echec("registre des modèles illisible : \(error)")
@@ -164,6 +167,33 @@ struct LigneModele: View {
         } else {
             VerbeAtelier(libelle: "Charger", occupe: occupe, action: charger)
         }
+    }
+}
+
+/// Les plans qui ont réellement chargé un modèle (`ChargementEprouve.tsx`) : le geste le plus sûr depuis le téléphone.
+private struct CommeLaDerniereFois: View {
+    @Environment(Salon.self) private var salon
+    let plans: [PlanEprouve]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Trame.serre) {
+            Text("Comme la dernière fois").rubrique()
+            ForEach(plans) { plan in
+                HStack(spacing: Trame.element) {
+                    VStack(alignment: .leading, spacing: Trame.fin) {
+                        Text(PhaseTour.nomCourt(plan.identifiant)).mention().foregroundStyle(Teinte.encre).lineLimit(1)
+                        Text(plan.resume).mesureFine().foregroundStyle(Teinte.encreDouce)
+                    }
+                    Spacer(minLength: 0)
+                    VerbeAtelier(libelle: "Recharger", occupe: salon.chargementEnCours) {
+                        Task { await salon.chargerPlanEprouve(plan) }
+                    }
+                    .disabled(salon.statutPret?.modele == plan.identifiant)
+                }
+                .frame(minHeight: Trame.rangee)
+            }
+        }
+        .padding(.bottom, Trame.groupe)
     }
 }
 #endif
