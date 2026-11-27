@@ -80,4 +80,10 @@ public struct SelectionOutils: Sendable, Codable, Equatable {
         let actifs = catalogue.filter { $0 == nom ? !contient($0) : contient($0) }
         return SelectionOutils(outilsActifs: actifs.count == catalogue.count ? nil : actifs)
     }
+
+    /// Coche ou décoche un groupe entier (`basculerGroupe` du web). Tout coché redevient « tous ».
+    public func basculant(groupe noms: [String], actif: Bool, parmi catalogue: [String]) -> SelectionOutils {
+        let actifs = catalogue.filter { noms.contains($0) ? actif : contient($0) }
+        return SelectionOutils(outilsActifs: actifs.count == catalogue.count ? nil : actifs)
+    }
 }

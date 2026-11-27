@@ -98,7 +98,17 @@ struct OutilsFeuille: View {
         let groupes = Dictionary(grouping: outils, by: \.groupe)
         return ForEach(groupes.keys.sorted(), id: \.self) { groupe in
             VStack(alignment: .leading, spacing: Trame.element) {
-                Text(groupe).rubrique().padding(.horizontal, Trame.ecran)
+                let noms = (groupes[groupe] ?? []).map(\.nom)
+                let toutActif = noms.allSatisfy(selection.contient)
+                HStack {
+                    Text(groupe).rubrique()
+                    Spacer(minLength: 0)
+                    Button(toutActif ? "Tout couper" : "Tout activer") {
+                        Task { await appliquer(selection.basculant(groupe: noms, actif: !toutActif, parmi: outils.map(\.nom))) }
+                    }
+                    .buttonStyle(.appui).legende().foregroundStyle(Teinte.accent)
+                }
+                .padding(.horizontal, Trame.ecran)
                 ForEach(groupes[groupe] ?? []) { outil in
                     LigneOutil(outil: outil, actif: selection.contient(outil.nom)) {
                         Task { await basculer(outil, parmi: outils) }
@@ -127,9 +137,12 @@ struct OutilsFeuille: View {
     /// refuse. L'inverse — attendre le serveur — donne un interrupteur qui colle,
     /// et fait rappuyer.
     private func basculer(_ outil: OutilDisponible, parmi outils: [OutilDisponible]) async {
+        await appliquer(selection.basculant(outil.nom, parmi: outils.map(\.nom)))
+    }
+
+    private func appliquer(_ apres: SelectionOutils) async {
         guard let conversation = salon.conversation else { return }
         let avant = selection
-        let apres = selection.basculant(outil.nom, parmi: outils.map(\.nom))
         withAnimation(Elan.micro) { selection = apres }
         do {
             selection = try await salon.outils.definir(conversation.id, apres)

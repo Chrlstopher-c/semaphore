@@ -28,3 +28,13 @@ struct ArtefactsTests {
         #expect(Artefacts.presente(appel)?.estImage == true)
     }
 }
+
+@Suite("Sélection d'outils par groupe")
+struct SelectionGroupeTests {
+    @Test func couperPuisRemettreUnGroupe() {
+        let catalogue = ["a", "b", "c"]
+        let coupee = SelectionOutils().basculant(groupe: ["a", "b"], actif: false, parmi: catalogue)
+        #expect(coupee.outilsActifs == ["c"])
+        #expect(coupee.basculant(groupe: ["a", "b"], actif: true, parmi: catalogue).outilsActifs == nil)
+    }
+}
