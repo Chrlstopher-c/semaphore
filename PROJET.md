@@ -49,7 +49,7 @@ web lui-même, sauf une route manquante pour le mobile.
 - [ ] E2.S2 — Liste des conversations complète (groupes, filtre, menu, archivées) — VERIFY: tests Noyau + parcours iPhone — codé 28/11, à vérifier sur l'iPhone
 - [ ] E2.S3 — Flux en direct (8 événements) + reprise `…/flux` + relance après silence — VERIFY: tests Noyau sur trames réelles enregistrées + verrouillage iPhone — codé 28/11 (raccrochage, veille 20 s/120 s, changer de conversation ne coupe plus le PC), à vérifier sur l'iPhone
 - [ ] E2.S4 — Composeur (pièces, photo, arrêter, consigne glissée, file) + commandes `/compact` `/clear` — VERIFY: tests + parcours — codé 28/11, à vérifier sur l'iPhone
-- [ ] E2.S5 — Actions de message et variantes, Markdown et code — VERIFY: tests + parcours
+- [ ] E2.S5 — Actions de message et variantes, Markdown et code — VERIFY: tests + parcours — codé 28/11, à vérifier sur l'iPhone
 ### E3 — Agent et projet
 - [ ] E3.S1 — Activité en direct : réflexion, lignes d'action + diff, commande shell (fond / arrêter) — VERIFY: trames réelles d'une session agent rejouées
 - [ ] E3.S2 — Feuille Projet : choisir, créer, retirer, instantanés, restaurer — VERIFY: tests contre EchoHub réel

@@ -9,8 +9,36 @@ struct FilConversation: View {
     /// La question en cours de réécriture. `nil` = pas d'édition ouverte.
     @State private var aModifier: MessageChat?
     @State private var texteModifie = ""
+    /// Chris a remonté le fil : le bas n'est plus collé, « Reprendre le fil » apparaît.
+    @State private var loinDuBas = false
 
     var body: some View {
+        ScrollViewReader { lecteur in
+            defilement
+                .overlay(alignment: .bottom) {
+                    if loinDuBas {
+                        Button {
+                            withAnimation(Elan.normal) { lecteur.scrollTo(Self.bas, anchor: .bottom) }
+                        } label: {
+                            Label("Reprendre le fil", systemImage: "arrow.down")
+                                .legende()
+                                .padding(.horizontal, Trame.element)
+                                .frame(height: 32)
+                                .background(Teinte.surfaceHaute, in: .capsule)
+                                .overlay(Capsule().strokeBorder(Teinte.lumiereHaute))
+                        }
+                        .buttonStyle(.appui)
+                        .foregroundStyle(Teinte.encre)
+                        .padding(.bottom, Trame.element)
+                        .transition(.scene)
+                    }
+                }
+        }
+    }
+
+    private static let bas = "bas-du-fil"
+
+    private var defilement: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Trame.groupe) {
                 if let prompt = salon.reglagesConversation?.promptSysteme, !prompt.isEmpty {
@@ -39,6 +67,7 @@ struct FilConversation: View {
                 if let erreur = salon.erreurGeneration {
                     EchecDeTour(raison: erreur)
                 }
+                Color.clear.frame(height: 1).id(Self.bas)
             }
             .padding(.horizontal, Trame.ecran)
             .padding(.vertical, Trame.groupe)
@@ -50,6 +79,11 @@ struct FilConversation: View {
         // à un `scrollTo` forcé à chaque fragment, qui le ramènerait en bas
         // vingt fois par seconde pendant qu'il relit un raisonnement.
         .defaultScrollAnchor(.bottom)
+        .onScrollGeometryChange(for: Bool.self) { geometrie in
+            geometrie.contentSize.height - geometrie.contentOffset.y - geometrie.containerSize.height > 400
+        } action: { _, loin in
+            withAnimation(Elan.normal) { loinDuBas = loin }
+        }
         .scrollDismissesKeyboard(.interactively)
         // Le seul geste qui relise le fil depuis le PC. Sans lui, le fil restait
         // figé sur ce que l'app avait elle-même observé — voir `Salon.recharger`.
@@ -79,7 +113,10 @@ struct FilConversation: View {
         case .user:
             VStack(alignment: .trailing, spacing: Trame.fin) {
                 BulleChris(texte: message.contenu)
-                ActionsQuestion(message: message, surModification: ouvrirModification)
+                // Masquées pendant une génération, comme au web : rien ne s'y déclenche.
+                if !salon.enGeneration {
+                    ActionsQuestion(message: message, surModification: ouvrirModification)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
         case .assistant:
@@ -91,7 +128,7 @@ struct FilConversation: View {
                 }
                 ReponseModele(texte: message.contenu, actif: false)
                 PiedDeReponse(message: message, aRelire: salon.aRelire.contains(message.id))
-                ActionsReponse(message: message)
+                if !salon.enGeneration { ActionsReponse(message: message) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         case .system:
@@ -151,6 +188,20 @@ struct PiedDeReponse: View {
     let aRelire: Bool
 
     var body: some View {
+        VStack(alignment: .leading, spacing: Trame.fin) {
+            // Comme au web : le modèle qui a écrit (celui du moment, pas le chargé) et l'heure.
+            HStack(spacing: Trame.serre) {
+                if let modele = message.modeleId {
+                    Text(PhaseTour.nomCourt(modele)).mesureFine().lineLimit(1)
+                }
+                Text(message.creeLe, format: .dateTime.hour().minute()).mesureFine()
+            }
+            .foregroundStyle(Teinte.encreEteinte)
+            mesures
+        }
+    }
+
+    private var mesures: some View {
         HStack(spacing: Trame.serre) {
             // `☠` Deux causes, deux mots. « Interrompu » n'est vrai que si le
             // SERVEUR l'affirme ; un flux qui se ferme sans `fin` — app
@@ -170,7 +221,17 @@ struct PiedDeReponse: View {
             if let tokens = message.tokensGeneres {
                 Text("\(tokens) tokens").mesureFine().foregroundStyle(Teinte.encreEteinte)
             }
+            if let duree {
+                Text("écrite en \(duree)").mesureFine().foregroundStyle(Teinte.encreEteinte)
+            }
         }
+    }
+
+    /// Durée d'écriture déduite des mesures du serveur (`dureeGeneration` du web), relecture exclue.
+    private var duree: String? {
+        guard let tokens = message.tokensGeneres, let debit = message.tokensParSeconde, debit > 0 else { return nil }
+        let secondes = Int((Double(tokens) / debit).rounded())
+        return secondes < 60 ? "\(secondes) s" : "\(secondes / 60) min \(secondes % 60) s"
     }
 }
 
