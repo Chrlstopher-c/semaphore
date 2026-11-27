@@ -61,6 +61,7 @@ struct FilConversation: View {
                             BaliseCompaction(info: compaction)
                         }
                         ReponseModele(texte: enCours.texte, actif: true)
+                        ActiviteEnDirect()
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }

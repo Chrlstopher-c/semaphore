@@ -53,6 +53,10 @@ public final class Salon {
     public private(set) var compactionEnCours: InfoCompaction?
     /// L'activité du moteur pendant le tour (phase, outil, plan, débit), jamais persistée : `nil` hors tour.
     public private(set) var activite: ActiviteMoteur?
+    /// Heure de la dernière activité reçue : au-delà de 4 s sans nouvelle, la ligne le dit.
+    public private(set) var activiteRecueLe = Date()
+    /// Les commandes shell de l'agent pendant le tour, sortie accumulée (fin seulement, 4 000 car.).
+    public internal(set) var commandesShell: [CommandeShellEnDirect] = []
     /// Le catalogue des commandes slash du PC, lu une fois au démarrage (vide si illisible).
     public internal(set) var catalogueCommandes: [DefinitionCommande] = []
     /// La dernière commande longue (`/compact`) de la conversation : sa carte d'étapes.
@@ -453,7 +457,11 @@ public final class Salon {
     func poser(message: MessageChat) { messages.append(message) }
     /// Retire une réponse déposée comme douteuse quand le serveur la rejoue en direct (raccrochage).
     func retirer(message identifiant: String) { messages.removeAll { $0.id == identifiant } }
-    func poser(activite nouvelle: ActiviteMoteur?) { activite = nouvelle }
+    func poser(activite nouvelle: ActiviteMoteur?) {
+        activite = nouvelle
+        activiteRecueLe = Date()
+        if nouvelle == nil { commandesShell = [] }
+    }
     func poser(enCours nouveau: MessageEnCours?) { enCours = nouveau }
     /// La balise du tour en cours. `nil` au début de chaque tour ; posée quand
     /// l'événement `compaction` arrive, avant les fragments.
@@ -501,6 +509,22 @@ extension FileManager {
             .urls(for: .applicationSupportDirectory, in: .userDomainMask).first
         return (base ?? FileManager.default.temporaryDirectory)
             .appendingPathComponent("EchoHub", isDirectory: true)
+    }
+}
+/// Une commande shell de l'agent vue en direct (`commande_shell`).
+public struct CommandeShellEnDirect: Sendable, Identifiable, Equatable {
+    public let id: String
+    public var etat: String
+    public var sortie: String
+    public var code: Int?
+
+    static let plafond = 4_000
+
+    mutating func absorber(_ ajout: SortieCommandeShell) {
+        etat = ajout.etat
+        code = ajout.code
+        sortie += ajout.sortie
+        if sortie.count > Self.plafond { sortie = String(sortie.suffix(Self.plafond)) }
     }
 }
 #endif

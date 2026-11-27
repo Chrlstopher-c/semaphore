@@ -44,22 +44,29 @@ public struct AppelLisible: Sendable, Equatable {
 /// technique exact.
 public enum LectureAppel {
     /// Les outils du harnais (`backend/outils/registre.py`).
+    /// Libellés par un VERBE, comme le web depuis la refonte du 25/11/2026.
     public static let outilsConnus: [String: DescripteurOutil] = [
-        "recherche_web": .init(libelle: "Recherche web", icone: .loupe, cles: ["requete", "query", "q"]),
-        "recuperer_page": .init(libelle: "Page web", icone: .globe, cles: ["url", "lien", "adresse"]),
-        "ecrire_fichier": .init(libelle: "Écriture", icone: .crayon, cles: cheminsPossibles),
-        "lire_fichier": .init(libelle: "Lecture", icone: .document, cles: cheminsPossibles),
-        "modifier_fichier": .init(libelle: "Modification", icone: .crayon, cles: cheminsPossibles),
-        "lister_fichiers": .init(libelle: "Dossier", icone: .dossier, cles: ["motif", "pattern", "glob", "chemin"]),
-        "chercher_dans_fichiers": .init(
-            libelle: "Recherche fichiers", icone: .loupe, cles: ["motif", "pattern", "texte"]
-        ),
-        "executer_python": .init(libelle: "Python", icone: .code, cles: ["fichier", "chemin", "code", "source"]),
+        "suivre_taches": .init(libelle: "Planifier", icone: .document, cles: ["taches", "tasks", "todos"]),
+        "mcp_outils": .init(libelle: "Lister MCP", icone: .code, cles: ["serveur", "server", "outil", "tool"]),
+        "mcp_appeler": .init(libelle: "Appeler MCP", icone: .code, cles: ["outil", "tool", "serveur", "server"]),
+        "recherche_web": .init(libelle: "Chercher sur le web", icone: .loupe, cles: ["requete", "query", "q"]),
+        "recuperer_page": .init(libelle: "Lire la page", icone: .globe, cles: ["url", "lien", "adresse"]),
+        "ecrire_fichier": .init(libelle: "Écrire", icone: .crayon, cles: cheminsPossibles),
+        "ecrire_fichiers": .init(libelle: "Écrire", icone: .crayon, cles: ["fichiers", "files"]),
+        "plan_fichier": .init(libelle: "Parcourir", icone: .document, cles: ["chemin", "path", "fichier"]),
+        "lire_fichier": .init(libelle: "Lire", icone: .document, cles: cheminsPossibles),
+        "modifier_fichier": .init(libelle: "Modifier", icone: .crayon, cles: cheminsPossibles),
+        "lister_fichiers": .init(libelle: "Lister", icone: .dossier, cles: ["motif", "pattern", "glob", "chemin", "path"]),
+        "chercher_dans_fichiers": .init(libelle: "Chercher", icone: .loupe, cles: ["texte", "motif", "pattern"]),
+        "executer_python": .init(libelle: "Python", icone: .code, cles: ["fichier", "chemin", "path", "code", "source"]),
         "executer_commande": .init(
-            libelle: "Commande", icone: .terminal, cles: ["commande", "command", "cmd", "shell"]
+            libelle: "Exécuter", icone: .terminal, cles: ["commande", "command", "cmd", "shell"]
         ),
-        "presenter_fichier": .init(libelle: "Fichier présenté", icone: .cadre, cles: ["fichier_id", "nom", "chemin"]),
-        "creer_artefact": .init(libelle: "Artefact", icone: .cadre, cles: ["titre", "nom"]),
+        "serveur_fond": .init(libelle: "Processus de fond", icone: .terminal, cles: ["nom", "name", "commande", "command"]),
+        "confier_a_haiku": .init(libelle: "Confier à Haiku", icone: .code, cles: ["tache", "task"]),
+        "deleguer_code": .init(libelle: "Déléguer le code", icone: .code, cles: ["comportement", "behavior"]),
+        "presenter_fichier": .init(libelle: "Présenter", icone: .cadre, cles: ["fichier_id", "file_id", "nom", "chemin"]),
+        "creer_artefact": .init(libelle: "Créer un artefact", icone: .cadre, cles: ["titre", "title", "nom"]),
     ]
 
     private static let cheminsPossibles = ["chemin", "path", "fichier", "nom"]

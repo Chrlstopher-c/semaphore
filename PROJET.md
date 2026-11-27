@@ -51,7 +51,7 @@ web lui-même, sauf une route manquante pour le mobile.
 - [ ] E2.S4 — Composeur (pièces, photo, arrêter, consigne glissée, file) + commandes `/compact` `/clear` — VERIFY: tests + parcours — codé 28/11, à vérifier sur l'iPhone
 - [ ] E2.S5 — Actions de message et variantes, Markdown et code — VERIFY: tests + parcours — codé 28/11, à vérifier sur l'iPhone
 ### E3 — Agent et projet
-- [ ] E3.S1 — Activité en direct : réflexion, lignes d'action + diff, commande shell (fond / arrêter) — VERIFY: trames réelles d'une session agent rejouées
+- [ ] E3.S1 — Activité en direct : réflexion, lignes d'action + diff, commande shell (fond / arrêter) — VERIFY: trames réelles d'une session agent rejouées — codé 28/11, à vérifier sur l'iPhone
 - [ ] E3.S2 — Feuille Projet : choisir, créer, retirer, instantanés, restaurer — VERIFY: tests contre EchoHub réel
 - [ ] E3.S3 — Fichiers du projet, modifications, diff — VERIFY: parcours iPhone
 - [ ] E3.S4 — Espace de travail : plan de l'agent, aperçu (WebView par le relais), terminal, contexte — VERIFY: parcours iPhone en 4G

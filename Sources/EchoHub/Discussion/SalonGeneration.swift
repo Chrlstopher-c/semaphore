@@ -240,9 +240,14 @@ extension Salon {
                 poser(activite: activite)
             case .commande(let etat):
                 commande = etat
-            case .commandeShell:
-                // Décodée ici ; affichée par la commande shell en direct (E3.S1).
-                break
+            case .commandeShell(let ajout):
+                if let rang = commandesShell.firstIndex(where: { $0.id == ajout.commandeId }) {
+                    commandesShell[rang].absorber(ajout)
+                } else {
+                    var neuve = CommandeShellEnDirect(id: ajout.commandeId, etat: ajout.etat, sortie: "")
+                    neuve.absorber(ajout)
+                    commandesShell.append(neuve)
+                }
             case .fin(let fin):
                 deposerEnCours(interrompu: fin.interrompu, mesures: fin)
                 noterChangementDeListe()

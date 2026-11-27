@@ -11,7 +11,7 @@ final class LectureAppelTests: XCTestCase {
             return XCTFail("appel attendu")
         }
         XCTAssertEqual(appel.nom, "recherche_web")
-        XCTAssertEqual(appel.libelle, "Recherche web")
+        XCTAssertEqual(appel.libelle, "Chercher sur le web")
         XCTAssertEqual(appel.icone, .loupe)
         XCTAssertEqual(appel.cible, "météo à Lyon")
         XCTAssertEqual(appel.etat, .termine)
