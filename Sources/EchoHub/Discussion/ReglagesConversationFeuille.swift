@@ -145,7 +145,7 @@ struct ReglagesConversationFeuille: View {
                 detail: "Plus haut, plus imprévisible."
             )
             CurseurReglage(
-                "Top-p", valeur: liaison(\.topP), plage: 0.05...1, pas: 0.05,
+                "Top-p", valeur: liaison(\.topP), plage: 0.01...1, pas: 0.01,
                 detail: "La masse de probabilité retenue."
             )
             CurseurReglage(
@@ -155,6 +155,14 @@ struct ReglagesConversationFeuille: View {
             CurseurReglage(
                 "Pénalité de répétition", valeur: liaison(\.penaliteRepetition),
                 plage: 0...2, pas: 0.05, detail: "1 = neutre."
+            )
+            CurseurReglage(
+                "Min-p", valeur: liaison(\.minP), plage: 0...1, pas: 0.01,
+                detail: "Écarte les jetons bien moins probables que le meilleur. 0 = inactif."
+            )
+            CurseurReglage(
+                "Pénalité de présence", valeur: liaison(\.penalitePresence), plage: 0...2, pas: 0.05,
+                detail: "Contre les boucles de répétition. Trop haut, mélange les langues."
             )
         }
         .padding(.horizontal, Trame.ecran)
@@ -190,6 +198,10 @@ struct ReglagesConversationFeuille: View {
                 defaut: 20,
                 detail: "Un compte de MESSAGES, jamais de tokens."
             )
+            SequencesArret(sequences: Binding(
+                get: { brouillon.parametres.sequencesArret },
+                set: { brouillon.parametres.sequencesArret = $0 }
+            ))
         }
         .padding(.horizontal, Trame.ecran)
     }
@@ -267,6 +279,41 @@ struct ReglagesConversationFeuille: View {
             Journal.echec("réglages non enregistrés : \(error)")
             withAnimation(Elan.normal) { erreur = Salon.libelle(error) }
         }
+    }
+}
+
+/// Les séquences qui coupent la génération dès qu'elles sortent (`SequencesArret.tsx`).
+private struct SequencesArret: View {
+    @Binding var sequences: [String]
+    @State private var nouvelle = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Trame.serre) {
+            Text("Séquences d'arrêt").mention().foregroundStyle(Teinte.encre)
+            ForEach(Array(sequences.enumerated()), id: \.offset) { rang, sequence in
+                HStack {
+                    Text(sequence.debugDescription).brut().foregroundStyle(Teinte.encreDouce)
+                    Spacer(minLength: 0)
+                    Button { sequences.remove(at: rang) } label: { Image(systemName: "xmark.circle.fill") }
+                        .foregroundStyle(Teinte.encreEteinte)
+                        .accessibilityLabel("Retirer \(sequence)")
+                }
+            }
+            HStack {
+                TextField("Ajouter une séquence", text: $nouvelle)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .onSubmit(ajouter)
+                Button("Ajouter", action: ajouter).disabled(nouvelle.isEmpty)
+            }
+            Text("La génération s'arrête net dès qu'une de ces séquences sort. Vide = aucune.")
+                .legende().foregroundStyle(Teinte.encreEteinte)
+        }
+    }
+
+    private func ajouter() {
+        guard !nouvelle.isEmpty, !sequences.contains(nouvelle) else { return }
+        sequences.append(nouvelle)
+        nouvelle = ""
     }
 }
 #endif

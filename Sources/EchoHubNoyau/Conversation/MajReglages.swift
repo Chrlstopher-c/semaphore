@@ -45,7 +45,9 @@ public struct MajParametres: Sendable, Encodable, Equatable {
     public var temperature: Double?
     public var topP: Double?
     public var topK: Int?
+    public var minP: Double?
     public var penaliteRepetition: Double?
+    public var penalitePresence: Double?
     public var maxTokens: ChampPatch<Int>
     public var sequencesArret: [String]?
     public var graine: ChampPatch<Int>
@@ -54,7 +56,9 @@ public struct MajParametres: Sendable, Encodable, Equatable {
         temperature: Double? = nil,
         topP: Double? = nil,
         topK: Int? = nil,
+        minP: Double? = nil,
         penaliteRepetition: Double? = nil,
+        penalitePresence: Double? = nil,
         maxTokens: ChampPatch<Int> = .absent,
         sequencesArret: [String]? = nil,
         graine: ChampPatch<Int> = .absent
@@ -62,7 +66,9 @@ public struct MajParametres: Sendable, Encodable, Equatable {
         self.temperature = temperature
         self.topP = topP
         self.topK = topK
+        self.minP = minP
         self.penaliteRepetition = penaliteRepetition
+        self.penalitePresence = penalitePresence
         self.maxTokens = maxTokens
         self.sequencesArret = sequencesArret
         self.graine = graine
@@ -74,7 +80,9 @@ public struct MajParametres: Sendable, Encodable, Equatable {
             temperature: parametres.temperature,
             topP: parametres.topP,
             topK: parametres.topK,
+            minP: parametres.minP,
             penaliteRepetition: parametres.penaliteRepetition,
+            penalitePresence: parametres.penalitePresence,
             maxTokens: ChampPatch(ecrivant: parametres.maxTokens),
             sequencesArret: parametres.sequencesArret,
             graine: ChampPatch(ecrivant: parametres.graine)
@@ -84,7 +92,7 @@ public struct MajParametres: Sendable, Encodable, Equatable {
     /// Cases en camelCase, sans valeur brute : `CodageJSON` pose
     /// `convertToSnakeCase`, qui les traduit à l'écriture.
     private enum Cle: String, CodingKey {
-        case temperature, topP, topK, penaliteRepetition, maxTokens, sequencesArret, graine
+        case temperature, topP, topK, minP, penaliteRepetition, penalitePresence, maxTokens, sequencesArret, graine
     }
 
     public func encode(to encodeur: any Encoder) throws {
@@ -93,6 +101,8 @@ public struct MajParametres: Sendable, Encodable, Equatable {
         try conteneur.encodeIfPresent(topP, forKey: .topP)
         try conteneur.encodeIfPresent(topK, forKey: .topK)
         try conteneur.encodeIfPresent(penaliteRepetition, forKey: .penaliteRepetition)
+        try conteneur.encodeIfPresent(minP, forKey: .minP)
+        try conteneur.encodeIfPresent(penalitePresence, forKey: .penalitePresence)
         try conteneur.encoder(maxTokens, pour: .maxTokens)
         try conteneur.encodeIfPresent(sequencesArret, forKey: .sequencesArret)
         try conteneur.encoder(graine, pour: .graine)

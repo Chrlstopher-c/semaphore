@@ -57,7 +57,7 @@ web lui-même, sauf une route manquante pour le mobile.
 - [ ] E3.S4 — Espace de travail : plan de l'agent, aperçu (WebView par le relais), terminal, contexte — VERIFY: parcours iPhone en 4G — codé 28/11, à vérifier sur l'iPhone
 - [ ] E3.S5 — Artefacts (versions, aperçu/code) et interrupteur hybride — VERIFY: parcours — codé 28/11 (cartes dans le fil, versions, aperçu HTML/SVG/Markdown, fichiers présentés ; hybride dans la feuille Projet), à vérifier sur l'iPhone
 ### E4 — Réglages de conversation
-- [ ] E4.S1 — Réglages (tous les curseurs, arrêt, prompt système) — VERIFY: tests PATCH
+- [ ] E4.S1 — Réglages (tous les curseurs, arrêt, prompt système) — VERIFY: tests PATCH — codé 28/11 (+ min-p, présence, séquences d'arrêt), à vérifier sur l'iPhone
 - [ ] E4.S2 — Outils par conversation — VERIFY: tests
 - [ ] E4.S3 — Profils (sélection et gestion) — VERIFY: tests + parcours
 - [ ] E4.S4 — Retours (pouces, raisons, correction) — VERIFY: tests

@@ -14,7 +14,9 @@ public struct ParametresEchantillonnage: Sendable, Codable, Equatable {
     public var temperature: Double
     public var topP: Double
     public var topK: Int
+    public var minP: Double
     public var penaliteRepetition: Double
+    public var penalitePresence: Double
     public var maxTokens: Int?
     public var sequencesArret: [String]
     public var graine: Int?
@@ -22,8 +24,10 @@ public struct ParametresEchantillonnage: Sendable, Codable, Equatable {
     public init(
         temperature: Double = 0.8,
         topP: Double = 0.95,
-        topK: Int = 40,
-        penaliteRepetition: Double = 1.1,
+        topK: Int = 20,
+        minP: Double = 0,
+        penaliteRepetition: Double = 1.0,
+        penalitePresence: Double = 0.5,
         maxTokens: Int? = nil,
         sequencesArret: [String] = [],
         graine: Int? = nil
@@ -31,10 +35,29 @@ public struct ParametresEchantillonnage: Sendable, Codable, Equatable {
         self.temperature = temperature
         self.topP = topP
         self.topK = topK
+        self.minP = minP
         self.penaliteRepetition = penaliteRepetition
+        self.penalitePresence = penalitePresence
         self.maxTokens = maxTokens
         self.sequencesArret = sequencesArret
         self.graine = graine
+    }
+
+    /// Un champ absent (serveur plus ancien, trame enregistrée) prend le défaut du serveur.
+    public init(from decodeur: any Decoder) throws {
+        let c = try decodeur.container(keyedBy: CodingKeys.self)
+        let d = ParametresEchantillonnage()
+        self.init(
+            temperature: try c.decodeIfPresent(Double.self, forKey: .temperature) ?? d.temperature,
+            topP: try c.decodeIfPresent(Double.self, forKey: .topP) ?? d.topP,
+            topK: try c.decodeIfPresent(Int.self, forKey: .topK) ?? d.topK,
+            minP: try c.decodeIfPresent(Double.self, forKey: .minP) ?? d.minP,
+            penaliteRepetition: try c.decodeIfPresent(Double.self, forKey: .penaliteRepetition) ?? d.penaliteRepetition,
+            penalitePresence: try c.decodeIfPresent(Double.self, forKey: .penalitePresence) ?? d.penalitePresence,
+            maxTokens: try c.decodeIfPresent(Int.self, forKey: .maxTokens),
+            sequencesArret: try c.decodeIfPresent([String].self, forKey: .sequencesArret) ?? [],
+            graine: try c.decodeIfPresent(Int.self, forKey: .graine)
+        )
     }
 }
 
