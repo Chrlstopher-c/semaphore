@@ -63,6 +63,6 @@ web lui-même, sauf une route manquante pour le mobile.
 - [ ] E4.S4 — Retours (pouces, raisons, correction) — VERIFY: tests — codé 28/11 (meilleure/pire sur variantes, verdict de Claude affiché à part), à vérifier sur l'iPhone
 ### E5 — Modèles et système
 - [ ] E5.S1 — Plans éprouvés + plan de chargement complet (contexte, KV, plus conservateur, journal, bandeau de refus de cible) — VERIFY: charger CyberTiel depuis l'iPhone — codé 28/11 (« Comme la dernière fois » dans Modèles ; plan, dégrader, refus de cible et journal existaient), à vérifier sur l'iPhone
-- [ ] E5.S2 — Découvrir (Hugging Face) + feuille Téléchargement — VERIFY: tests + parcours
-- [ ] E5.S3 — Sur le disque + Transferts + Strata — VERIFY: tests + parcours
+- [ ] E5.S2 — Découvrir (Hugging Face) + feuille Téléchargement — VERIFY: tests + parcours — codé 28/11 (+ filtre par capacités, faisabilité par variante), à vérifier sur l'iPhone
+- [ ] E5.S3 — Sur le disque + Transferts + Strata — VERIFY: tests + parcours — codé 28/11 (+ Strata, jeter les fichiers partiels avec confirmation), à vérifier sur l'iPhone
 - [ ] E5.S4 — Système : profil machine, services, moteurs (installation vLLM en direct), journal — VERIFY: parcours

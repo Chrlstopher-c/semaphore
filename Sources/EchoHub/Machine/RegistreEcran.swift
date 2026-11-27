@@ -13,12 +13,14 @@ struct RegistreEcran: View {
     @State private var etat: EtatChargement<[ModeleEnregistre]> = .chargement
     @State private var echecAction: String?
     @State private var eprouves: [PlanEprouve] = []
+    @State private var strata: SondeStrata?
 
     var body: some View {
         PageAtelier("Modèles du PC", rafraichir: charger) {
             if let echecAction { EchecAction(raison: echecAction) }
             if let echec = salon.echecMachine { EchecAction(raison: echec) }
             if !eprouves.isEmpty { CommeLaDerniereFois(plans: eprouves) }
+            if let strata { CarteStrata(sonde: strata) }
             contenu
         }
         .task { await charger() }
@@ -97,6 +99,7 @@ struct RegistreEcran: View {
         do {
             let liste = try await salon.modeles.registre()
             eprouves = (try? await salon.modeles.plansEprouves()) ?? []
+            strata = try? await salon.modeles.sonderStrata()
             withAnimation(Elan.normal) { etat = liste.isEmpty ? .vide : .pret(liste) }
         } catch {
             Journal.echec("registre des modèles illisible : \(error)")
@@ -191,6 +194,35 @@ private struct CommeLaDerniereFois: View {
                     .disabled(salon.statutPret?.modele == plan.identifiant)
                 }
                 .frame(minHeight: Trame.rangee)
+            }
+        }
+        .padding(.bottom, Trame.groupe)
+    }
+}
+
+/// Strata, le serveur de modèle de l'hôte : son état, et le charger à la place du modèle actif.
+private struct CarteStrata: View {
+    @Environment(Salon.self) private var salon
+    let sonde: SondeStrata
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Trame.serre) {
+            HStack {
+                Text("Strata").rubrique()
+                Spacer(minLength: 0)
+                Sceau(sonde.joignable ? (sonde.charge ? "Modèle servi" : "Joignable") : "Arrêté")
+                    .ton(sonde.joignable ? .ok : .neutre)
+            }
+            if let modele = sonde.modele {
+                Text(PhaseTour.nomCourt(modele) + (sonde.contexte.map { " · \($0 / 1024) k" } ?? ""))
+                    .mesureFine().foregroundStyle(Teinte.encreDouce)
+            }
+            if sonde.joignable {
+                VerbeAtelier(libelle: "Charger Strata", occupe: salon.chargementEnCours) {
+                    Task { await salon.chargerStrata() }
+                }
+            } else if let detail = sonde.detail {
+                Text(detail).legende().foregroundStyle(Teinte.encreEteinte).fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(.bottom, Trame.groupe)

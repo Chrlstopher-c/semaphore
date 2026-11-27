@@ -17,6 +17,7 @@ struct FicheDepotEcran: View {
     @State private var lance: String?
     @State private var echecAction: String?
     @State private var occupe = false
+    @State private var budget: Faisabilite.Budget?
 
     var body: some View {
         PageAtelier(nomCourt, rafraichir: charger) {
@@ -109,7 +110,10 @@ struct FicheDepotEcran: View {
             SectionAtelier("Variantes") {
                 VStack(spacing: Trame.element) {
                     ForEach(fiche.fichiersGguf) { fichier in
-                        LigneVariante(fichier: fichier, occupe: occupe) {
+                        LigneVariante(
+                            fichier: fichier, occupe: occupe,
+                            faisabilite: Faisabilite.evaluer(poidsOctets: fichier.tailleOctets, budget: budget)
+                        ) {
                             Task { await telecharger(fiche.depot, fichier.nom) }
                         }
                     }
@@ -123,6 +127,7 @@ struct FicheDepotEcran: View {
     private func charger() async {
         do {
             let fiche = try await salon.modeles.ficheDepot(depot)
+            budget = (try? await salon.modeles.profilMachine()).flatMap(Faisabilite.Budget.depuis)
             withAnimation(Elan.normal) { etat = .pret(fiche) }
         } catch {
             Journal.echec("fiche du dépôt \(depot) illisible : \(error)")
@@ -154,6 +159,7 @@ struct FicheDepotEcran: View {
 struct LigneVariante: View {
     let fichier: FichierDepot
     let occupe: Bool
+    let faisabilite: Faisabilite
     let telecharger: () -> Void
 
     var body: some View {
@@ -168,11 +174,24 @@ struct LigneVariante: View {
                     }
                 }
                 .foregroundStyle(Teinte.encreEteinte)
+                if faisabilite != .indeterminee {
+                    Sceau(faisabilite.libelle).ton(ton)
+                        .accessibilityHint("Poids annoncés contre mémoire libre maintenant ; cache KV et contexte non comptés.")
+                }
             }
             Spacer(minLength: 0)
             VerbeAtelier(libelle: "Télécharger", occupe: occupe, action: telecharger)
         }
         .padding(.vertical, Trame.serre)
+    }
+
+    private var ton: Ton {
+        switch faisabilite {
+        case .tientVram: .ok
+        case .debordeRam: .alerte
+        case .neTientPas: .panne
+        case .indeterminee: .neutre
+        }
     }
 }
 #endif

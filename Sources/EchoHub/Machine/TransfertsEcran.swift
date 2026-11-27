@@ -59,7 +59,8 @@ struct TransfertsEcran: View {
                         LigneTransfert(
                             transfert: transfert,
                             annuler: { Task { await annuler(transfert) } },
-                            relancer: { Task { await relancer(transfert) } }
+                            relancer: { Task { await relancer(transfert) } },
+                            jeter: { Task { await annuler(transfert, jeter: true) } }
                         )
                     }
                 }
@@ -110,13 +111,11 @@ struct TransfertsEcran: View {
         }
     }
 
-    /// `☠` Les octets déjà écrits sont CONSERVÉS. Un transfert de plusieurs
-    /// gigaoctets doit pouvoir reprendre ; les jeter demanderait un geste que
-    /// cet écran ne propose pas, précisément pour qu'il ne soit pas fait par
-    /// mégarde depuis un téléphone.
-    private func annuler(_ transfert: Telechargement) async {
+    /// `☠` Par défaut les octets déjà écrits sont CONSERVÉS : un transfert de plusieurs gigaoctets doit pouvoir
+    /// reprendre. Les jeter est un geste à part, derrière une confirmation, pour qu'il ne parte pas par mégarde.
+    private func annuler(_ transfert: Telechargement, jeter: Bool = false) async {
         do {
-            fondre(try await salon.modeles.annulerTelechargement(transfert.id))
+            fondre(try await salon.modeles.annulerTelechargement(transfert.id, supprimerFichiers: jeter))
             echecAction = nil
         } catch {
             Journal.echec("annulation de \(transfert.id) refusée : \(error)")
@@ -140,6 +139,8 @@ struct LigneTransfert: View {
     let transfert: Telechargement
     let annuler: () -> Void
     let relancer: () -> Void
+    let jeter: () -> Void
+    @State private var confirmation = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Trame.serre) {
@@ -177,7 +178,15 @@ struct LigneTransfert: View {
             VerbeAtelier(libelle: "Annuler", ton: .alerte, action: annuler)
         } else if transfert.etat == .interrompu || transfert.etat == .erreur
             || transfert.etat == .annule {
-            VerbeAtelier(libelle: "Reprendre", action: relancer)
+            HStack(spacing: Trame.bloc) {
+                VerbeAtelier(libelle: "Reprendre", action: relancer)
+                VerbeAtelier(libelle: "Jeter les fichiers partiels", ton: .panne) { confirmation = true }
+            }
+            .confirmationDialog("Jeter les octets déjà reçus ?", isPresented: $confirmation, titleVisibility: .visible) {
+                Button("Jeter les fichiers", role: .destructive, action: jeter)
+            } message: {
+                Text("Le transfert devra repartir de zéro.")
+            }
         }
     }
 

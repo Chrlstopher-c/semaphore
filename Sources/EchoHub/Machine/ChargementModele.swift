@@ -73,15 +73,24 @@ extension Salon {
     /// l'écran de plan : deux chemins vers le même appel divergeraient.
     /// « Comme la dernière fois » : le serveur recharge le plan qui a déjà tenu, sans replanifier.
     public func chargerPlanEprouve(_ plan: PlanEprouve) async {
+        await lancerChargement(plan.identifiant) { try await self.modeles.chargerPlanEprouve(plan.identifiant) }
+    }
+
+    /// Le modèle servi par Strata, à la place du modèle actif.
+    public func chargerStrata() async {
+        await lancerChargement("Strata") { try await self.modeles.chargerStrata() }
+    }
+
+    private func lancerChargement(_ quoi: String, _ requete: () async throws -> StatutInference) async {
         guard !chargementEnCours else { return }
         poser(chargement: true)
         defer { poser(chargement: false) }
         do {
-            statut = .pret(try await modeles.chargerPlanEprouve(plan.identifiant))
+            statut = .pret(try await requete())
             poser(echecMachine: nil)
             await attendreLaFinDuChargement()
         } catch {
-            Journal.echec("plan éprouvé de \(plan.identifiant) non rechargé : \(error)")
+            Journal.echec("chargement de \(quoi) refusé : \(error)")
             poser(echecMachine: Self.libelle(error))
         }
     }

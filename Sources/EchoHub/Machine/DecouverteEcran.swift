@@ -15,14 +15,17 @@ struct DecouverteEcran: View {
     @State private var saisie = ""
     @State private var etat: EtatChargement<[ResultatDepot]> = .vide
     @State private var recherche: Task<Void, Never>?
+    @State private var definitions: [DefinitionCapacite] = []
 
     var body: some View {
         PageAtelier("Chercher sur le Hub") {
             champ
             tri
+            filtreCapacites
             contenu
         }
         .onDisappear { recherche?.cancel() }
+        .task { definitions = (try? await salon.modeles.definitionsCapacites()) ?? [] }
     }
 
     private var champ: some View {
@@ -53,6 +56,33 @@ struct DecouverteEcran: View {
         }
         .pickerStyle(.segmented)
         .onChange(of: demande.tri) { _, _ in if !saisie.isEmpty { lancer() } }
+    }
+
+    /// Les capacités se combinent en ET, comme sur le web : chaque pastille resserre la recherche.
+    @ViewBuilder private var filtreCapacites: some View {
+        if !definitions.isEmpty {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Trame.serre) {
+                    ForEach(definitions) { definition in
+                        let actif = demande.capacites.contains(definition.capacite)
+                        Button {
+                            demande.capacites = actif
+                                ? demande.capacites.filter { $0 != definition.capacite }
+                                : demande.capacites + [definition.capacite]
+                            if !saisie.isEmpty { lancer() }
+                        } label: {
+                            Text(definition.libelle).legende()
+                                .padding(.horizontal, Trame.element).frame(height: 28)
+                                .foregroundStyle(actif ? Teinte.fond : Teinte.encreDouce)
+                                .background(actif ? Teinte.accent : Teinte.surface, in: .capsule)
+                                .overlay(Capsule().strokeBorder(Teinte.trait))
+                        }
+                        .buttonStyle(.appui)
+                        .accessibilityHint(definition.definition)
+                    }
+                }
+            }
+        }
     }
 
     @ViewBuilder private var contenu: some View {

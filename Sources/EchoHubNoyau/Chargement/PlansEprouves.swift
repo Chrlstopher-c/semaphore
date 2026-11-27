@@ -36,3 +36,24 @@ extension DepotModeles {
         try await client.lire(StatutInference.self, "POST", "inference/plans-eprouves/\(identifiant)/charger")
     }
 }
+
+/// Le serveur Strata de l'hôte (`GET inference/strata`) : joignable, modèle servi, contexte.
+public struct SondeStrata: Sendable, Decodable, Equatable {
+    public let joignable: Bool
+    public let charge: Bool
+    public let modele: String?
+    public let contexte: Int?
+    /// Ce qu'il faut faire quand il ne répond pas.
+    public let detail: String?
+}
+
+extension DepotModeles {
+    public func sonderStrata() async throws -> SondeStrata {
+        try await client.lire(SondeStrata.self, "GET", "inference/strata")
+    }
+
+    /// Charge le modèle de Strata à la place du modèle actif.
+    public func chargerStrata() async throws -> StatutInference {
+        try await client.lire(StatutInference.self, "POST", "inference/strata/charger")
+    }
+}
