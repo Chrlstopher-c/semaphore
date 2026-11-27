@@ -33,6 +33,14 @@ public struct ReglagesRelais: Sendable, Equatable, Codable {
 
     /// Une adresse utilisable : un schéma et un hôte. Le reste — port, chemin —
     /// est laissé libre : un tunnel peut très bien servir sur un sous-chemin.
+    /// Une adresse enregistrée en `http://` (réseau local seulement) cède la place à l'adresse
+    /// embarquée quand celle-ci passe par le tunnel (`https://`) : sans ça, l'app installée gardait
+    /// l'adresse du Wi-Fi et restait muette en 4G (27/11/2026). Le jeton est conservé.
+    public func migre(versDefaut defaut: String) -> ReglagesRelais {
+        guard adresse.hasPrefix("http://"), defaut.hasPrefix("https://"), adresse != defaut else { return self }
+        return ReglagesRelais(adresse: defaut, jeton: jeton)
+    }
+
     public var adresseValide: Bool {
         guard let url = URL(string: adresse) else { return false }
         return url.scheme != nil && url.host != nil
@@ -68,6 +76,7 @@ public struct MagasinReglagesRelaisDisque: MagasinReglagesRelais {
         guard let donnees = try? Data(contentsOf: fichier) else { return .parDefaut }
         do {
             return try JSONDecoder().decode(ReglagesRelais.self, from: donnees)
+                .migre(versDefaut: ReglagesRelais.adresseLocaleParDefaut)
         } catch {
             Journal.echec("réglages relais illisibles, repli sur le défaut : \(error)")
             return .parDefaut

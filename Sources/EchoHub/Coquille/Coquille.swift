@@ -9,6 +9,7 @@ public struct Coquille: View {
     @Environment(\.scenePhase) private var phase
     @State private var salon = Salon()
     @State private var onglet: Onglet = .fil
+    @State private var tour: SuiviTour?
     /// Faut-il couper la génération quand l'app passe à l'arrière-plan ?
     /// Seule, l'app est suspendue par iOS en une à deux secondes — couper
     /// proprement vaut mieux qu'un flux mort. Hébergée dans un centre qui tient
@@ -41,8 +42,26 @@ public struct Coquille: View {
         .ambiance(Ambiance())
         .preferredColorScheme(.dark)
         .sensoryFeedback(Retour.bascule, trigger: onglet)
-        .task { await salon.demarrer() }
+        .overlay { voileTour }
+        .task {
+            await salon.demarrer()
+            let suivi = SuiviTour(client: salon.client)
+            tour = suivi
+            suivi.suivre()
+        }
         .onChange(of: phase) { _, nouvelle in reagir(nouvelle) }
+    }
+
+    /// Tant que la tour n'est pas prête, rien d'autre n'a de sens : l'écran d'état couvre l'app.
+    @ViewBuilder private var voileTour: some View {
+        if let tour, !Self.estPrete(tour.phase) {
+            TourEcran(suivi: tour).transition(.opacity)
+        }
+    }
+
+    private static func estPrete(_ phase: PhaseTour?) -> Bool {
+        if case .prete = phase { return true }
+        return false
     }
 
     /// `☠` Le seul crochet qui rende l'app honnête au réveil. Sans lui, le
@@ -56,7 +75,9 @@ public struct Coquille: View {
     private func reagir(_ nouvelle: ScenePhase) {
         switch nouvelle {
         case .background: if suspendreEnArrierePlan() { salon.suspendre() }
-        case .active: Task { await salon.reprendre() }
+        case .active:
+            Task { await salon.reprendre() }
+            tour?.suivre()
         default: break
         }
     }

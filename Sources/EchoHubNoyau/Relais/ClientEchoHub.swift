@@ -61,6 +61,8 @@ public actor ClientEchoHub {
 
     public func adresseCourante() -> String { reglages.adresse }
 
+    func jetonCourant() -> String { reglages.jeton }
+
     // MARK: - Requêtes
 
     /// Construit une requête signée vers une route de l'API EchoHub.

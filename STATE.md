@@ -9,6 +9,17 @@ ci-dessous) ; monde Quart v1 refait à l'identique de la partie Code de l'appli 
 
 ---
 
+## 27/11/2026 — Refonte du monde EchoHub (PROJET.md, checklist docs/echohub-parite.md)
+- Demande de Chris : parité écran par écran avec l'EchoHub web (mode étroit), + état/allumage de la tour, démarrage
+  d'EchoHub, en 4G. Plan : PROJET.md (5 épiques).
+- E1.S1-S3 FAITS (relais `echohub-mobile` 7574fac, déployé sur le Pi, éprouvé par le tunnel) : `GET /tour`,
+  `POST /tour/reveiller` (réveil réel tour éteinte PAS encore éprouvé), `POST /tour/echohub/demarrer` (clé Pi
+  `~/.ssh/id_echohub_demarrer`, commande forcée tour `~/.local/bin/echohub-demarrer-distant.sh`, journal
+  `~/.local/state/echohub-demarrage-distant.log`), aperçus `/apercu/ouvrir?port=` (cookie signé, WebSocket, Basic vers
+  nginx tour, `Cache-Control: private, no-store` — Cloudflare resservait les .js sans cookie).
+- E1.S4 en cours : `EchohubNoyau/Relais/Tour.swift` (EtatTour, PhaseTour, client) + `TourTests` verts. Reste l'écran.
+- Piège : swift sur la tour exige `-E LD_LIBRARY_PATH=$HOME/.local/lib/swift-compat` (libncurses.so.6 → ncursesw).
+
 ## 25/11/2026 — Lueur par le tunnel + installation automatisée (branche `dev`, non commité)
 - Lueur : l'app visait une adresse du réseau local (aucune chance en 4G). Désormais `ECHO_ADRESSE_LUEUR` = sous-domaine
   HTTPS (tunnel dédié du Pi) + `ECHO_CLE_LUEUR` (en-tête Bearer, Info.plist `EchoCleLueur`), délai 16 s (le Pi attend
