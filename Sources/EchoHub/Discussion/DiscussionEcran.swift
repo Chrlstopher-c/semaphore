@@ -11,6 +11,7 @@ public struct DiscussionEcran: View {
     @State private var conversationsOuvertes = false
     @State private var projetOuvert = false
     @State private var fichiersOuverts = false
+    @State private var espaceOuvert = false
 
     public init() {}
 
@@ -29,6 +30,7 @@ public struct DiscussionEcran: View {
             .sheet(isPresented: $arbreOuvert) { ArbreEcran() }
             .sheet(isPresented: $projetOuvert) { ProjetFeuille() }
             .sheet(isPresented: $fichiersOuverts) { FichiersFeuille() }
+            .sheet(isPresented: $espaceOuvert) { EspaceTravailFeuille() }
             .sheet(isPresented: $conversationsOuvertes) {
                 ConversationsEcran(surOuverture: { conversationsOuvertes = false })
             }
@@ -120,6 +122,9 @@ public struct DiscussionEcran: View {
                 Button { fichiersOuverts = true } label: {
                     Label("Fichiers du projet", systemImage: "doc.on.doc")
                 }
+            }
+            Button { espaceOuvert = true } label: {
+                Label("Espace de travail", systemImage: "rectangle.split.3x1")
             }
             Button { reglagesOuverts = true } label: {
                 Label("Réglages", systemImage: "slider.horizontal.3")

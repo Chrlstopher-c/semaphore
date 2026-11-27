@@ -50,19 +50,7 @@ struct ActiviteEnDirect: View {
                     }
                 }
             }
-            if let taches = activite.taches, !taches.isEmpty {
-                VStack(alignment: .leading, spacing: Trame.fin) {
-                    ForEach(Array(taches.enumerated()), id: \.offset) { _, tache in
-                        let etat = EtatTache(tache.etat)
-                        HStack(alignment: .firstTextBaseline, spacing: Trame.serre) {
-                            Text(etat.marque).mesureFine().foregroundStyle(couleur(etat))
-                            Text(tache.titre).legende()
-                                .foregroundStyle(etat == .fait || etat == .abandonne ? Teinte.encreEteinte : Teinte.encreDouce)
-                                .strikethrough(etat == .abandonne)
-                        }
-                    }
-                }
-            }
+            if let taches = activite.taches, !taches.isEmpty { ListePlan(taches: taches) }
             if let contexte = activite.contexte, contexte.total > 0 {
                 ProgressView(value: Double(contexte.tokens), total: Double(contexte.total)) {
                     Text("Contexte \(contexte.tokens * 100 / contexte.total) %").mesureFine()
@@ -86,6 +74,25 @@ struct ActiviteEnDirect: View {
         case .neutre: Teinte.encreDouce
         case .actif: Teinte.accent
         case .alerte: Teinte.alerte
+        }
+    }
+}
+
+/// Le plan de l'agent, tâche par tâche (`PlanAgent.tsx`) : dans la ligne d'activité et dans l'espace de travail.
+struct ListePlan: View {
+    let taches: [TacheAgent]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Trame.fin) {
+            ForEach(Array(taches.enumerated()), id: \.offset) { _, tache in
+                let etat = EtatTache(tache.etat)
+                HStack(alignment: .firstTextBaseline, spacing: Trame.serre) {
+                    Text(etat.marque).mesureFine().foregroundStyle(couleur(etat))
+                    Text(tache.titre).legende()
+                        .foregroundStyle(etat == .fait || etat == .abandonne ? Teinte.encreEteinte : Teinte.encreDouce)
+                        .strikethrough(etat == .abandonne)
+                }
+            }
         }
     }
 

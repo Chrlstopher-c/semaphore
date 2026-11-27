@@ -55,6 +55,8 @@ public final class Salon {
     public private(set) var activite: ActiviteMoteur?
     /// Heure de la dernière activité reçue : au-delà de 4 s sans nouvelle, la ligne le dit.
     public private(set) var activiteRecueLe = Date()
+    /// Le dernier plan non vide de l'agent, gardé après le tour (`useDernieresTaches` du web).
+    public private(set) var dernierPlan: [TacheAgent] = []
     /// Les commandes shell de l'agent pendant le tour, sortie accumulée (fin seulement, 4 000 car.).
     public internal(set) var commandesShell: [CommandeShellEnDirect] = []
     /// Le catalogue des commandes slash du PC, lu une fois au démarrage (vide si illisible).
@@ -419,6 +421,7 @@ public final class Salon {
         enCours = nil
         compactionEnCours = nil
         activite = nil
+        dernierPlan = []
         commande = nil
         effacements = []
         consignesGlissees = []
@@ -467,6 +470,7 @@ public final class Salon {
     func poser(activite nouvelle: ActiviteMoteur?) {
         activite = nouvelle
         activiteRecueLe = Date()
+        if let taches = nouvelle?.taches, !taches.isEmpty { dernierPlan = taches }
         if nouvelle == nil { commandesShell = [] }
     }
     func poser(enCours nouveau: MessageEnCours?) { enCours = nouveau }
