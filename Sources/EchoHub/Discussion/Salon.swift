@@ -57,6 +57,8 @@ public final class Salon {
     public private(set) var activiteRecueLe = Date()
     /// Le dernier plan non vide de l'agent, gardé après le tour (`useDernieresTaches` du web).
     public private(set) var dernierPlan: [TacheAgent] = []
+    /// Les verdicts de Chris (et de Claude, à part) sur les réponses de cette conversation.
+    public internal(set) var retours = ResumeRetours()
     /// Les commandes shell de l'agent pendant le tour, sortie accumulée (fin seulement, 4 000 car.).
     public internal(set) var commandesShell: [CommandeShellEnDirect] = []
     /// Le catalogue des commandes slash du PC, lu une fois au démarrage (vide si illisible).
@@ -425,6 +427,7 @@ public final class Salon {
         compactionEnCours = nil
         activite = nil
         dernierPlan = []
+        retours = ResumeRetours()
         commande = nil
         effacements = []
         consignesGlissees = []

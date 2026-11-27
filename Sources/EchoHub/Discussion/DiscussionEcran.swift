@@ -26,7 +26,10 @@ public struct DiscussionEcran: View {
             .pastilleMoteur()
             .toolbar { barre }
             .sheet(isPresented: $outilsOuverts) { OutilsFeuille() }
-            .task(id: salon.conversation?.id) { await salon.releverLesOutils() }
+            .task(id: salon.conversation?.id) {
+                await salon.releverLesOutils()
+                await salon.chargerRetours()
+            }
             .sheet(isPresented: $reglagesOuverts) { ReglagesConversationFeuille() }
             .sheet(isPresented: $arbreOuvert) { ArbreEcran() }
             .sheet(isPresented: $projetOuvert) { ProjetFeuille() }

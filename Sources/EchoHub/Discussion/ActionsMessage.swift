@@ -25,6 +25,7 @@ struct ActionsReponse: View {
             BoutonAction("Rejouer", symbole: "arrow.clockwise") { salon.rejouer(message) }
                 .disabled(salon.enGeneration)
             Spacer(minLength: 0)
+            BoutonsRetour(message: message)
         }
     }
 }

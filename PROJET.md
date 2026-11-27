@@ -60,7 +60,7 @@ web lui-même, sauf une route manquante pour le mobile.
 - [ ] E4.S1 — Réglages (tous les curseurs, arrêt, prompt système) — VERIFY: tests PATCH — codé 28/11 (+ min-p, présence, séquences d'arrêt), à vérifier sur l'iPhone
 - [ ] E4.S2 — Outils par conversation — VERIFY: tests — codé 28/11 (+ bascule par groupe), à vérifier sur l'iPhone
 - [ ] E4.S3 — Profils (sélection et gestion) — VERIFY: tests + parcours — codé 28/11 (choix, profil des sessions neuves, création, modification, suppression), à vérifier sur l'iPhone
-- [ ] E4.S4 — Retours (pouces, raisons, correction) — VERIFY: tests
+- [ ] E4.S4 — Retours (pouces, raisons, correction) — VERIFY: tests — codé 28/11 (meilleure/pire sur variantes, verdict de Claude affiché à part), à vérifier sur l'iPhone
 ### E5 — Modèles et système
 - [ ] E5.S1 — Plans éprouvés + plan de chargement complet (contexte, KV, plus conservateur, journal, bandeau de refus de cible) — VERIFY: charger CyberTiel depuis l'iPhone
 - [ ] E5.S2 — Découvrir (Hugging Face) + feuille Téléchargement — VERIFY: tests + parcours
