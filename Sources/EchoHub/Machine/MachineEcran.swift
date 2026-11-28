@@ -75,6 +75,8 @@ public struct MachineEcran: View {
         case .systeme:
             SectionAtelier("La machine") {
                 VStack(spacing: 0) {
+                    lien(ProfilServicesEcran(), "cpu", "Machine et services", "GPU, mémoire, services de la pile")
+                    lien(MoteursEcran(), "engine.combustion", "Moteurs", "llama.cpp, vLLM")
                     lien(JournalEcran(), "list.bullet.rectangle", "Journal et santé", nil)
                     lien(DisqueEcran(), "internaldrive", "Disque du PC", nil)
                     lien(
