@@ -12,11 +12,17 @@ public struct EtatLumiere: Codable, Equatable, Sendable {
     public var favoris: [String]
     /// Le Pi tient-il la liaison Bluetooth avec le ruban ? Faux = serveur joint, LED injoignables.
     public var relie: Bool
+    /// Le scénario que joue le Pi (routine ou essai), absent sinon.
+    public var lecture: Lecture?
+
+    public struct Lecture: Codable, Equatable, Sendable {
+        public let id: String
+    }
 
     enum CodingKeys: String, CodingKey {
         case allume = "power", couleur = "color", intensite = "brightness"
         case effet = "effect", dernierEffet = "last_effect"
-        case vitesse = "speed", favoris = "favorites", relie = "connected"
+        case vitesse = "speed", favoris = "favorites", relie = "connected", lecture = "playing"
     }
 
     public init(allume: Bool, couleur: String, intensite: Int, effet: Int?, dernierEffet: Int? = nil,
@@ -51,5 +57,21 @@ public struct Effet: Codable, Hashable, Identifiable, Sendable {
     public init(code: Int, nom: String) {
         self.code = code
         self.nom = nom
+    }
+}
+
+extension EtatLumiere {
+    /// L'état tel qu'il sera une fois le geste joué : appliqué tout de suite à l'écran, sans attendre le Pi (sinon les
+    /// commandes revenaient en arrière le temps du fondu, puis repartaient — Chris, 28/11/2026).
+    public mutating func appliquer(_ commande: Commande) {
+        switch commande {
+        case .allumer(let oui): allume = oui
+        case .couleur(let nuance): allume = true; couleur = nuance.hexa; effet = nil
+        case .intensite(let valeur): allume = true; intensite = valeur
+        case .effet(let code): allume = true; effet = code; if let code { dernierEffet = code }
+        case .vitesse(let valeur): vitesse = valeur
+        case .ajouterFavori(let hexa): if !favoris.contains(hexa) { favoris.append(hexa) }
+        case .retirerFavori(let hexa): favoris.removeAll { $0 == hexa }
+        }
     }
 }

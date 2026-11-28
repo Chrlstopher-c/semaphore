@@ -21,6 +21,8 @@ final class Lampe {
     @ObservationIgnored private var file = FileCommandes()
     @ObservationIgnored private var enVol = false
     @ObservationIgnored private var releve: Task<Void, Never>?
+    /// Compteur des gestes : un relevé parti avant le dernier geste est périmé, on le jette.
+    @ObservationIgnored private var gestes = 0
 
     /// Unique par processus, comme l'émetteur d'Iris : un `@State Lampe()` serait recréé par SwiftUI.
     static let partage = Lampe()
@@ -44,6 +46,8 @@ final class Lampe {
 
     func envoyer(_ commande: Commande) {
         if case .couleur(let nuance) = commande { apercu = nuance }
+        gestes += 1
+        etat?.appliquer(commande)
         file.deposer(commande)
         guard !enVol else { return }
         enVol = true
@@ -55,7 +59,7 @@ final class Lampe {
             do {
                 let reponse = try await client.envoyer(commande)
                 if !reponse.envoye { echecs += 1 }
-                if file.estVide { etat = reponse.etat }
+                if file.estVide { gestes += 1; etat = reponse.etat }
                 joignabilite = .jointe
             } catch {
                 noterPanne(error)
@@ -67,14 +71,18 @@ final class Lampe {
 
     private func relever() async {
         guard !enVol else { return }
+        let avant = gestes
         do {
             let nouvel = try await client.etat()
-            if !enVol { etat = nouvel }
+            if !enVol, avant == gestes { etat = nouvel }
             joignabilite = .jointe
         } catch {
             noterPanne(error)
         }
     }
+
+    /// Relève l'état tout de suite (après un essai de routine, pour voir « en cours »).
+    func releverMaintenant() { Task { await relever() } }
 
     private func chargerEffets() async {
         effets = (try? await client.effets()) ?? []

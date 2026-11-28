@@ -8,23 +8,37 @@ import Systeme
 
 struct LueurEcran: View {
     @Environment(Lampe.self) private var lampe
+    /// Ruban (la lumière maintenant) ou Routines (ce qu'elle fera, et quand).
+    @State private var vue = Vue.ruban
+
+    enum Vue: String, CaseIterable { case ruban = "Ruban", routines = "Routines" }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Grille.section) {
-                VStack(alignment: .leading, spacing: Grille.groupe) {
+                VStack(alignment: .leading, spacing: Grille.element) {
                     enTete
-                    RoueChromatique().frame(maxWidth: .infinity)
+                    Picker("Vue", selection: $vue) {
+                        ForEach(Vue.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
                 }
-                Intensite()
-                Nuancier()
-                Effets()
+                if vue == .ruban {
+                    RoueChromatique().frame(maxWidth: .infinity)
+                    Intensite()
+                    Nuancier()
+                    Effets()
+                } else {
+                    RoutinesVue()
+                }
             }
+            .animation(Mouvement.normal, value: vue)
             .padding(.horizontal, Grille.ecran)
             .padding(.vertical, Grille.groupe)
         }
         .background(Neutre.fond.ignoresSafeArea())
         .sensoryFeedback(Toucher.butee, trigger: lampe.echecs)
+        .sensoryFeedback(Toucher.selection, trigger: vue)
     }
 
     private var enTete: some View {
