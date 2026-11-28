@@ -61,7 +61,7 @@ let package = Package(
         ),
         .target(
             name: "Saily",
-            dependencies: ["SailyNoyau", "Systeme"],
+            dependencies: ["SailyNoyau", "EchoHubNoyau", "Systeme"],
             exclude: ["Charte/CHARTE.md"]
         ),
         .target(

@@ -135,3 +135,14 @@ func adresseEmbarquee(_ cle: String, repli: String) -> String {
     let nettoyee = brut.trimmingCharacters(in: .whitespacesAndNewlines)
     return nettoyee.isEmpty ? repli : nettoyee
 }
+
+extension FileManager {
+    /// Le dossier Application Support d'EchoHub : survit aux lancements, pas aux
+    /// réinstallations qui changent le bundle ID. Saily y lit aussi le relais (coffre de la tour).
+    public static func dossierReglagesParDefaut() -> URL {
+        let base = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+        return (base ?? FileManager.default.temporaryDirectory)
+            .appendingPathComponent("EchoHub", isDirectory: true)
+    }
+}

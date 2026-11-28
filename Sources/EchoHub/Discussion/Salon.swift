@@ -521,17 +521,6 @@ public final class Salon {
         )
     }
 }
-
-extension FileManager {
-    /// Le dossier Application Support de l'app : survit aux lancements, pas aux
-    /// réinstallations qui changent le bundle ID.
-    static func dossierReglagesParDefaut() -> URL {
-        let base = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-        return (base ?? FileManager.default.temporaryDirectory)
-            .appendingPathComponent("EchoHub", isDirectory: true)
-    }
-}
 /// Une commande shell de l'agent vue en direct (`commande_shell`).
 public struct CommandeShellEnDirect: Sendable, Identifiable, Equatable {
     public let id: String

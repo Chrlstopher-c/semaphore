@@ -21,6 +21,9 @@ public struct Coquille: View {
             Tab(Onglet.capture.libelle, systemImage: Onglet.capture.symbole, value: .capture) {
                 CaptureEcran(surCapture: { onglet = .inbox })
             }
+            Tab(Onglet.coffre.libelle, systemImage: Onglet.coffre.symbole, value: .coffre) {
+                CoffreEcran()
+            }
             Tab(Onglet.reglages.libelle, systemImage: Onglet.reglages.symbole, value: .reglages) {
                 ReglagesEcran()
             }
@@ -47,15 +50,15 @@ public struct Coquille: View {
     }
 }
 
-/// Trois onglets, pas cinq : le monde en fait trois choses — voir ce qu'on a
-/// capturé, capturer, et régler la liaison.
+/// Quatre onglets : voir ce qu'on a capturé, capturer, le coffre de la tour, et régler la liaison.
 public enum Onglet: String, Hashable, CaseIterable {
-    case inbox, capture, reglages
+    case inbox, capture, coffre, reglages
 
     public var libelle: String {
         switch self {
         case .inbox: return "Besace"
         case .capture: return "Capturer"
+        case .coffre: return "Coffre"
         case .reglages: return "Réglages"
         }
     }
@@ -64,6 +67,7 @@ public enum Onglet: String, Hashable, CaseIterable {
         switch self {
         case .inbox: return "tray.full"
         case .capture: return "plus.circle"
+        case .coffre: return "lock.shield"
         case .reglages: return "slider.horizontal.3"
         }
     }

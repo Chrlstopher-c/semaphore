@@ -120,8 +120,12 @@ extension ClientEchoHub {
         return requete
     }
 
-    private func routeRelais(_ methode: String, _ chemin: String) async throws -> Data {
-        let requete = try requeteRelais(methode, chemin)
+    func routeRelais(_ methode: String, _ chemin: String, corps: Data? = nil) async throws -> Data {
+        var requete = try requeteRelais(methode, chemin)
+        if let corps {
+            requete.httpBody = corps
+            requete.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
         let donnees: Data
         let reponse: URLResponse
         do {
@@ -135,15 +139,18 @@ extension ClientEchoHub {
         return donnees
     }
 
-    private func requeteRelais(_ methode: String, _ chemin: String) throws -> URLRequest {
+    func requeteRelais(_ methode: String, _ chemin: String) throws -> URLRequest {
         let adresse = adresseCourante()
         guard let base = URL(string: adresse), base.host != nil else {
             throw ErreurRelais.adresseInvalide(adresse)
         }
         let morceaux = chemin.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false)
-        var composants = URLComponents(
-            url: base.appendingPathComponent(String(morceaux[0])), resolvingAgainstBaseURL: false
-        )
+        // `chemin` arrive déjà encodé (un nom de secret peut porter `/` ou `%`) : il est posé tel quel.
+        var composants = URLComponents(url: base, resolvingAgainstBaseURL: false)
+        if let racine = composants?.percentEncodedPath {
+            composants?.percentEncodedPath = (racine.hasSuffix("/") ? String(racine.dropLast()) : racine)
+                + "/" + morceaux[0]
+        }
         if morceaux.count == 2 { composants?.percentEncodedQuery = String(morceaux[1]) }
         guard let url = composants?.url else { throw ErreurRelais.adresseInvalide(adresse) }
         var requete = URLRequest(url: url, timeoutInterval: Self.delaiRequeteSecondes)
