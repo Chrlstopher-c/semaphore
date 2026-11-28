@@ -17,6 +17,9 @@ ci-dessous) ; monde Quart v1 refait à l'identique de la partie Code de l'appli 
 - RIEN n'est vérifié sur l'iPhone ; la checklist `docs/echohub-parite.md` se coche seulement après essai réel.
 - Écarts connus restants : Découvrir ne cherche que du GGUF (pas safetensors/vLLM) ; mermaid affiché en code ;
   réveil réel d'une tour éteinte jamais éprouvé.
+- Validé par Chris sur l'iPhone (28/11) : longues sessions fluides (8 dernières étapes par tour d'agent, e5994a1),
+  un seul monde monté à la fois qui retrouve son écran au retour (6720cba, c72da58), onglet Coffre de Saily
+  (secrets echo-vault de la tour sous Face ID, d2d0056 ; relais `/coffre/*` et service `echo-vault-http`).
 - IPA INSTALLÉE sur l'iPhone le 28/11 par Wi-Fi seul (script corrigé : `idevice_id -n`). Suite : parcours de Chris Wi-Fi puis 4G, retours à corriger, puis cocher la checklist.
 
 ## 27/11/2026 — Refonte du monde EchoHub (PROJET.md, checklist docs/echohub-parite.md)
