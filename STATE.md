@@ -34,6 +34,13 @@ ci-dessous) ; monde Quart v1 refait à l'identique de la partie Code de l'appli 
 - E1.S4 en cours : `EchohubNoyau/Relais/Tour.swift` (EtatTour, PhaseTour, client) + `TourTests` verts. Reste l'écran.
 - Piège : swift sur la tour exige `-E LD_LIBRARY_PATH=$HOME/.local/lib/swift-compat` (libncurses.so.6 → ncursesw).
 
+## 28/11/2026 — Lueur : routines + gestes instantanés (ab5d9e8, installée sur l'iPhone)
+- Monde Lueur : sélecteur Ruban | Routines. Routines : frise du jour, cartes (marche/arrêt, prochain passage), feuille
+  d'édition (nom, heure, jours, bande d'étapes, réglages par type, ColorPicker natif, essai 30 %, suppression confirmée).
+  Noyau : `LueurNoyau/Routines` (Routine, Scenario, Etape, Horaire) + 8 tests ; `EtatLumiere.appliquer` (geste appliqué
+  tout de suite) et `lecture` (« playing » du Pi). `Lampe` jette un relevé parti avant le dernier geste.
+  Pas de simulateur : vue jamais vue à l'écran avant l'essai de Chris.
+
 ## 25/11/2026 — Lueur par le tunnel + installation automatisée (branche `dev`, non commité)
 - Lueur : l'app visait une adresse du réseau local (aucune chance en 4G). Désormais `ECHO_ADRESSE_LUEUR` = sous-domaine
   HTTPS (tunnel dédié du Pi) + `ECHO_CLE_LUEUR` (en-tête Bearer, Info.plist `EchoCleLueur`), délai 16 s (le Pi attend
