@@ -4,17 +4,20 @@ Résumé vivant, inter-sessions. Les décisions et leurs raisons sont dans
 `ARCHITECTURE.md` ; ce qui reste à faire et ce qui demande un arbitrage sont
 dans `TODO.md`.
 
-Dernière mise à jour : **22/11/2026** — **Quart** : texte en direct, étincelle de travail et dictée qui défile (voir
+Dernière mise à jour : **28/11/2026** — refonte EchoHub codée (section du 28/11). Avant :
+**22/11/2026** — **Quart** : texte en direct, étincelle de travail et dictée qui défile (voir
 ci-dessous) ; monde Quart v1 refait à l'identique de la partie Code de l'appli Claude iOS (branche `dev`).
 
 ---
 
-## 28/11/2026 — Refonte EchoHub, épique 2 (branche `dev`)
-- E1.S4 codé (a5951c9), E2.S1 (f9ea09d : onglets Sessions/Modèles/Système, couleurs du web sombre+clair via
-  `.environment(\.colorScheme)` — PAS `preferredColorScheme`, qui réglerait tous les mondes du pupitre ; pastille
-  moteur + Éjecter + thème), E2.S2 (c58ce36 : tiroir conversations), E2.S3 (410f124 : raccrochage `…/flux`, veille
-  20 s/120 s, changer de conversation se détache sans couper le PC). Tout compile en IPA, 281 tests verts.
-- RIEN n'est encore vérifié sur l'iPhone : Chris veut l'installation quand tout est fait (28/11).
+## 28/11/2026 — Refonte EchoHub : les 5 épiques codées (branche `dev`)
+- E1.S4 à E5.S4 tous codés et committés (dernier : 3aa322e), 311 tests verts, l'IPA compile. Détail par story :
+  annotations « codé 28/11 » de PROJET.md. Relais : aperçu par port d'atelier (`?atelier=`, 7bff6cd, déployé Pi).
+- Couleurs du web via `.environment(\.colorScheme)` — PAS `preferredColorScheme`, qui réglerait tous les mondes.
+- RIEN n'est vérifié sur l'iPhone ; la checklist `docs/echohub-parite.md` se coche seulement après essai réel.
+- Écarts connus restants : Découvrir ne cherche que du GGUF (pas safetensors/vLLM) ; mermaid affiché en code ;
+  réveil réel d'une tour éteinte jamais éprouvé.
+- Suite : installer l'IPA (`./installer-iphone.sh`, iPhone visible du portable), parcours Wi-Fi puis 4G.
 
 ## 27/11/2026 — Refonte du monde EchoHub (PROJET.md, checklist docs/echohub-parite.md)
 - Demande de Chris : parité écran par écran avec l'EchoHub web (mode étroit), + état/allumage de la tour, démarrage
