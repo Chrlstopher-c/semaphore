@@ -31,8 +31,9 @@ final class CaptureCamera: NSObject, @unchecked Sendable {
         apercu.videoGravity = .resizeAspect
         super.init()
         sortie.alwaysDiscardsLateVideoFrames = true
+        // plage vidéo (420v), celle des webcams : le PC recopie l'image décodée sans conversion de plage
         sortie.videoSettings = [
-            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange,
+            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
         ]
         sortie.setSampleBufferDelegate(self, queue: file)
     }
@@ -106,7 +107,7 @@ final class CaptureCamera: NSObject, @unchecked Sendable {
         appareil.formats.first { format in
             let taille = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
             let sousType = CMFormatDescriptionGetMediaSubType(format.formatDescription)
-            return taille.width == largeur && sousType == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
+            return taille.width == largeur && sousType == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
                 && format.videoSupportedFrameRateRanges.contains { $0.maxFrameRate >= 60 }
         }
     }
