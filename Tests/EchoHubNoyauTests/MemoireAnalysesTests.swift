@@ -18,4 +18,11 @@ struct MemoireAnalysesTests {
         let texte = "# Titre\n\nUn **gras** et du `code`."
         #expect(AnalyseMarkdown.analyserMemorise(texte) == AnalyseMarkdown.analyser(texte))
     }
+
+    @Test func uneCleSuitLeTexteQuiSAllonge() {
+        let debut = "<think>a</think>Bonjour"
+        let suite = debut + " Chris"
+        #expect(SegmenteurReponse.segmenterMemorise(debut, cle: "m1") == SegmenteurReponse.segmenter(debut))
+        #expect(SegmenteurReponse.segmenterMemorise(suite, cle: "m1") == SegmenteurReponse.segmenter(suite))
+    }
 }

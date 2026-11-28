@@ -13,7 +13,7 @@ struct FilConversation: View {
     @State private var loinDuBas = false
     /// Combien de messages le fil montre, depuis la fin. Une longue session entière d'un coup saccadait.
     @State private var fenetre = Self.pas
-    private static let pas = 30
+    private static let pas = 20
 
     var body: some View {
         ScrollViewReader { lecteur in
@@ -93,6 +93,8 @@ struct FilConversation: View {
             geometrie.contentSize.height - geometrie.contentOffset.y - geometrie.containerSize.height > 400
         } action: { _, loin in
             withAnimation(Elan.normal) { loinDuBas = loin }
+            // Revenu en bas : l'historique déplié se décharge, le fil redevient léger.
+            if !loin { fenetre = Self.pas }
         }
         .scrollDismissesKeyboard(.interactively)
         .onChange(of: salon.conversation?.id) { _, _ in fenetre = Self.pas }
@@ -137,7 +139,7 @@ struct FilConversation: View {
                 if let compaction = message.compaction {
                     BaliseCompaction(info: compaction)
                 }
-                ReponseModele(texte: message.contenu, actif: false)
+                ReponseModele(texte: message.contenu, actif: false, cle: message.id)
                 PiedDeReponse(message: message, aRelire: salon.aRelire.contains(message.id))
                 if !salon.enGeneration { ActionsReponse(message: message) }
             }

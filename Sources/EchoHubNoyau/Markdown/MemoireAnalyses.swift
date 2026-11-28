@@ -35,6 +35,11 @@ extension SegmenteurReponse {
     public static func segmenterMemorise(_ source: String) -> ReponseSegmentee {
         memoire.valeur(source) { segmenter(source) }
     }
+
+    /// Même chose, rangé sous `cle` + longueur (O(1)) au lieu du texte entier, haché à chaque rendu sinon.
+    public static func segmenterMemorise(_ source: String, cle: String) -> ReponseSegmentee {
+        memoire.valeur("\(cle)#\(source.utf8.count)") { segmenter(source) }
+    }
 }
 
 extension AnalyseMarkdown {

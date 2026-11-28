@@ -14,12 +14,23 @@ struct ReponseModele: View {
     /// la différence est visible : un bloc jamais refermé est « en train de
     /// s'écrire » pendant une génération, « coupé net » après.
     let actif: Bool
+    /// L'identifiant du message, pour la mémoire des analyses : hacher 500 Ko de texte à chaque rendu chauffait.
+    var cle: String?
+    /// Combien d'étapes (raisonnements, appels d'outil) se montrent, depuis la fin.
+    /// `☠` Un tour d'agent en compte des centaines : toutes peintes d'un coup, l'app tombait et le téléphone chauffait.
+    @State private var etapes = Self.pasEtapes
+    private static let pasEtapes = 8
 
     var body: some View {
-        let segmentee = actif ? SegmenteurReponse.segmenter(texte) : SegmenteurReponse.segmenterMemorise(texte)
+        let segmentee = segmenter()
         let muette = tourMuet(segmentee)
+        let masquees = segmentee.raisonnements.count - etapes
         VStack(alignment: .leading, spacing: Trame.element) {
-            ForEach(segmentee.raisonnements) { segment in
+            if masquees > 0 {
+                Button("\(masquees) étapes précédentes") { etapes += 20 }
+                    .buttonStyle(.appui).legende().foregroundStyle(Teinte.accent)
+            }
+            ForEach(segmentee.raisonnements.suffix(etapes)) { segment in
                 BlocReplie(
                     segment: segment, actif: actif,
                     ouvertParDefaut: muette && segment.id == segmentee.raisonnements.last?.id
@@ -33,6 +44,12 @@ struct ReponseModele: View {
                 epilogueVide(segmentee)
             }
         }
+    }
+
+    private func segmenter() -> ReponseSegmentee {
+        if actif { return SegmenteurReponse.segmenter(texte) }
+        if let cle { return SegmenteurReponse.segmenterMemorise(texte, cle: cle) }
+        return SegmenteurReponse.segmenterMemorise(texte)
     }
 
     /// La réponse : le SEUL texte de l'app composé en encre pleine à 17 pt,
