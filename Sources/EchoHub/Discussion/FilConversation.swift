@@ -11,6 +11,9 @@ struct FilConversation: View {
     @State private var texteModifie = ""
     /// Chris a remonté le fil : le bas n'est plus collé, « Reprendre le fil » apparaît.
     @State private var loinDuBas = false
+    /// Combien de messages le fil montre, depuis la fin. Une longue session entière d'un coup saccadait.
+    @State private var fenetre = Self.pas
+    private static let pas = 30
 
     var body: some View {
         ScrollViewReader { lecteur in
@@ -40,11 +43,17 @@ struct FilConversation: View {
 
     private var defilement: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: Trame.groupe) {
-                if let prompt = salon.reglagesConversation?.promptSysteme, !prompt.isEmpty {
+            // `☠` Pas de LazyVStack : ses hauteurs estimées changeaient pendant le rendu, et l'ancrage en bas courait
+            // après elles — le fil « défilait sans fin » à l'ouverture. La fenêtre garde le VStack léger.
+            VStack(alignment: .leading, spacing: Trame.groupe) {
+                if salon.messages.count > fenetre {
+                    Button("Messages précédents (\(salon.messages.count - fenetre))") { fenetre += Self.pas }
+                        .buttonStyle(.appui).legende().foregroundStyle(Teinte.accent)
+                        .frame(maxWidth: .infinity)
+                } else if let prompt = salon.reglagesConversation?.promptSysteme, !prompt.isEmpty {
                     EnteteSysteme(texte: prompt)
                 }
-                ForEach(salon.messages) { message in
+                ForEach(salon.messages.suffix(fenetre)) { message in
                     tour(message)
                     ForEach(salon.effacements.filter { $0.ancreMessageId == message.id }) { effacement in
                         SeparateurEffacement(effacement: effacement) {
@@ -86,6 +95,7 @@ struct FilConversation: View {
             withAnimation(Elan.normal) { loinDuBas = loin }
         }
         .scrollDismissesKeyboard(.interactively)
+        .onChange(of: salon.conversation?.id) { _, _ in fenetre = Self.pas }
         // Le seul geste qui relise le fil depuis le PC. Sans lui, le fil restait
         // figé sur ce que l'app avait elle-même observé — voir `Salon.recharger`.
         .refreshable { await salon.recharger() }

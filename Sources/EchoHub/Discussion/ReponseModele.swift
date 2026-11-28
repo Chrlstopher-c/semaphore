@@ -16,7 +16,7 @@ struct ReponseModele: View {
     let actif: Bool
 
     var body: some View {
-        let segmentee = SegmenteurReponse.segmenter(texte)
+        let segmentee = actif ? SegmenteurReponse.segmenter(texte) : SegmenteurReponse.segmenterMemorise(texte)
         let muette = tourMuet(segmentee)
         VStack(alignment: .leading, spacing: Trame.element) {
             ForEach(segmentee.raisonnements) { segment in
@@ -43,7 +43,7 @@ struct ReponseModele: View {
     @ViewBuilder private func reponse(_ visible: String) -> some View {
         let propre = visible.trimmingCharacters(in: .whitespacesAndNewlines)
         if !propre.isEmpty {
-            RenduMarkdown(source: propre)
+            RenduMarkdown(source: propre, memoriser: !actif)
         }
     }
 

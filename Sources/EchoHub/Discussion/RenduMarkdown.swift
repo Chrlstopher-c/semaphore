@@ -12,10 +12,12 @@ import EchoHubNoyau
 
 struct RenduMarkdown: View {
     let source: String
+    /// Texte figé : son analyse est gardée. Un texte qui s'écrit, lui, change à chaque fragment.
+    var memoriser = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: Trame.element) {
-            ForEach(AnalyseMarkdown.analyser(source)) { indexe in
+            ForEach(memoriser ? AnalyseMarkdown.analyserMemorise(source) : AnalyseMarkdown.analyser(source)) { indexe in
                 rendre(indexe.bloc)
             }
         }
