@@ -26,6 +26,7 @@ final class Diffusion: @unchecked Sendable {
     private let file = DispatchQueue(label: "iris.diffusion")
     private var liaisons: [String: Liaison] = [:]
     private var enPause: [String: Date] = [:]
+    private var voulus: [Recepteur] = []
     private let cle: String
     private let demanderCle: @Sendable () -> Void
     private let signaler: @Sendable (String, EtatLiaison?) -> Void
@@ -50,6 +51,7 @@ final class Diffusion: @unchecked Sendable {
     }
 
     private func accorderSurFile(_ voulus: [Recepteur]) {
+        self.voulus = voulus
         let sessions = Dictionary(voulus.map { ($0.nom, $0.session) }, uniquingKeysWith: { a, _ in a })
         for (nom, liaison) in liaisons where sessions[nom] != liaison.session { fermer(nom) }
         let maintenant = Date()
@@ -134,9 +136,15 @@ final class Diffusion: @unchecked Sendable {
         signaler(nom, nil)
     }
 
+    /// Après la pause, on retente seul : le relais annonce un PC qui redémarre sa réception pendant cette pause, et
+    /// sans nouvelle annonce ensuite la liaison restait fermée pour toujours (il fallait relancer l'app).
     private func echouer(_ nom: String) {
         enPause[nom] = Date().addingTimeInterval(Self.pause)
         signaler(nom, .injoignable)
+        file.asyncAfter(deadline: .now() + Self.pause + 0.2) { [weak self] in
+            guard let self else { return }
+            self.accorderSurFile(self.voulus)
+        }
     }
 }
 #endif
