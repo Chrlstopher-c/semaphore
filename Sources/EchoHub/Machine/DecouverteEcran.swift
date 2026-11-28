@@ -16,6 +16,8 @@ struct DecouverteEcran: View {
     @State private var etat: EtatChargement<[ResultatDepot]> = .vide
     @State private var recherche: Task<Void, Never>?
     @State private var definitions: [DefinitionCapacite] = []
+    @State private var finAtteinte = true
+    @State private var suite = false
 
     var body: some View {
         PageAtelier("Chercher sur le Hub") {
@@ -126,6 +128,10 @@ struct DecouverteEcran: View {
                         .buttonStyle(.appui)
                         .entreeEnScene(rang: rang)
                     }
+                    if !finAtteinte {
+                        VerbeAtelier(libelle: "Plus de résultats", occupe: suite) { Task { await pageSuivante(depots) } }
+                            .padding(.top, Trame.element)
+                    }
                 }
             }
         }
@@ -133,6 +139,21 @@ struct DecouverteEcran: View {
 
     /// Une recherche à la fois : sur un réseau à quatre sauts, deux réponses
     /// dans le désordre afficheraient les résultats de la requête d'avant.
+    private func pageSuivante(_ deja: [ResultatDepot]) async {
+        suite = true
+        defer { suite = false }
+        var suivante = demande
+        suivante.page += 1
+        do {
+            let page = try await salon.modeles.rechercherDepots(suivante)
+            demande.page = suivante.page
+            finAtteinte = page.finAtteinte
+            etat = .pret(deja + page.resultats.filter { nouveau in !deja.contains { $0.id == nouveau.id } })
+        } catch {
+            Journal.echec("page suivante du Hub échouée : \(error)")
+        }
+    }
+
     private func lancer() {
         recherche?.cancel()
         let requete = saisie.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -147,6 +168,7 @@ struct DecouverteEcran: View {
             do {
                 let page = try await salon.modeles.rechercherDepots(demande)
                 guard !Task.isCancelled else { return }
+                finAtteinte = page.finAtteinte
                 withAnimation(Elan.normal) { etat = .pret(page.resultats) }
             } catch {
                 guard !Task.isCancelled else { return }

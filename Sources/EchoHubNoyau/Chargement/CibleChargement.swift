@@ -88,11 +88,14 @@ public struct PreferencesChargement: Sendable, Equatable {
     /// `f16`, `q8_0`, `q4_0`. Le défaut du planificateur.
     public var typeCacheKv: String
     public var flashAttention: Bool
+    /// Actifs par défaut : seule leur désactivation s'exprime (`desactiver_cuda_graphs`).
+    public var graphesCuda: Bool
 
-    public init(contexte: Int? = nil, typeCacheKv: String = "f16", flashAttention: Bool = true) {
+    public init(contexte: Int? = nil, typeCacheKv: String = "f16", flashAttention: Bool = true, graphesCuda: Bool = true) {
         self.contexte = contexte
         self.typeCacheKv = typeCacheKv
         self.flashAttention = flashAttention
+        self.graphesCuda = graphesCuda
     }
 
     /// `☠` `moteur` n'est PAS exposé. L'atelier ne pilote pas les moteurs
@@ -103,6 +106,7 @@ public struct PreferencesChargement: Sendable, Equatable {
             "contexte": contexte.map(ValeurJSON.entier) ?? .nul,
             "type_cache_kv": .texte(typeCacheKv),
             "flash_attention": .booleen(flashAttention),
+            "desactiver_cuda_graphs": .booleen(!graphesCuda),
         ])
     }
 }

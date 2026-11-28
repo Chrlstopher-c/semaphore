@@ -53,6 +53,11 @@ struct OutilsFeuille: View {
                 )
             case .pret(let outils):
                 entete(outils)
+                ForEach(PairesOutils.cassees(selection), id: \.actif) { paire in
+                    Text("\(paire.actif) sans \(paire.requis) : \(paire.raison).")
+                        .legende().foregroundStyle(Teinte.alerte)
+                        .padding(.horizontal, Trame.ecran)
+                }
                 familles(outils)
                 defaut
             }

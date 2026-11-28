@@ -12,6 +12,7 @@ struct ProfilsFeuille: View {
     @State private var lie: String?
     @State private var erreur: String?
     @State private var edition: EditionEnCours?
+    @State private var aSupprimer: Profil?
 
     var body: some View {
         NavigationStack {
@@ -37,6 +38,17 @@ struct ProfilsFeuille: View {
                 }
             }
             .task { await charger() }
+            .confirmationDialog(
+                "Supprimer le profil « \(aSupprimer?.nom ?? "") » ?",
+                isPresented: Binding(get: { aSupprimer != nil }, set: { if !$0 { aSupprimer = nil } }),
+                titleVisibility: .visible
+            ) {
+                Button("Supprimer", role: .destructive) {
+                    if let profil = aSupprimer { Task { await supprimer(profil) } }
+                }
+            } message: {
+                Text("Les sessions qui le suivent gardent leurs réglages actuels.")
+            }
             .sheet(item: $edition) { enCours in
                 EditeurProfil(depart: enCours) { await charger() }
             }
@@ -49,7 +61,7 @@ struct ProfilsFeuille: View {
             ForEach(liste) { profil in
                 ligne(profil.nom, detail: resume(profil.edition), choisi: lie == profil.id) { await choisir(profil.id) }
                     .swipeActions {
-                        Button(role: .destructive) { Task { await supprimer(profil) } } label: { Label("Supprimer", systemImage: "trash") }
+                        Button(role: .destructive) { aSupprimer = profil } label: { Label("Supprimer", systemImage: "trash") }
                         Button { edition = EditionEnCours(id: profil.id, edition: profil.edition) } label: {
                             Label("Modifier", systemImage: "pencil")
                         }

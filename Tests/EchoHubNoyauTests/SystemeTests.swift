@@ -24,3 +24,11 @@ struct SystemeTests {
         #expect(DepotSysteme.lire(erreur) == .echec("Disque plein. Libérer 10 Go."))
     }
 }
+
+@Suite("Paires d'outils")
+struct PairesOutilsTests {
+    @Test func signaleLeMembreSeul() {
+        #expect(PairesOutils.cassees(SelectionOutils(outilsActifs: ["recuperer_page"])).map(\.requis) == ["recherche_web"])
+        #expect(PairesOutils.cassees(SelectionOutils()).isEmpty)
+    }
+}

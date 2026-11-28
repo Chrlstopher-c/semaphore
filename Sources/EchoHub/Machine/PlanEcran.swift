@@ -136,6 +136,10 @@ struct PlanEcran: View {
                         Text("Flash attention").note().foregroundStyle(Teinte.encreDouce)
                     }
                     .tint(Teinte.accent)
+                    Toggle(isOn: $preferences.graphesCuda) {
+                        Text("Graphes CUDA").note().foregroundStyle(Teinte.encreDouce)
+                    }
+                    .tint(Teinte.accent)
                 }
             }
         }

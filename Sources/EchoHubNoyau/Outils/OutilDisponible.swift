@@ -87,3 +87,23 @@ public struct SelectionOutils: Sendable, Codable, Equatable {
         return SelectionOutils(outilsActifs: actifs.count == catalogue.count ? nil : actifs)
     }
 }
+
+/// Des outils qui vont par paires (`PAIRES_SUGGEREES` du web) : on suggère, on n'interdit pas.
+public enum PairesOutils {
+    public struct Paire: Sendable, Equatable {
+        public let actif: String
+        public let requis: String
+        public let raison: String
+    }
+
+    static let suggerees = [
+        Paire(actif: "recuperer_page", requis: "recherche_web", raison: "sans recherche, le modèle n'a pas d'adresses à lire"),
+        Paire(actif: "modifier_fichier", requis: "lire_fichier", raison: "modifier sans relire, c'est éditer à l'aveugle"),
+        Paire(actif: "presenter_fichier", requis: "lire_fichier", raison: "présenter suppose de savoir ce que le bac contient"),
+    ]
+
+    /// Les paires cassées : le membre coché sans son complément.
+    public static func cassees(_ selection: SelectionOutils) -> [Paire] {
+        suggerees.filter { selection.contient($0.actif) && !selection.contient($0.requis) }
+    }
+}
