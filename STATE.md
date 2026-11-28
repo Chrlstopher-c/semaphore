@@ -17,7 +17,7 @@ ci-dessous) ; monde Quart v1 refait à l'identique de la partie Code de l'appli 
 - RIEN n'est vérifié sur l'iPhone ; la checklist `docs/echohub-parite.md` se coche seulement après essai réel.
 - Écarts connus restants : Découvrir ne cherche que du GGUF (pas safetensors/vLLM) ; mermaid affiché en code ;
   réveil réel d'une tour éteinte jamais éprouvé.
-- Suite : installer l'IPA (`./installer-iphone.sh`, iPhone visible du portable), parcours Wi-Fi puis 4G.
+- IPA INSTALLÉE sur l'iPhone le 28/11 par Wi-Fi seul (script corrigé : `idevice_id -n`). Suite : parcours de Chris Wi-Fi puis 4G, retours à corriger, puis cocher la checklist.
 
 ## 27/11/2026 — Refonte du monde EchoHub (PROJET.md, checklist docs/echohub-parite.md)
 - Demande de Chris : parité écran par écran avec l'EchoHub web (mode étroit), + état/allumage de la tour, démarrage
