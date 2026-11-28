@@ -38,9 +38,9 @@ final class CaptureCamera: NSObject, @unchecked Sendable {
     }
 
     /// Configure (ou reconfigure à chaud) puis lance la session.
-    func demarrer(objectif: Objectif, qualite: Qualite) async throws {
+    func demarrer(objectif: Objectif, qualite: Qualite, cadence: Cadence) async throws {
         try await surFile {
-            try self.configurer(objectif: objectif, qualite: qualite)
+            try self.configurer(objectif: objectif, qualite: qualite, cadence: cadence)
             if !self.session.isRunning { self.session.startRunning() }
         }
     }
@@ -62,7 +62,7 @@ final class CaptureCamera: NSObject, @unchecked Sendable {
         }
     }
 
-    private func configurer(objectif: Objectif, qualite: Qualite) throws {
+    private func configurer(objectif: Objectif, qualite: Qualite, cadence: Cadence) throws {
         guard let appareil = Self.appareil(pour: objectif) else { throw ErreurCapture.objectifAbsent }
         session.beginConfiguration()
         defer { session.commitConfiguration() }
@@ -75,19 +75,39 @@ final class CaptureCamera: NSObject, @unchecked Sendable {
         if session.outputs.isEmpty, session.canAddOutput(sortie) { session.addOutput(sortie) }
         let preset: AVCaptureSession.Preset = qualite == .hd720 ? .hd1280x720 : .hd1920x1080
         session.sessionPreset = session.canSetSessionPreset(preset) ? preset : .high
-        regler30ImagesParSeconde(appareil)
+        let obtenue = regler(cadence: cadence, qualite: qualite, appareil)
         orienter(appareil)
-        journal.info("caméra : \(objectif.rawValue, privacy: .public) \(qualite.rawValue, privacy: .public)")
+        journal.info("caméra : \(objectif.rawValue, privacy: .public) \(qualite.rawValue, privacy: .public) \(obtenue) i/s")
     }
 
-    private func regler30ImagesParSeconde(_ appareil: AVCaptureDevice) {
+    /// 30 i/s tiennent dans le format du préréglage ; 60 i/s exigent un format de l'objectif qui les offre à
+    /// cette définition (le choisir fait passer la session en `inputPriority`). Rend la cadence obtenue.
+    private func regler(cadence: Cadence, qualite: Qualite, _ appareil: AVCaptureDevice) -> Int {
+        var ips = cadence.rawValue
         do {
             try appareil.lockForConfiguration()
-            appareil.activeVideoMinFrameDuration = CMTime(value: 1, timescale: 30)
-            appareil.activeVideoMaxFrameDuration = CMTime(value: 1, timescale: 30)
-            appareil.unlockForConfiguration()
+            defer { appareil.unlockForConfiguration() }
+            if cadence == .i60 {
+                if let format = Self.format60(appareil, largeur: qualite == .hd720 ? 1280 : 1920) {
+                    appareil.activeFormat = format
+                } else {
+                    ips = 30
+                }
+            }
+            appareil.activeVideoMinFrameDuration = CMTime(value: 1, timescale: CMTimeScale(ips))
+            appareil.activeVideoMaxFrameDuration = CMTime(value: 1, timescale: CMTimeScale(ips))
         } catch {
             journal.error("cadence non réglée : \(error.localizedDescription, privacy: .public)")
+        }
+        return ips
+    }
+
+    private static func format60(_ appareil: AVCaptureDevice, largeur: Int32) -> AVCaptureDevice.Format? {
+        appareil.formats.first { format in
+            let taille = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+            let sousType = CMFormatDescriptionGetMediaSubType(format.formatDescription)
+            return taille.width == largeur && sousType == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
+                && format.videoSupportedFrameRateRanges.contains { $0.maxFrameRate >= 60 }
         }
     }
 

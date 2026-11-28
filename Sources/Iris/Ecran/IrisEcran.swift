@@ -22,7 +22,7 @@ struct IrisEcran: View {
                 }
                 ReglagesIris()
                 PostesListe()
-                Text("L'image part en direct vers chaque ordinateur du réseau local. Le Pi ne fait que les présenter.")
+                Text("L'image part en direct vers chaque ordinateur du réseau local. Le Pi ne fait que les présenter. En direct, l'écran passe au noir après 10 s : touchez pour le rallumer.")
                     .font(Voix.note).foregroundStyle(Neutre.encreEteinte)
             }
             .padding(.horizontal, Grille.ecran)
@@ -32,6 +32,7 @@ struct IrisEcran: View {
         .animation(Mouvement.normal, value: emetteur.panne)
         .sensoryFeedback(Toucher.engage, trigger: emetteur.enDirect)
         .sensoryFeedback(Toucher.butee, trigger: emetteur.panne) { _, panne in panne != nil }
+        .modifier(EcranNoir(actif: emetteur.enDirect, reglages: emetteur.reglages))
     }
 
     private var enTete: some View {
@@ -96,7 +97,7 @@ struct IrisEcran: View {
     }
 }
 
-/// Les trois réglages, en segments système : peu de choix, tous visibles.
+/// Les quatre réglages, en segments système : peu de choix, tous visibles.
 private struct ReglagesIris: View {
     @Environment(Emetteur.self) private var emetteur
 
@@ -110,6 +111,10 @@ private struct ReglagesIris: View {
             segments("Définition", selection: emetteur.reglages.qualite,
                      options: Qualite.allCases, libelle: \.libelle) { [emetteur] q in
                 Task { await emetteur.choisir(qualite: q) }
+            }
+            segments("Cadence", selection: emetteur.reglages.cadence,
+                     options: Cadence.allCases, libelle: \.libelle) { [emetteur] c in
+                Task { await emetteur.choisir(cadence: c) }
             }
             segments("Image", selection: emetteur.reglages.cadrage,
                      options: Cadrage.allCases, libelle: \.libelle) { [emetteur] c in

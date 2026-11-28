@@ -28,7 +28,7 @@ final class Emetteur {
     private init() {
         let depart = Reglages.charger()
         reglages = depart
-        let encodeur = Encodeur(debit: depart.qualite.debit)
+        let encodeur = Encodeur(debit: depart.qualite.debit(a: depart.cadence))
         let diffusion = Diffusion(
             cle: Parametres.cle,
             demanderCle: { @Sendable in encodeur.forcerCle() },
@@ -67,7 +67,7 @@ final class Emetteur {
             return
         }
         do {
-            try await capture.demarrer(objectif: reglages.objectif, qualite: reglages.qualite)
+            try await capture.demarrer(objectif: reglages.objectif, qualite: reglages.qualite, cadence: reglages.cadence)
         } catch {
             journal.error("caméra : \(error.localizedDescription, privacy: .public)")
             panne = "Caméra indisponible (\(reglages.objectif.libelle))."
@@ -96,7 +96,13 @@ final class Emetteur {
 
     func choisir(qualite: Qualite) async {
         reglages.qualite = qualite
-        encodeur.changerDebit(qualite.debit)
+        encodeur.changerDebit(qualite.debit(a: reglages.cadence))
+        await reconfigurer()
+    }
+
+    func choisir(cadence: Cadence) async {
+        reglages.cadence = cadence
+        encodeur.changerDebit(reglages.qualite.debit(a: cadence))
         await reconfigurer()
     }
 
@@ -110,7 +116,7 @@ final class Emetteur {
         reglages.enregistrer()
         guard enDirect else { return }
         do {
-            try await capture.demarrer(objectif: reglages.objectif, qualite: reglages.qualite)
+            try await capture.demarrer(objectif: reglages.objectif, qualite: reglages.qualite, cadence: reglages.cadence)
             encodeur.forcerCle()
         } catch {
             journal.error("reconfiguration : \(error.localizedDescription, privacy: .public)")

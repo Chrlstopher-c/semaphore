@@ -18,7 +18,19 @@ public enum Qualite: String, CaseIterable, Sendable, Codable {
     case hd720, hd1080
 
     public var libelle: String { self == .hd720 ? "720p" : "1080p" }
-    public var debit: Int { self == .hd720 ? 4_000_000 : 8_000_000 }
+
+    /// Débit visé : 60 i/s demandent ~1,5× le débit de 30 i/s pour la même netteté.
+    public func debit(a cadence: Cadence) -> Int {
+        let base = self == .hd720 ? 4_000_000 : 8_000_000
+        return cadence == .i60 ? base * 3 / 2 : base
+    }
+}
+
+/// Images par seconde : 30 (plus léger pour le Wi-Fi) ou 60 (mouvements fluides).
+public enum Cadence: Int, CaseIterable, Sendable, Codable {
+    case i30 = 30, i60 = 60
+
+    public var libelle: String { "\(rawValue) i/s" }
 }
 
 /// Comment le PC range l'image dans sa webcam 16:9 : bandes noires ou recadrage.

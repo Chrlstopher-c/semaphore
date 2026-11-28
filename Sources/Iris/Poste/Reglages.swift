@@ -6,7 +6,19 @@ import IrisNoyau
 struct Reglages: Codable, Equatable {
     var objectif: Objectif = .arriere
     var qualite: Qualite = .hd720
+    var cadence: Cadence = .i30
     var cadrage: Cadrage = .adapter
+
+    init() {}
+
+    /// Les réglages d'avant la cadence se relisent : un champ absent garde sa valeur par défaut.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        objectif = try c.decodeIfPresent(Objectif.self, forKey: .objectif) ?? .arriere
+        qualite = try c.decodeIfPresent(Qualite.self, forKey: .qualite) ?? .hd720
+        cadence = try c.decodeIfPresent(Cadence.self, forKey: .cadence) ?? .i30
+        cadrage = try c.decodeIfPresent(Cadrage.self, forKey: .cadrage) ?? .adapter
+    }
 
     private static let cle = "iris.reglages"
 

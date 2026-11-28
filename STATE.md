@@ -21,6 +21,7 @@ ci-dessous) ; monde Quart v1 refait à l'identique de la partie Code de l'appli 
   un seul monde monté à la fois qui retrouve son écran au retour (6720cba, c72da58), onglet Coffre de Saily
   (secrets echo-vault de la tour sous Face ID, d2d0056 ; relais `/coffre/*` et service `echo-vault-http`).
 - IPA INSTALLÉE sur l'iPhone le 28/11 par Wi-Fi seul (script corrigé : `idevice_id -n`). Suite : parcours de Chris Wi-Fi puis 4G, retours à corriger, puis cocher la checklist.
+- 28/11 : Iris — cadence 30/60 i/s (format 60 i/s cherché sur l'objectif, repli à 30) et écran noir en direct (10 s sans toucher, luminosité 0, toucher = rallume ; iOS coupe la caméra verrouillé). Installé par Wi-Fi, à valider par Chris.
 
 ## 27/11/2026 — Refonte du monde EchoHub (PROJET.md, checklist docs/echohub-parite.md)
 - Demande de Chris : parité écran par écran avec l'EchoHub web (mode étroit), + état/allumage de la tour, démarrage
