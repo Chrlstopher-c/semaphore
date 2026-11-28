@@ -13,6 +13,9 @@ import TamisNoyau
 @MainActor
 @Observable
 final class Atelier {
+    /// L'atelier de l'app, gardé quand le pupitre démonte le monde Tamis.
+    static let memoire = Atelier()
+
     enum Etat: Equatable { case attente, refuse, inventaire, pret }
 
     private(set) var etat: Etat = .attente

@@ -7,8 +7,9 @@ import SailyNoyau
 
 public struct Coquille: View {
     @Environment(\.scenePhase) private var phase
-    @State private var boite = Boite()
-    @State private var onglet: Onglet = .inbox
+    // Le pupitre démonte le monde quitté : la besace et l'onglet survivent au retour.
+    @State private var boite = Boite.memoire
+    @SceneStorage("saily.onglet") private var onglet: Onglet = .inbox
 
     public init() {}
 
@@ -29,7 +30,9 @@ public struct Coquille: View {
         .ambiance(Ambiance())
         .preferredColorScheme(.dark)
         .sensoryFeedback(Retour.bascule, trigger: onglet)
-        .task { await boite.demarrer() }
+        .task { if boite.demarree { await boite.reprendre() } else { await boite.demarrer() } }
+        // Monde quitté : le socket se ferme, la besace reste en mémoire.
+        .onDisappear { boite.suspendre() }
         .onChange(of: phase) { _, nouvelle in reagir(nouvelle) }
     }
 

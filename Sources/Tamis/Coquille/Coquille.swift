@@ -9,8 +9,9 @@ public struct Coquille: View {
     /// Vrai quand le pupitre montre ce monde.
     private let visible: Bool
     @Environment(\.scenePhase) private var phase
-    @State private var atelier = Atelier()
-    @State private var onglet: Onglet = .strates
+    // Le pupitre démonte le monde quitté : l'atelier (tri en cours) et l'onglet survivent au retour.
+    @State private var atelier = Atelier.memoire
+    @SceneStorage("tamis.onglet") private var onglet: Onglet = .strates
 
     public init(visible: Bool) {
         self.visible = visible
@@ -40,9 +41,12 @@ public struct Coquille: View {
         // modifie. Posé avant `.overlay`, il laissait `AccesEcran` sans atelier —
         // crash au lancement d'Echo, monde Tamis ou pas.
         .environment(atelier)
-        .task(id: visible) { if visible { await atelier.demarrer() } }
+        .task(id: visible) {
+            atelier.reveil()
+            if visible { await atelier.demarrer() }
+        }
         // Monde quitté (démonté par le pupitre) : l'analyse des photos ne tourne plus dans le vide.
-        .onDisappear { atelier.suspendreAnalyse() }
+        .onDisappear { atelier.sommeil() }
         .onChange(of: phase) { _, nouvelle in reagir(nouvelle) }
     }
 }
@@ -65,7 +69,7 @@ extension Coquille {
     }
 }
 
-enum Onglet: Hashable, CaseIterable {
+enum Onglet: String, Hashable, CaseIterable {
     case strates, tri, pistes, panier
 
     var libelle: String {

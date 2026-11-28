@@ -17,6 +17,9 @@ public enum EtatLiaison: Equatable, Sendable {
 @Observable
 @MainActor
 public final class Boite {
+    /// La besace de l'app, gardée quand le pupitre démonte le monde Saily.
+    public static let memoire = Boite()
+
     // MARK: - Ce que les écrans lisent
 
     /// Les items visibles, épingles en tête. Dérivé de l'état pur : c'est lui la
@@ -69,6 +72,9 @@ public final class Boite {
 
     /// Premier geste : relire le réglage, le poser au client, tirer un delta
     /// REST (utile même WS fermé), puis ouvrir le socket et consommer son flux.
+    /// Déjà démarrée : un retour dans le monde reprend au lieu de redémarrer.
+    public var demarree: Bool { boucleFlux != nil }
+
     public func demarrer() async {
         guard boucleFlux == nil else { return }
         reglages = await gestionnaire.actuels()

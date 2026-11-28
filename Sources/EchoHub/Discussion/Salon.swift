@@ -181,6 +181,9 @@ public final class Salon {
         noterChangementDeListe()
     }
 
+    /// Le salon de l'app, gardé quand le pupitre démonte le monde EchoHub.
+    public static let memoire = Salon()
+
     public init() {
         let dossier = FileManager.dossierReglagesParDefaut()
         gestionnaire = GestionnaireReglagesRelais(

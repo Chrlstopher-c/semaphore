@@ -7,8 +7,9 @@ import EchoHubNoyau
 
 public struct Coquille: View {
     @Environment(\.scenePhase) private var phase
-    @State private var salon = Salon()
-    @State private var onglet: Onglet = .sessions
+    // Le pupitre démonte le monde quitté : le salon (conversation ouverte) et l'onglet survivent au retour.
+    @State private var salon = Salon.memoire
+    @SceneStorage("echohub.onglet") private var onglet: Onglet = .sessions
     @AppStorage(ThemeEchoHub.cle) private var theme: ThemeEchoHub = .sombre
     @State private var tour: SuiviTour?
     /// Faut-il couper la génération quand l'app passe à l'arrière-plan ?
@@ -42,7 +43,7 @@ public struct Coquille: View {
         .sensoryFeedback(Retour.bascule, trigger: onglet)
         .overlay { voileTour }
         .task {
-            await salon.demarrer()
+            if salon.demarre { await salon.reprendre() } else { await salon.demarrer() }
             let suivi = SuiviTour(client: salon.client)
             tour = suivi
             suivi.suivre()

@@ -7,13 +7,14 @@ import VigieNoyau
 public struct Coquille: View {
     @Environment(Cablage.self) private var cablage
     @Environment(\.scenePhase) private var phase
-    @State private var pile: [String] = []
+    /// La pile ouverte, gardée quand le pupitre démonte le monde (un id de session par ligne).
+    @SceneStorage("quart.pile") private var pileGardee = ""
 
     public init() {}
 
     public var body: some View {
         Group {
-            if cablage.connecte { RacineQuart(pile: $pile) } else { ConnexionEcran() }
+            if cablage.connecte { RacineQuart(pile: pile) } else { ConnexionEcran() }
         }
         .preferredColorScheme(.dark)
         .tint(Q.coche)
@@ -28,9 +29,16 @@ public struct Coquille: View {
         .onChange(of: Aiguillage.partage.sessionDemandee) { _, id in ouvrirDemandee(id) }
     }
 
+    private var pile: Binding<[String]> {
+        Binding(
+            get: { pileGardee.isEmpty ? [] : pileGardee.components(separatedBy: "\n") },
+            set: { pileGardee = $0.joined(separator: "\n") }
+        )
+    }
+
     private func ouvrirDemandee(_ id: String?) {
         guard let id else { return }
-        pile = [id]
+        pileGardee = id
         Aiguillage.partage.sessionDemandee = nil
     }
 
