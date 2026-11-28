@@ -42,7 +42,7 @@ log "compte Apple enregistré"
 
 ssh "$PORTABLE" 'systemctl is-active --quiet usbmuxd || sudo -n systemctl start usbmuxd 2>/dev/null || true'
 
-trouver_udid() { ssh "$PORTABLE" 'idevice_id -l 2>/dev/null | head -1'; }
+trouver_udid() { ssh "$PORTABLE" '{ idevice_id -l; idevice_id -n; } 2>/dev/null | head -1'; }
 fin=$(( $(date +%s) + ATTENTE ))
 UDID="$(trouver_udid)"
 while [ -z "$UDID" ] && [ "$(date +%s)" -lt "$fin" ]; do
@@ -50,7 +50,7 @@ while [ -z "$UDID" ] && [ "$(date +%s)" -lt "$fin" ]; do
     sleep 3; UDID="$(trouver_udid)"
 done
 [ -n "$UDID" ] || die "aucun iPhone vu par le portable (câble de données ? iPhone déverrouillé ? « Faire confiance » ?)"
-NOM="$(ssh "$PORTABLE" 'ideviceinfo -k DeviceName 2>/dev/null' || true)"
+NOM="$(ssh "$PORTABLE" 'ideviceinfo -n -k DeviceName 2>/dev/null || ideviceinfo -k DeviceName 2>/dev/null' || true)"
 log "iPhone détecté : ${NOM:-?}"
 
 [ "$A_BLANC" = 1 ] && { log "à blanc : tout est prêt, rien n'a été signé ni installé"; exit 0; }
