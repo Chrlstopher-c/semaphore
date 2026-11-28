@@ -41,6 +41,8 @@ public struct Coquille: View {
         // crash au lancement d'Echo, monde Tamis ou pas.
         .environment(atelier)
         .task(id: visible) { if visible { await atelier.demarrer() } }
+        // Monde quitté (démonté par le pupitre) : l'analyse des photos ne tourne plus dans le vide.
+        .onDisappear { atelier.suspendreAnalyse() }
         .onChange(of: phase) { _, nouvelle in reagir(nouvelle) }
     }
 }

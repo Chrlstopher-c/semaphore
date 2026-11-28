@@ -16,6 +16,8 @@ public struct Coquille: View {
             .tint(Teinte.accent)
             .preferredColorScheme(.dark)
             .onChange(of: visible, initial: true) { _, devant in lampe.montrer(devant) }
+            // Le pupitre démonte le monde quitté : la lampe doit le savoir.
+            .onDisappear { lampe.montrer(false) }
             .environment(lampe)
     }
 }

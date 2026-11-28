@@ -48,6 +48,11 @@ public struct Coquille: View {
             suivi.suivre()
         }
         .task(id: phase == .active) { await sonderLeMoteur() }
+        // Monde quitté : plus de flux ni de sonde. Le PC poursuit la génération, le retour la relit.
+        .onDisappear {
+            salon.suspendre()
+            tour?.arreter()
+        }
         .onChange(of: phase) { _, nouvelle in reagir(nouvelle) }
     }
 

@@ -9,24 +9,16 @@ import Systeme
 import Tamis
 import Vigie
 
-/// Le pupitre : les mondes montés en permanence, un sélecteur en tête.
+/// Le pupitre : un sélecteur en tête, et SEUL le monde affiché est monté.
 ///
-/// `☠` Les coquilles VIVENT en même temps — changer de monde ne démonte
-/// rien. C'est ce qui permet à une génération EchoHub de continuer pendant
-/// qu'on tranche une décision au Quart, et au Quart de sonder le Pi pendant
-/// qu'on lit une réponse. Le prix : tout démarre au lancement, et le
-/// monde caché reçoit les `onAppear`. Vigie règle déjà ce cas pour ses propres
-/// piles avec `\.ecranVisible` ; EchoHub n'a qu'un onglet actif à la fois et
-/// sonde peu.
+/// `☠` Les mondes vivaient tous en même temps (sondes, flux, rendus cachés) : l'iPhone chauffait pour des écrans
+/// que Chris ne regardait pas (28/11/2026). Quitter un monde le démonte, ses tâches s'arrêtent. Une génération
+/// EchoHub n'est pas perdue : le PC la poursuit et la persiste, l'app la relit au retour. Ce qui doit survivre au
+/// changement de monde (veille, alertes de Quart) vit dans le câblage de l'app, pas dans une coquille.
 ///
 /// Le chrome est peint avec le socle `Systeme`, en pierre neutre : le centre
 /// de contrôle n'appartient à aucun monde. Chaque monde garde sa propre barre
 /// en bas et sa couleur — les directions artistiques ne se mélangent pas.
-///
-/// La bascule de monde reproduit `AnyTransition.monde` (zoom profond + fondu)
-/// SANS `.id` ni transition d'insertion : une identité changeante démonterait
-/// les coquilles et tuerait la génération en cours. On anime donc `scale` et
-/// `opacity` sur les vues persistantes — même geste, zéro démontage.
 struct Pupitre: View {
     @State private var monde: Monde = .quart
     @State private var grilleOuverte = false
@@ -49,33 +41,30 @@ struct Pupitre: View {
 
     private var mondes: some View {
         ZStack {
-            scene(.quart) { Vigie.Coquille() }
-            // La suspension à l'arrière-plan est celle d'EchoHub seul ; ici
-            // le système de veille de Vigie tient le processus, donc une
-            // génération n'a plus à être coupée quand l'écran s'éteint.
-            scene(.machine) {
-                EchoHub.Coquille(suspendreEnArrierePlan: { !MaintienVie.partage.actif })
-            }
-            scene(.saily) { Saily.Coquille() }
-            scene(.duplex) { Duplex.Coquille() }
-            scene(.tamis) { Tamis.Coquille(visible: monde == .tamis) }
-            scene(.iris) { Iris.Coquille(visible: monde == .iris) }
-            scene(.lueur) { Lueur.Coquille(visible: monde == .lueur) }
+            scene
+                .id(monde)
+                .transition(reduireMouvement ? .opacity : .monde)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Une notification ou un lien de session de Quart ramène à Quart, d'où qu'on soit.
+        .onChange(of: Vigie.LienProfond.sessionEnAttente) { _, id in
+            if id != nil { basculer(vers: .quart) }
+        }
     }
 
-    /// Habille une coquille persistante pour la bascule : le monde actif est
-    /// à l'échelle 1, le monde caché recule à 0,98 dans le fondu. À l'entrée
-    /// il avance donc vers soi, à la sortie il plonge — le geste de
-    /// `AnyTransition.monde`, sans insertion ni retrait.
-    private func scene(_ cible: Monde, @ViewBuilder _ contenu: () -> some View) -> some View {
-        let actif = monde == cible
-        return contenu()
-            .opacity(actif ? 1 : 0)
-            .scaleEffect(reduireMouvement ? 1 : (actif ? 1 : 0.98))
-            .allowsHitTesting(actif)
-            .accessibilityHidden(!actif)
+    @ViewBuilder private var scene: some View {
+        switch monde {
+        case .quart: Vigie.Coquille()
+        // La suspension à l'arrière-plan est celle d'EchoHub seul ; ici
+        // le système de veille de Vigie tient le processus, donc une
+        // génération n'a plus à être coupée quand l'écran s'éteint.
+        case .machine: EchoHub.Coquille(suspendreEnArrierePlan: { !MaintienVie.partage.actif })
+        case .saily: Saily.Coquille()
+        case .duplex: Duplex.Coquille()
+        case .tamis: Tamis.Coquille(visible: true)
+        case .iris: Iris.Coquille(visible: true)
+        case .lueur: Lueur.Coquille(visible: true)
+        }
     }
 
     /// Le seul point d'écriture de `monde` : la bascule est toujours jouée

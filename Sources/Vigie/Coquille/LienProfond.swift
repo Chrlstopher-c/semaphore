@@ -6,6 +6,9 @@ import Foundation
 public enum LienProfond {
     public static let schema = "semaphore"
 
+    /// Session de Quart demandée et pas encore ouverte : le pupitre s'en sert pour revenir à Quart.
+    @MainActor public static var sessionEnAttente: String? { Aiguillage.partage.sessionDemandee }
+
     /// Rend `true` si le lien est le nôtre (qu'il désigne une session ou non).
     @MainActor
     @discardableResult

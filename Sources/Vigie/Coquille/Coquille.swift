@@ -17,7 +17,13 @@ public struct Coquille: View {
         }
         .preferredColorScheme(.dark)
         .tint(Q.coche)
-        .task { await cablage.amorcer() }
+        .task {
+            await cablage.amorcer()
+            cablage.modele.demarrer()
+            ouvrirDemandee(Aiguillage.partage.sessionDemandee)
+        }
+        // Monde quitté : le flux direct s'arrête ; la veille et les alertes, tenues par le câblage, continuent.
+        .onDisappear { cablage.modele.arreter() }
         .onChange(of: phase) { _, nouvelle in suivrePhase(nouvelle) }
         .onChange(of: Aiguillage.partage.sessionDemandee) { _, id in ouvrirDemandee(id) }
     }
