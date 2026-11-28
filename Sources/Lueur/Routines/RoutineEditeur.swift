@@ -1,6 +1,6 @@
 // Édition d'une routine en feuille (création si `routine` est nul) : quand (nom, heure, jours), puis quoi (la bande des
 // instructions et les réglages de l'étape touchée). Rien n'est écrit sur le Pi avant « Enregistrer » ; « Essayer » joue
-// la version en cours plafonnée à 30 %.
+// la version en cours accélérée (~15 s).
 #if canImport(SwiftUI) && canImport(UIKit)
 import LueurNoyau
 import SwiftUI
@@ -157,7 +157,7 @@ struct RoutineEditeur: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             Button { Task { await essayer() } } label: {
-                Label(essaiEnCours ? "Arrêter l'essai" : "Essayer sur le ruban (30 %)",
+                Label(essaiEnCours ? "Arrêter l'essai" : "Essayer en accéléré",
                       systemImage: essaiEnCours ? "stop.fill" : "play.fill")
                     .font(Voix.entete).frame(maxWidth: .infinity, minHeight: Grille.cible)
                     .foregroundStyle(Neutre.encre)

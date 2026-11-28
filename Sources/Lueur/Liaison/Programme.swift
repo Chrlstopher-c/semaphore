@@ -11,7 +11,7 @@ final class Programme {
     private(set) var charge = false
     private(set) var panne: String?
     @ObservationIgnored private let client = Client()
-    /// Le scénario d'essai de l'éditeur (instructions non enregistrées), joué plafonné à 30 %.
+    /// Le scénario d'essai de l'éditeur (instructions non enregistrées), accéléré à ~15 s, pleine lumière (Chris, 28/11).
     static let essai = "apercu-iphone"
     static let partage = Programme()
     private init() {}
@@ -77,8 +77,9 @@ final class Programme {
 
     func essayer(_ etapes: [Etape]) async -> String? {
         do {
-            try await client.ecrire(Scenario(id: Programme.essai, nom: "Essai", etapes: etapes.map(\.propre)))
-            try await client.jouer(Programme.essai, plafond: 30)
+            let apercu = Horaire.acceleree(etapes.map(\.propre))
+            try await client.ecrire(Scenario(id: Programme.essai, nom: "Essai", etapes: apercu))
+            try await client.jouer(Programme.essai, plafond: 100)
             return nil
         } catch {
             return Programme.message(error)

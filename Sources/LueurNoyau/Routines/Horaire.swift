@@ -124,6 +124,20 @@ public enum Horaire {
         }
     }
 
+    /// L'aperçu d'« Essayer » : les mêmes étapes, ramenées à `cible` secondes au plus (durées et ondes à la même
+    /// échelle, une onde jamais sous 0,4 s — le minimum du Pi). Une routine de 6 min se juge alors en 15 s.
+    public static func acceleree(_ etapes: [Etape], cible: Double = 15) -> [Etape] {
+        let t = total(etapes)
+        guard t > cible else { return etapes }
+        let k = cible / t
+        return etapes.map { e in
+            var a = e
+            if let d = e.duree { a.duree = (d * k * 10).rounded() / 10 }
+            if let o = e.onde { a.onde = max(0.4, (o * k * 10).rounded() / 10) }
+            return a
+        }
+    }
+
     /// Les couleurs qui résument une routine (pastille, bloc de la journée).
     public static func palette(_ etapes: [Etape]) -> [String] {
         var vues: [String] = []

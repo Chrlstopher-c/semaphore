@@ -63,7 +63,7 @@ struct Client: Sendable {
         try await appeler("DELETE", "/api/scenarios/\(id)")
     }
 
-    /// Joue un scénario plafonné (les essais à 30 %, comme convenu avec Chris).
+    /// Joue un scénario, luminosité plafonnée à `plafond` %.
     func jouer(_ id: String, plafond: Int) async throws {
         let corps = try JSONSerialization.data(withJSONObject: ["max_brightness": plafond])
         try await appeler("POST", "/api/scenarios/\(id)/play", corps: corps)

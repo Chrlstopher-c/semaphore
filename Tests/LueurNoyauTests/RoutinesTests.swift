@@ -87,4 +87,13 @@ final class RoutinesTests: XCTestCase {
         e.appliquer(.allumer(false))
         XCTAssertFalse(e.allume)
     }
+
+    func testEssaiAccelere() {
+        let reveil = [Etape(genre: .fondu, couleur: "#00ff00", intensite: 100, duree: 60),
+                      Etape(genre: .pulsation, couleur: "#00ff00", duree: 300, creux: 25, pic: 100, onde: 4)]
+        let a = Horaire.acceleree(reveil)
+        XCTAssertEqual(Horaire.total(a), 15, accuracy: 0.2)
+        XCTAssertEqual(a[1].onde, 0.4, "jamais sous le minimum du Pi")
+        XCTAssertEqual(Horaire.acceleree([Etape.neuve(.extinction)]), [Etape.neuve(.extinction)], "court : inchangé")
+    }
 }
